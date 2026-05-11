@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "884532670354",
+    "project_id": "foodpandauser",
+    "storage_bucket": "foodpandauser.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884532670354:android:f79d27bbe9bdfea1ca5b4b",
+        "android_client_info": {
+          "package_name": "com.newwasseny.user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "884532670354-ik8pvdtj2a1abrcco0ukie0annl2j8om.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.newwasseny.user",
+            "certificate_hash": "d4965a2a9a019f2dd315d6f86461487c3173b9d3"
+          }
+        },
+        {
+          "client_id": "884532670354-46fiemj5obrksscteg55fhiinrjbbv1g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_yMyLxZ28qOsLKwuRphXQBBVfESIdSWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "884532670354-46fiemj5obrksscteg55fhiinrjbbv1g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

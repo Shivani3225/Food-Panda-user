@@ -1,0 +1,849 @@
+import React, { useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
+  StatusBar,
+  useWindowDimensions,
+  RefreshControl,
+} from 'react-native';
+import Toast from 'react-native-toast-message';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import apiClient from '../../config/apiClient';
+import { USER_ROUTES } from '../../config/routes';
+import { getHomeData } from '../../services/homeService';
+import { convertDrawerFiltersToAPI } from '../../services/filterService';
+import { translateText } from '../../services/translationService';
+import Geolocation from '@react-native-community/geolocation';
+import { CartContext } from '../../context/CartContext';
+import { FavouritesContext } from '../../context/FavouritesContext';
+import { AuthContext, useAuth } from '../../context/AuthContext';
+import { Filter } from 'lucide-react-native';
+import { useLocation } from '../../context/LocationContext';
+import FilterDrawer from '../../components/FilterDrawer';
+import Offers from './Offers';
+import PickupScreen from './PickupScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { wp, hp } from '../../utils/responsive';
+import { scale } from '../../utils/scale';
+import { FONT_SIZES as FONT } from '../../theme/typography';
+import { getRatingAverage, getRatingCount } from '../../utils/ratingUtils';
+import { getAddressFromCoordinates } from '../../utils/locationUtils';
+import { HomeHeader } from '../../components/Home/HomeHeader';
+import { FoodCategoryList } from '../../components/Home/FoodCategoryList';
+import { PromoCardList } from '../../components/Home/PromoCardList';
+import { RestaurantListCard, RestaurantRecommendCard } from '../../components/Home/RestaurantCard';
+import { SkeletonCard, SkeletonRecommendCard } from '../../components/Home/SkeletonLoaders';
+
+export default function HomeScreen() {
+  const { t, i18n } = useTranslation();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { width } = useWindowDimensions();
+  const isSmallDevice = width < 360;
+  const { isAuthenticated, authenticatedUser, setAuthenticatedUser } = useAuth() || {};
+  const [restaurants, setRestaurants] = useState([]);
+  const [allRestaurants, setAllRestaurants] = useState([]);
+  const [recommendedRestaurants, setRecommendedRestaurants] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [tabs, setTabs] = useState([
+    t('home.restaurants', 'Restaurants'),
+    t('home.offers', 'Offers'),
+    t('home.pickup', 'Pick-up')
+  ]);
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true);
+  const isInitialLoadDone = useRef(false);
+  const [activeTab, setActiveTab] = useState(t('home.restaurants', 'Restaurants'));
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { location: globalLocation, permissionStatus } = useLocation();
+  const [userLocation, setUserLocation] = useState(null);
+  const hasLocationPermission = permissionStatus === 'granted';
+  const [pageNum, setPageNum] = useState(0);
+  const itemsPerPage = 8;
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [addressLabel, setAddressLabel] = useState(t('home.loading_location', 'Loading Location...')); // Initial state: Loading Current Location
+  const [addressLine, setAddressLine] = useState(t('home.loading_address', 'loading address...')); // Initial state: Loading address details
+  const [userData, setUserData] = useState(null);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
+  const { cartCount } = useContext(CartContext);
+  const { isFavourite, toggleFavourite } = useContext(FavouritesContext);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+  const hasAppliedSelectedAddressParam = useRef(false); // New ref to track param application
+  const selectedAddressParam = route?.params?.selectedAddress;
+
+  // Robust Image URL handling with Fallback - Moved to component level
+  const getImageUrl = useCallback((img, type = 'Image') => {
+    // Local placeholder image for reliability
+    const localPlaceholder = require('../../assets/images/Food.png');
+
+    if (!img || String(img).trim() === '') {
+      return localPlaceholder;
+    }
+
+    const trimmed = String(img).trim();
+
+    // Force local image if path contains '/uploads/' because backend is currently broken (404)
+    if (trimmed.includes('/uploads/')) {
+      return localPlaceholder;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return { uri: trimmed };
+    }
+
+    const baseUrl = apiClient.defaults.baseURL.replace(/\/+$/, '');
+    const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return { uri: `${baseUrl}${path}` };
+  }, []);
+
+  // Memoize map restaurant function - STABLE VERSION
+  const mapRestaurant = useCallback((item) => {
+    const lang = i18n.language || 'en';
+
+    const getName = (val) => {
+      if (!val) return t('home.restaurant', 'Restaurant');
+      if (typeof val === 'object') return val[lang] || val.en || val.de || val.ar || t('home.restaurant', 'Restaurant');
+      return String(val);
+    };
+
+    const ratingAverage = getRatingAverage(item);
+    const ratingCount = getRatingCount(item);
+
+    // Distance calculation
+    let rawDistance = item.distanceKm ?? item.distance ?? item.dist ?? item.location?.distance;
+    const numericDist = typeof rawDistance === 'string' ? parseFloat(rawDistance) : Number(rawDistance);
+    const hasValidDist = rawDistance != null && !isNaN(numericDist);
+
+    const restaurantImage = getImageUrl(item.image, 'Restro-Icon');
+    const restaurantBanner = getImageUrl(item.bannerImage || item.image, 'Restro-Banner');
+
+    return {
+      ...item,
+      id: item._id || item.id,
+      name: getName(item.name),
+      cuisines: item.cuisine || [],
+      image: restaurantImage,
+      bannerImage: restaurantBanner,
+      coverImage: restaurantBanner,
+      ratingAverage,
+      ratingCount,
+      numericDist,
+      hasValidDist,
+      deliveryTime: (() => {
+        const timeValue = item.deliveryTime;
+        let timePart = '';
+        if (!timeValue) timePart = `30-40 ${t('home.min', 'min')}`;
+        else {
+          const tVal = parseInt(timeValue);
+          if (isNaN(tVal)) timePart = `${timeValue} ${t('home.min', 'min')}`;
+          else {
+            const lower = Math.max(10, Math.floor(tVal / 10) * 10);
+            const upper = lower + 10;
+            timePart = `${lower}-${upper} ${t('home.min', 'min')}`;
+          }
+        }
+        const distPart = hasValidDist ? ` • 📍 ${numericDist.toFixed(1)} ${t('home.km', 'km')}` : '';
+        return `🕒 ${timePart}${distPart}`;
+      })(),
+      isOpen: item.isActive === true && item.isTemporarilyClosed !== true,
+      bestSeller: item.bestSeller || t('home.best_seller', 'Best Seller'),
+    };
+  }, [t, i18n.language, getImageUrl]);
+
+  // Log restaurant mapping for debugging image paths
+  useEffect(() => {
+    if (restaurants.length > 0) {
+      const firstRes = restaurants[0];
+      console.log(`🍴 [Restaurant Image Check] Name: ${firstRes.name} | Image: ${firstRes.image} | Banner: ${firstRes.bannerImage}`);
+    }
+  }, [restaurants]);
+
+  // Process home data - ROBUST VERSION
+  const processHomeData = useCallback((data) => {
+    if (!data) {
+      setIsLoadingRestaurants(false);
+      return;
+    }
+
+    try {
+      // 1. Categories
+      const rawCategories = data.categories || data.foodCategories || [];
+      if (Array.isArray(rawCategories)) {
+        const allCategory = {
+          id: 'all',
+          name: t('home.all', 'All'),
+          title: t('home.all', 'All'),
+          image: require('../../assets/images/Food.png'),
+        };
+
+        const apiCategories = rawCategories.map(cat => ({
+          id: cat._id || cat.id,
+          name: cat.name,
+          title: cat.name,
+          // Use getImageUrl to handle broken server paths for category images too
+          image: getImageUrl(cat.image, 'Category'),
+        }));
+
+        setCategories([allCategory, ...apiCategories]);
+        setIsLoadingCategories(false);
+      }
+
+      // 2. Banners
+      if (Array.isArray(data.banners)) {
+        setBanners(data.banners.filter(b => b?.isActive !== false));
+      }
+
+      // 3. Tabs
+      if (Array.isArray(data.tabs)) {
+        const translatedTabs = data.tabs.map(tab => {
+          if (tab === 'Restaurants') return t('home.restaurants', 'Restaurants');
+          if (tab === 'Offers') return t('home.offers', 'Offers');
+          if (tab === 'Pick-up') return t('home.pickup', 'Pick-up');
+          return tab;
+        });
+        setTabs(translatedTabs);
+      }
+
+      // 4. Restaurants Sections
+      const sections = data.sections || data;
+
+      // Recommended
+      let recommendedRaw = sections.recommendedForYou || sections.recommended || [];
+      let recommendedData = (Array.isArray(recommendedRaw) ? recommendedRaw : []).map(r => {
+        const m = mapRestaurant(r);
+        console.log(`🌟 [Recommended Restro] ${m.name} | URL: ${m.image}`);
+        return m;
+      });
+
+      if (recommendedData.length === 0) {
+        const fallbackSource = [
+          ...(sections.popularRestaurants || []),
+          ...(sections.recentRestaurants || []),
+          ...(sections.exploreRestaurants || []).slice(0, 5),
+        ];
+        const uniqueFallback = Array.from(
+          new Map(fallbackSource.filter(Boolean).map(r => [r._id || r.id, r])).values(),
+        ).slice(0, 5);
+        recommendedData = uniqueFallback.map(mapRestaurant);
+      }
+      setRecommendedRestaurants(recommendedData);
+
+      // All / Explore
+      const allRestaurants_raw = [
+        ...(sections.exploreRestaurants || []),
+        ...(sections.popularRestaurants || []),
+        ...(sections.fastDelivery || []),
+        ...(sections.freeDelivery || []),
+        ...(sections.newOnPlatform || []),
+        ...(sections.recentRestaurants || []),
+        ...(Array.isArray(data.restaurants) ? data.restaurants : []),
+      ];
+
+      const uniqueRestaurants = Array.from(
+        new Map(allRestaurants_raw.filter(Boolean).map(r => [r._id || r.id, r])).values(),
+      );
+
+      const mapped = uniqueRestaurants.map(r => {
+        try {
+          const m = mapRestaurant(r);
+          console.log(`🏠 [Explore Restro] ${m.name} | URL: ${m.image}`);
+          return m;
+        } catch (e) {
+          console.warn('Map error for restaurant:', r?.id, e.message);
+          return null;
+        }
+      }).filter(Boolean);
+
+      setAllRestaurants(mapped);
+      setRestaurants(mapped.slice(0, itemsPerPage));
+    } catch (err) {
+      console.error('Error processing home data:', err);
+    } finally {
+      setIsLoadingRestaurants(false);
+    }
+  }, [mapRestaurant, t, itemsPerPage]);
+
+  // Fetch home data
+  const fetchHomeData = useCallback(async (showLoading = true) => {
+    try {
+      // Sirf initial load par skeleton dikhao, background updates par nahi
+      if (showLoading && !isInitialLoadDone.current) {
+        setIsLoadingRestaurants(true);
+      }
+
+      const loc = globalLocation;
+      if (loc) setUserLocation(loc);
+
+      console.log(`🏠 [HomePage] Fetching data... (showLoading: ${showLoading})`);
+      const data = await getHomeData({ lat: loc?.latitude, lng: loc?.longitude });
+
+      processHomeData(data);
+      isInitialLoadDone.current = true;
+    } catch (error) {
+      console.error('fetchHomeData error:', error);
+    } finally {
+      setIsLoadingRestaurants(false);
+    }
+  }, [globalLocation, processHomeData]);
+
+  const getAddressUpdatedTime = useCallback((address) => {
+    const rawDate = address?.updatedAt || address?.createdAt;
+    const time = rawDate ? new Date(rawDate).getTime() : 0;
+    return Number.isNaN(time) ? 0 : time;
+  }, []);
+
+  const getAddressLine = useCallback((address) => {
+    if (!address) return '';
+    return (
+      address.streetArea ||
+      address.area ||
+      address.landmark ||
+      address.addressLine ||
+      address.fullAddress ||
+      address.city ||
+      ''
+    );
+  }, []);
+
+  const pickHeaderAddress = useCallback((addresses) => {
+    if (!Array.isArray(addresses) || addresses.length === 0) return null;
+    const defaultAddress = addresses.find(addr => addr.isDefault === true);
+    if (defaultAddress) return defaultAddress;
+
+    const latestAddress = [...addresses].sort((a, b) => getAddressUpdatedTime(b) - getAddressUpdatedTime(a))[0];
+    return getAddressUpdatedTime(latestAddress) > 0 ? latestAddress : addresses[addresses.length - 1];
+  }, [getAddressUpdatedTime]);
+
+  const applyHeaderAddress = useCallback((addresses) => {
+    const headerAddress = pickHeaderAddress(addresses);
+    if (!headerAddress) return false;
+
+    setAddressLabel(headerAddress.label || t('home.home', 'Home'));
+    setAddressLine(getAddressLine(headerAddress));
+    return true;
+  }, [getAddressLine, pickHeaderAddress, t]);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const [profileResult, addressesResult] = await Promise.allSettled([
+        apiClient.get(USER_ROUTES.profile),
+        apiClient.get(USER_ROUTES.addresses),
+      ]);
+
+      const response = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      const addressesResponse = addressesResult.status === 'fulfilled' ? addressesResult.value : null;
+      const user = response?.data?.user || response?.data;
+      const directAddresses = addressesResponse?.data?.addresses || addressesResponse?.data || [];
+      const savedAddresses = Array.isArray(directAddresses) && directAddresses.length > 0
+        ? directAddresses
+        : (user?.savedAddresses || user?.addresses || []);
+      setUserData(user ? { ...user, savedAddresses } : { savedAddresses });
+
+      if (user && setAuthenticatedUser) {
+        setAuthenticatedUser(null, { ...user, savedAddresses });
+      }
+
+      // Fallback to saved addresses ONLY if GPS location is not yet resolved
+      // AND no specific address was passed via navigation params.
+      // This prevents saved addresses from overriding a pending GPS location or a just-selected address.
+      if (!globalLocation && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
+        applyHeaderAddress(savedAddresses);
+      }
+    } catch (error) {
+      console.warn('Error fetching user data:', error);
+    }
+  }, [applyHeaderAddress, selectedAddressParam, setAuthenticatedUser]);
+
+  useEffect(() => {
+    if (selectedAddressParam) {
+      applyHeaderAddress([selectedAddressParam]);
+    }
+  }, [applyHeaderAddress, selectedAddressParam]);
+
+  // Single source of truth for home data fetching
+  const prevFetchCoords = useRef(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoadingRestaurants(false);
+      return;
+    }
+
+    const runFetch = async () => {
+      const lat = globalLocation?.latitude;
+      const lng = globalLocation?.longitude;
+
+      // Check if location moved significantly (> 500m)
+      const moved = !prevFetchCoords.current ||
+        (Math.abs(lat - (prevFetchCoords.current.lat || 0)) > 0.005 ||
+          Math.abs(lng - (prevFetchCoords.current.lng || 0)) > 0.005);
+
+      if (!isInitialLoadDone.current || moved) {
+        if (moved) prevFetchCoords.current = { lat, lng };
+        await fetchHomeData(!isInitialLoadDone.current); // showLoading only on first time
+      }
+
+      // User profile fetch happens once
+      if (!userData) {
+        fetchUserData();
+      }
+    };
+
+    runFetch();
+  }, [isAuthenticated, globalLocation, fetchHomeData, fetchUserData, userData]);
+
+  // Focus effect for profile only
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) fetchUserData();
+    }, [fetchUserData, isAuthenticated])
+  );
+
+  useEffect(() => {
+    const updateHeaderFromLocation = async () => {
+      if (globalLocation) {
+        console.log('📍 [HomePage] Updating header with CURRENT location...');
+        try {
+          const data = await getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude);
+          setAddressLabel(t('home.current_location_label', 'Current Location')); // Set label to "Current Location"
+
+          // Priority: Extract Area/Locality name as per user request
+          const locality = data.streetArea || data.area || data.neighborhood || data.sublocality || data.landmark;
+          if (locality) {
+            setAddressLine(locality);
+          } else if (data.city || data.country) {
+            setAddressLine(`${data.city}${data.city && data.country ? ', ' : ''}${data.country}`);
+          } else {
+            setAddressLine(`${globalLocation.latitude.toFixed(4)}, ${globalLocation.longitude.toFixed(4)}`);
+          }
+          // Reset the flag once GPS has successfully updated the header
+          hasAppliedSelectedAddressParam.current = false;
+        } catch (e) {
+          console.error('Failed to geocode current location:', e);
+        }
+      }
+    };
+    updateHeaderFromLocation();
+  }, [globalLocation, t, authenticatedUser?.savedAddresses, applyHeaderAddress]);
+
+  // Fail-safe for loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isLoadingRestaurants) {
+        console.log('⏱️ [HomePage] Loading timeout reached, forcing UI render');
+        setIsLoadingRestaurants(false);
+      }
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [isLoadingRestaurants]);
+
+  // Load more restaurants
+  const loadMoreRestaurants = useCallback(() => {
+    if (pageNum * itemsPerPage < allRestaurants.length) {
+      const nextPage = pageNum + 1;
+      const startIndex = nextPage * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      setRestaurants([...restaurants, ...allRestaurants.slice(startIndex, endIndex)]);
+      setPageNum(nextPage);
+    }
+  }, [pageNum, allRestaurants, restaurants]);
+
+  // Toggle favorite
+  const handleToggleFavorite = useCallback((restaurant) => {
+    if (!restaurant) return;
+    toggleFavourite?.({
+      id: restaurant.id || restaurant._id,
+      restaurantId: restaurant.id || restaurant._id,
+      name: restaurant.name,
+      image: restaurant.bannerImage || restaurant.image,
+      restaurantName: restaurant.name,
+      type: 'restaurant',
+    });
+  }, [toggleFavourite]);
+
+  // Pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      setPageNum(0);
+      // Pull-to-refresh should explicitly re-fetch area from current coordinates, overriding any temporary param address
+      if (globalLocation) {
+        getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude)
+          .then(data => {
+            const loc = data.streetArea || data.area || data.neighborhood || data.sublocality || data.landmark;
+            if (loc) {
+              setAddressLine(loc);
+              setAddressLabel(t('home.address_label', 'Home'));
+              hasAppliedSelectedAddressParam.current = false; // Reset flag as GPS has taken over
+            }
+          }).catch(console.error);
+      }
+      await Promise.all([fetchHomeData(false), fetchUserData()]);
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchHomeData, fetchUserData]);
+
+  // Build promo cards
+  const promoCards = useMemo(() => {
+    // 3 Premium Default Banners
+    const defaultBanners = [
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=1000&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop'
+    ];
+
+    if (banners.length > 0) {
+      return banners.map((banner, index) => {
+        const bannerImage = (banner?.image || '').trim();
+        const isHttp = bannerImage.startsWith('http://') || bannerImage.startsWith('https://');
+
+        let bannerUri = bannerImage;
+        if (bannerImage && !isHttp) {
+          const baseUrl = apiClient.defaults.baseURL.replace(/\/+$/, '');
+          const path = bannerImage.startsWith('/') ? bannerImage : `/${bannerImage}`;
+          bannerUri = `${baseUrl}${path}`;
+        }
+
+        // Fallback to one of the 3 default banners if API URI is problematic
+        const fallbackImage = { uri: defaultBanners[index % defaultBanners.length] };
+
+        return {
+          id: banner._id || `banner-${index}`,
+          // Since we know the current API images are 404, I'm prioritizing the default banners
+          // so the user can see the UI properly. 
+          image: { uri: defaultBanners[index % defaultBanners.length] },
+          title: banner.title || t('promo.seasonal_favorites', 'Seasonal favorites are here'),
+          subtitle: t('promo.try_something_new', 'try something new today !'),
+          cta: t('promo.explore_now', 'Explore Now'),
+          banner: banner,
+        };
+      });
+    }
+
+    // Default banners if API returns nothing
+    return defaultBanners.map((url, index) => ({
+      id: `def-banner-${index}`,
+      image: { uri: url },
+      title: index === 0 ? 'Fresh Flavors' : index === 1 ? 'Weekend Special' : 'Chef\'s Choice',
+      subtitle: 'Enjoy exclusive deals on your favorite meals',
+      cta: 'Order Now'
+    }));
+  }, [banners, t]);
+
+  // Navigation handlers
+  const handleProfilePress = useCallback(() => {
+    const tabNav = navigation.getParent?.();
+    if (tabNav?.navigate) {
+      tabNav.navigate('Profile', { screen: 'ProfileHome' });
+    }
+  }, [navigation]);
+
+  const handleCartPress = useCallback(() => navigation.navigate('Cart'), [navigation]);
+  const handleNotificationPress = useCallback(() => navigation.navigate('HomeNotifications'), [navigation]);
+
+  const handleSearchPress = useCallback(() => {
+    const tabNav = navigation.getParent?.();
+    const params = { autoFocus: true };
+    if (tabNav?.navigate) {
+      tabNav.navigate('Search', { screen: 'SearchHome', params });
+    } else {
+      navigation.navigate('SearchHome', params);
+    }
+  }, [navigation]);
+  // Update handleCategoryPress (around line 350)
+  const handleCategoryPress = useCallback((item) => {
+    const tabNav = navigation.getParent?.();
+    const isAllCategory = item.id === 'all' || item.name === 'All';
+
+    // If "All" is selected, don't pass any category filter
+    if (isAllCategory) {
+      // Navigate to search with empty query or show all restaurants
+      const params = { autoFocus: false };
+      if (tabNav?.navigate) {
+        tabNav.navigate('Search', { screen: 'SearchHome', params });
+      } else {
+        navigation.navigate('SearchHome', params);
+      }
+    } else {
+      // Regular category behavior
+      const params = {
+        autoFocus: true,
+        category: item.name,
+        initialQuery: item.name
+      };
+      if (tabNav?.navigate) {
+        tabNav.navigate('Search', { screen: 'SearchHome', params });
+      } else {
+        navigation.navigate('SearchHome', params);
+      }
+    }
+  }, [navigation]);
+
+  const handlePromoPress = useCallback((item) => {
+    // Banner item mein restaurant aksar item.banner.restaurant ke andar hota hai
+    const restaurant = item?.banner?.restaurant || item?.restaurant;
+    if (restaurant) {
+      const restaurantData = typeof restaurant === 'string' ? { _id: restaurant } : restaurant;
+      navigation.navigate('RestaurantDetail', { restaurant: restaurantData });
+    }
+  }, [navigation]);
+
+  const handleRestaurantPress = useCallback((item) => {
+    if (item) {
+      navigation.navigate('RestaurantDetail', { restaurant: item });
+    }
+  }, [navigation]);
+
+  const handleSeeAllRecommended = useCallback(() => {
+    navigation.navigate('RecommendedRestaurants', { recommendedRestaurants });
+  }, [navigation, recommendedRestaurants]);
+
+  const handleTabPress = useCallback(setActiveTab, [setActiveTab]);
+  const handleTryAgain = useCallback(async () => {
+    setIsRefreshing(true);
+    await fetchHomeData(true);
+    setIsRefreshing(false);
+  }, [fetchHomeData]);
+
+  const handleApplyFilters = useCallback(async (drawerFilters) => {
+    try {
+      const searchQuery = drawerFilters?.searchQuery || currentSearchQuery;
+      const apiFilters = convertDrawerFiltersToAPI(drawerFilters);
+
+      console.log('🏠 [HomePage] Applying Filters:', { searchQuery, apiFilters, globalLocation });
+
+      navigation.navigate('FilteredResults', {
+        drawerFilters,
+        searchQuery,
+        apiFilters,
+        userLocation: globalLocation
+      });
+      setIsFilterOpen(false);
+    } catch (error) {
+      console.error('❌ Filter error:', error?.message);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: error?.message || t('home.filter_failed', 'Failed to apply filters'),
+        duration: 2000,
+      });
+    }
+  }, [navigation, currentSearchQuery, globalLocation, t]);
+
+  const handleResetFilters = useCallback(async () => {
+    try {
+      setPageNum(0);
+      await fetchHomeData(true);
+    } catch (error) {
+      console.error('Reset filters error:', error);
+    }
+  }, [fetchHomeData]);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#ed1c24']} tintColor="#ed1c24" />
+          }
+        >
+          <HomeHeader
+            addressLabel={addressLabel}
+            addressLine={addressLine}
+            userData={userData}
+            cartCount={cartCount}
+            tabs={tabs}
+            activeTab={activeTab}
+            isSmallDevice={isSmallDevice}
+            onProfilePress={handleProfilePress}
+            onCartPress={handleCartPress}
+            onNotificationPress={handleNotificationPress}
+            onSearchPress={handleSearchPress}
+            onTabPress={handleTabPress}
+          />
+
+          {activeTab === t('home.offers', 'Offers') ? (
+            <Offers />
+          ) : activeTab === t('home.pickup', 'Pick-up') ? (
+            <PickupScreen />
+          ) : (
+            <>
+              <FoodCategoryList
+                categories={categories}
+                isLoading={isLoadingCategories}
+                selectedCategoryId={selectedCategoryId}
+                onCategoryPress={handleCategoryPress}
+              />
+              <PromoCardList promoCards={promoCards} onPromoPress={handlePromoPress} />
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('home.recommended_for_you', 'Recommended For You')}</Text>
+                <TouchableOpacity style={styles.allItemsButton} activeOpacity={0.85} onPress={handleSeeAllRecommended}>
+                  <Text style={styles.allItemsText}>{t('home.view_all', 'View All')}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {isLoadingRestaurants ? (
+                <FlatList
+                  horizontal
+                  data={Array(3).fill(null)}
+                  keyExtractor={(_, index) => `skeleton-recommend-${index}`}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recommendList}
+                  renderItem={() => <SkeletonRecommendCard />}
+                />
+              ) : recommendedRestaurants.length > 0 ? (
+                <FlatList
+                  horizontal
+                  data={recommendedRestaurants}
+                  keyExtractor={item => item.id}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recommendList}
+                  renderItem={({ item }) => (
+                    <RestaurantRecommendCard
+                      item={item}
+                      isFavorite={isFavourite?.(item.id, 'restaurant')}
+                      onPress={() => handleRestaurantPress(item)}
+                      onFavoritePress={() => handleToggleFavorite(item)}
+                    />
+                  )}
+                />
+              ) : null}
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('home.explore_restaurants', 'Explore Restaurants')}</Text>
+                <View style={styles.sortActions}>
+                  <TouchableOpacity activeOpacity={0.85} onPress={() => setIsFilterOpen(true)}>
+                    <Filter size={scale(18)} color="#ed1c24" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {isLoadingRestaurants ? (
+                <View style={{ marginBottom: hp(5) }}>
+                  <FlatList
+                    data={Array(6).fill(null)}
+                    keyExtractor={(_, index) => `skeleton-${index}`}
+                    scrollEnabled={false}
+                    renderItem={() => <SkeletonCard />}
+                  />
+                  <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: hp(1.5) }}>
+                    <ActivityIndicator size="small" color="#ed1c24" />
+                    <Text style={{ marginTop: hp(1), color: '#8E8E93', fontSize: FONT.xs }}>
+                      {t('home.loading_restaurants', 'Loading restaurants...')}
+                    </Text>
+                  </View>
+                </View>
+              ) : restaurants.length > 0 ? (
+                <FlatList
+                  data={restaurants}
+                  keyExtractor={item => item.id}
+                  scrollEnabled={false}
+                  contentContainerStyle={{ paddingBottom: hp(8) }}
+                  renderItem={({ item }) => (
+                    <RestaurantListCard
+                      item={item}
+                      isFavorite={isFavourite?.(item.id, 'restaurant')}
+                      onPress={() => handleRestaurantPress(item)}
+                      onFavoritePress={() => handleToggleFavorite(item)}
+                    />
+                  )}
+                  onEndReached={loadMoreRestaurants}
+                  onEndReachedThreshold={0.5}
+                  ListFooterComponent={<View style={{ height: hp(2) }} />}
+                />
+              ) : (
+                <View style={styles.emptyResults}>
+                  <TouchableOpacity
+                    style={styles.tryAgainBtn}
+                    onPress={handleTryAgain}
+                  >
+                    <Text style={styles.tryAgainText}>{t('home.try_again', 'Try Again')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <View style={{ height: hp(5) }} />
+            </>
+          )}
+        </ScrollView>
+      </View>
+      <FilterDrawer visible={isFilterOpen} onClose={() => setIsFilterOpen(false)} onReset={handleResetFilters} onApply={handleApplyFilters} />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  sectionHeader: {
+    marginTop: hp(3.75),
+    paddingHorizontal: wp(4.44),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: FONT.md + scale(2),
+    fontWeight: '600',
+  },
+  allItemsButton: {
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(0.5),
+    borderRadius: scale(10),
+    backgroundColor: '#FFF5F5',
+    alignSelf: 'center',
+  },
+  allItemsText: {
+    fontSize: FONT.xs,
+    color: '#ed1c24',
+    fontWeight: '600',
+  },
+  sortActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(2.78),
+  },
+  recommendList: {
+    paddingLeft: wp(4.44),
+    marginTop: hp(1.75),
+    paddingBottom: hp(2),
+  },
+  emptyResults: {
+    height: hp(20),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tryAgainBtn: {
+    paddingHorizontal: wp(8),
+    paddingVertical: hp(1.5),
+    backgroundColor: '#ed1c24',
+    borderRadius: scale(10),
+  },
+  tryAgainText: {
+    color: '#FFFFFF',
+    fontSize: FONT.sm,
+    fontWeight: '700',
+  },
+});
