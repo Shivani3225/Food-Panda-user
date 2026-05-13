@@ -141,34 +141,7 @@ export default function AddressesScreen() {
     navigation.navigate('AddAddressScreen');
   };
 
-  const handleDeleteAddress = async (id) => {
-    Alert.alert(
-      t('addresses.delete_confirm_title', 'Delete Address'),
-      t('addresses.delete_confirm_message', 'Are you sure you want to delete this address?'),
-      [
-        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
-        {
-          text: t('common.delete', 'Delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              // Use the endpoint from routes
-              const endpoint = USER_ROUTES.addressById.replace(':id', id);
-              await apiClient.delete(endpoint);
-              fetchAddresses();
-              Alert.alert(t('common.success', 'Success'), t('addresses.deleted_message', 'Address deleted successfully'));
-            } catch (err) {
-              console.error('Error deleting address:', err);
-              Alert.alert(t('common.error', 'Error'), err.message);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
+
 
   const handlePickAddressForDelivery = (address) => {
     // Navigate back to the Home screen and pass the selected address
@@ -194,19 +167,6 @@ export default function AddressesScreen() {
           <View style={styles.defaultBadge}>
             <Text style={styles.defaultBadgeText}>{t('addresses.default', 'Default')}</Text>
           </View>
-          {item.isDefault && (
-            <View style={styles.defaultBadge}>
-              <Text style={styles.defaultBadgeText}>{t('addresses.default', 'Default')}</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.addressText} numberOfLines={2}>
-          {item.fullAddress}
-        </Text>
-        {item.deliveryInstructions && (
-          <Text style={styles.instructionsText} numberOfLines={1}>
-            📝 {item.deliveryInstructions}
-          </Text>
         )}
       </View>
       <Text style={styles.addressText} numberOfLines={2}>
