@@ -158,7 +158,11 @@ export default function OtpVerificationScreen() {
 
     try {
       setIsLoading(true);
-      const data = await registerVerify({ mobile: mobileValue, otp: otpValue });
+      const data = await registerVerify({ 
+        mobile: mobileValue, 
+        otp: otpValue,
+        countryCode: route.params?.countryCode 
+      });
       await clearPendingSignup();
 
       const token = data?.token || data?.accessToken || data?.data?.token;

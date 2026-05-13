@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import Geolocation from '@react-native-community/geolocation';
 import MapView, { Marker } from 'react-native-maps';
 import { useLocation } from '../context/LocationContext';
-import { getAddressFromCoordinates } from '../utils/locationUtils';
+import { getAddressFromCoordinates, getLocationByIP } from '../utils/locationUtils';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -70,8 +70,8 @@ export default function AddressSheet({
   const [mapCoords, setMapCoords] = useState(null);
   const [selectedMapCoords, setSelectedMapCoords] = useState(null);
   const [mapRegion, setMapRegion] = useState({
-    latitude: globalLocation?.latitude || 28.6139, // Use global location if available
-    longitude: globalLocation?.longitude || 77.2090,
+    latitude: globalLocation?.latitude || 52.5200, // Use global location if available, fallback to Berlin
+    longitude: globalLocation?.longitude || 13.4050,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
@@ -394,6 +394,29 @@ export default function AddressSheet({
     } catch (error) {
       console.error('❌ Error fetching location:', error);
       
+      console.log('🌐 Attempting IP location fallback...');
+      try {
+        const ipLocation = await getLocationByIP();
+        if (ipLocation) {
+          console.log('✅ IP location fallback success:', ipLocation);
+          await setCoordinateValues(ipLocation.latitude, ipLocation.longitude, true);
+          
+          const successMsg = t('address.location_fetched_ip', 'Location fetched via IP');
+          if (Platform.OS === 'android') {
+            ToastAndroid.show(successMsg, ToastAndroid.SHORT);
+          } else {
+            Toast.show({
+              type: 'success',
+              text1: t('address.location', 'Location'),
+              text2: successMsg,
+            });
+          }
+          return; // Exit successfully
+        }
+      } catch (ipErr) {
+        console.error('❌ IP location fallback failed:', ipErr);
+      }
+
       let message = t('address.unable_to_fetch', 'Unable to fetch current location');
       
       if (error?.code === 1) {
@@ -794,6 +817,8 @@ export default function AddressSheet({
                       onPress={event => {
                         const { latitude, longitude } = event.nativeEvent.coordinate;
                         console.log(`🗺️ Map tapped - Lat: ${latitude}, Lng: ${longitude}`);
+                        setNewLat(String(latitude.toFixed(6)));
+                        setNewLng(String(longitude.toFixed(6)));
                         setSelectedMapCoords({ latitude, longitude });
                         setMapRegion(prev => ({ ...prev, latitude, longitude }));
                         // Address immediately fetch karo
@@ -804,9 +829,17 @@ export default function AddressSheet({
                         <Marker
                           coordinate={selectedMapCoords}
                           draggable
+                          onDrag={event => {
+                            const { latitude, longitude } = event.nativeEvent.coordinate;
+                            setNewLat(String(latitude.toFixed(6)));
+                            setNewLng(String(longitude.toFixed(6)));
+                            setNewLine('Updating location...');
+                          }}
                           onDragEnd={event => {
                             const { latitude, longitude } = event.nativeEvent.coordinate;
                             console.log(`📍 Marker dragged to - Lat: ${latitude}, Lng: ${longitude}`);
+                            setNewLat(String(latitude.toFixed(6)));
+                            setNewLng(String(longitude.toFixed(6)));
                             setSelectedMapCoords({ latitude, longitude });
                             setMapRegion(prev => ({ ...prev, latitude, longitude }));
                             // Address immediately fetch karo

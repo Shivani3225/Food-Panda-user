@@ -59,7 +59,7 @@ export const connectSocket = async () => {
 
   socketInstance = io(socketUrl, {
 
-    transports: ['polling', 'websocket'],
+    transports: ['websocket'],
     autoConnect: true,
     auth: { token },
     withCredentials: false,

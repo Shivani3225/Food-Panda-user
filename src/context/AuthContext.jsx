@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkVerificationStatus as checkVerificationStatusApi, loginApi, logoutApi } from '../services/authService';
 import Toast from 'react-native-toast-message';
@@ -171,7 +171,7 @@ export const AuthProvider = ({ children }) => {
 
       console.log('✅ [AuthContext] Auth token found in storage');
 
-      await bootstrapRealtimeAndPush();
+      bootstrapRealtimeAndPush(); // Run in background, do not block app startup
     } catch (error) {
       setUser(null);
       await AsyncStorage.removeItem('userData');
@@ -185,7 +185,7 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       console.log('[AuthContext] 🔐 Login attempt for:', email);
       const response = await loginApi({ email, password });
@@ -231,9 +231,9 @@ export const AuthProvider = ({ children }) => {
           'Something went wrong, please try again',
       };
     }
-  };
+  }, [bootstrapRealtimeAndPush]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await logoutApi();
     } catch (error) {
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }) => {
     await AsyncStorage.removeItem('userData');
     await AsyncStorage.removeItem('auth_token');
     setUser(null);
-  };
+  }, [teardownRealtimeAndPush]);
 
   useEffect(() => {
     return () => {
@@ -251,7 +251,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [teardownRealtimeAndPush]);
 
-  const setAuthenticatedUser = async (token, userData) => {
+  const setAuthenticatedUser = useCallback(async (token, userData) => {
     if (token) {
       await AsyncStorage.setItem('auth_token', token);
     }
@@ -262,7 +262,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       await bootstrapRealtimeAndPush();
     }
-  };
+  }, [bootstrapRealtimeAndPush]);
 
   return (
     <AuthContext.Provider

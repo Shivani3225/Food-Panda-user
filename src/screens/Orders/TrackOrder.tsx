@@ -16,6 +16,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
+import MapView, { Marker } from 'react-native-maps';
+import { Phone, MessageSquare } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../config/apiClient';
 
@@ -119,8 +121,8 @@ const OrderTracking = () => {
   const getActiveStep = (status) => {
     const s = status?.toLowerCase();
     if (['placed'].includes(s)) return 0;
-    if (['accepted', 'preparing'].includes(s)) return 1;
-    if (['ready', 'picked_up', 'out_for_delivery'].includes(s)) return 2;
+    if (['accepted'].includes(s)) return 1;
+    if (['preparing', 'ready', 'picked_up', 'out_for_delivery'].includes(s)) return 2;
     if (['delivered'].includes(s)) return 3;
     return 0;
   };
@@ -154,6 +156,7 @@ const OrderTracking = () => {
   const formattedOrders = formatOrders();
   const latestOrder = formattedOrders[0];
   const activeStep = latestOrder ? getActiveStep(latestOrder.rawStatus) : 0;
+  const showMap = latestOrder && ['accepted', 'preparing', 'ready', 'picked_up', 'out_for_delivery'].includes(latestOrder.rawStatus.toLowerCase());
 
   const STEPS = [
     { emoji: '🧾', label: 'orders.order_step' },
@@ -211,10 +214,10 @@ const OrderTracking = () => {
       const statusMap = {
         'placed': t('orders.status_placed', 'Placed'),
         'accepted': t('orders.status_accepted', 'Accepted'),
-        'preparing': t('orders.status_preparing', 'Preparing'),
+        'preparing': t('orders.status_preparing', 'Preparing food & searching for rider'),
         'ready': t('orders.status_ready', 'Ready'),
-        'picked_up': t('orders.status_picked_up', 'Picked Up'),
-        'out_for_delivery': t('orders.status_out_for_delivery', 'Out for Delivery'),
+        'picked_up': t('orders.status_picked_up', 'Rider is on the way'),
+        'out_for_delivery': t('orders.status_out_for_delivery', 'Rider is on the way'),
         'delivered': t('orders.status_delivered', 'Delivered'),
         'cancelled': t('orders.status_cancelled', 'Cancelled')
       };
@@ -305,6 +308,24 @@ const OrderTracking = () => {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Action buttons for active orders (Chat) */}
+        {['accepted', 'preparing', 'ready', 'picked_up', 'out_for_delivery'].includes(statusKey) && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.chatButton]}
+              onPress={() => {
+                navigation.navigate('ChatScreen', {
+                  orderId: order.id,
+                  receiverId: order.rider?.user?._id || order.restaurantData?._id,
+                  receiverName: order.rider?.user?.name || getLangText(order.restaurant),
+                });
+              }}
+            >
+              <Text style={styles.actionButtonText}>{t('orders.chat', 'Chat')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -392,49 +413,87 @@ const OrderTracking = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Progress stepper */}
-        {formattedOrders.length > 0 && <ProgressStepper activeStep={activeStep} />}
-
-        {/* Order cards */}
-        <View style={styles.ordersContainer}>
-          {formattedOrders.length > 0 ? (
-            formattedOrders.map((order, index) => (
-              <OrderCard
-                key={index}
-                order={order}
-                onRate={handleRateOrder}
-                onRefund={handleRefundRequest}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyEmoji}>📋</Text>
-              <Text style={styles.emptyText}>{t('orders.no_orders', 'No orders found')}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Reorder button */}
-        {formattedOrders.length > 0 && (
-          <TouchableOpacity
-            style={styles.reorderButton}
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
-            activeOpacity={0.8}
+      <View style={styles.contentContainer}>
+        {/* Map View takes background */}
+        {showMap && (
+          <MapView
+            style={styles.fullMap}
+            initialRegion={{
+              latitude: latestOrder.rider?.currentLocation?.coordinates?.[1] || latestOrder.restaurantData?.location?.coordinates?.[1] || 52.5200,
+              longitude: latestOrder.rider?.currentLocation?.coordinates?.[0] || latestOrder.restaurantData?.location?.coordinates?.[0] || 13.4050,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
           >
-            <LinearGradient
-              colors={['#e62e2e', '#c0392b']}
-              style={styles.reorderGradient}
-            >
-              <Text style={styles.reorderButtonText}>{t('orders.reorder', 'Reorder')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            {latestOrder.rider?.currentLocation?.coordinates && (
+              <Marker
+                coordinate={{
+                  latitude: latestOrder.rider.currentLocation.coordinates[1],
+                  longitude: latestOrder.rider.currentLocation.coordinates[0],
+                }}
+                title={t('orders.rider', 'Rider')}
+                description={t('orders.rider_desc', 'Your delivery partner')}
+              />
+            )}
+            {latestOrder.restaurantData?.location?.coordinates && (
+              <Marker
+                coordinate={{
+                  latitude: latestOrder.restaurantData.location.coordinates[1],
+                  longitude: latestOrder.restaurantData.location.coordinates[0],
+                }}
+                title={getLangText(latestOrder.restaurant)}
+                description={t('orders.restaurant_desc', 'Restaurant location')}
+                pinColor="green"
+              />
+            )}
+          </MapView>
         )}
-      </ScrollView>
+
+        {/* Floating Swiggy Card */}
+        {formattedOrders.length > 0 ? (
+          <View style={styles.floatingCard}>
+            <View style={styles.cardStatusRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.swiggyStatusTitle}>
+                  {latestOrder.status === 'picked_up' ? t('orders.rider_on_way', 'Partner is on the way') : t('orders.preparing', 'Preparing your order')}
+                </Text>
+                <Text style={styles.swiggyStatusSub}>
+                  {latestOrder.status === 'picked_up' ? t('orders.rider_desc', 'Partner is on the way to your location') : t('orders.preparing_desc', 'Partner will be assigned when food is just about ready')}
+                </Text>
+              </View>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeText}>15</Text>
+                <Text style={styles.timeLabel}>mins</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.cardActionsRow}>
+              <TouchableOpacity style={styles.actionIconBtn}>
+                <Phone size={20} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionIconBtn}
+                onPress={() => {
+                  navigation.navigate('ChatScreen', {
+                    orderId: latestOrder.id,
+                    receiverId: latestOrder.rider?.user?._id || latestOrder.restaurantData?._id,
+                    receiverName: latestOrder.rider?.user?.name || getLangText(latestOrder.restaurant),
+                  });
+                }}
+              >
+                <MessageSquare size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyEmoji}>📋</Text>
+            <Text style={styles.emptyText}>{t('orders.no_orders', 'No orders found')}</Text>
+          </View>
+        )}
+      </View>
 
       {/* Rating Modal */}
       <RatingModal />
@@ -446,6 +505,95 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+  contentContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  fullMap: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  floatingCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  cardStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  swiggyStatusTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111',
+    marginBottom: 4,
+  },
+  swiggyStatusSub: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+  },
+  timeBox: {
+    backgroundColor: '#0F8A5F',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  timeLabel: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 12,
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  actionIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F6F6F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapContainer: {
+    height: 300,
+    marginHorizontal: 16,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 16,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  map: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -674,6 +822,9 @@ const styles = StyleSheet.create({
   },
   refundButton: {
     backgroundColor: '#666',
+  },
+  chatButton: {
+    backgroundColor: '#E41C26',
   },
   actionButtonText: {
     color: '#fff',

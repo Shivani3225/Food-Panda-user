@@ -30,6 +30,7 @@ export const HomeHeader = memo(({
   onNotificationPress,
   onSearchPress,
   onTabPress,
+  onAddressPress,
 }) => {
   const { t } = useTranslation();
 
@@ -48,7 +49,11 @@ export const HomeHeader = memo(({
           ]}
         >
           <View style={styles.headerLeft}>
-            <View style={styles.addressBlock}>
+            <TouchableOpacity 
+              style={styles.addressBlock} 
+              activeOpacity={0.7} 
+              onPress={onAddressPress}
+            >
               <Text style={styles.homeLabel} numberOfLines={1} ellipsizeMode="tail">
                 {t(addressLabel, addressLabel)}
               </Text>
@@ -58,7 +63,7 @@ export const HomeHeader = memo(({
                   {addressLine}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.headerRight}>

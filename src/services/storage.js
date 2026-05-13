@@ -21,7 +21,7 @@ export const getAuthUser = async () => {
 };
 
 export const clearAuth = async () => {
-  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY, 'chosen_address']);
 };
 
 export const savePendingSignup = async ({ email, mobile }) => {

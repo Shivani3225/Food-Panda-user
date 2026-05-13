@@ -11,7 +11,7 @@ export const CountryProvider = ({ children }) => {
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        const response = await apiClient.get("/settings/countries");
+        const response = await apiClient.get("/api/settings/countries");
         if (Array.isArray(response.data)) {
           setCountries(response.data);
         }
