@@ -47,12 +47,9 @@ export default function PickupScreen() {
       <Text style={styles.sectionTitle}>{t('home.nearby_restaurants', 'Nearby Restaurants')}</Text>
 
       {/* 🍔 List */}
-      <FlatList
-        data={restaurants}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}>
+      <View>
+        {restaurants.map((item) => (
+          <TouchableOpacity key={item.id} style={styles.card}>
             <View style={styles.cardLeft}>
               <Image 
                 source={{ uri: item.image }} 
@@ -70,8 +67,8 @@ export default function PickupScreen() {
               </View>
             </View>
           </TouchableOpacity>
-        )}
-      />
+        ))}
+      </View>
     </View>
   );
 }

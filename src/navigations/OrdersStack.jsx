@@ -5,6 +5,7 @@ import OrderDetailsScreen from '../screens/Orders/OrderDetailsScreen';
 import RestaurantDetail from '../screens/Orders/RestaurantDetail';
 import TrackOrder from '../screens/Orders/TrackOrder';
 import RatePastOrders from '../screens/Orders/RatePastOrders';
+import ChatScreen from '../screens/Orders/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,7 @@ export default function OrdersStack() {
       <Stack.Screen name="RestaurantDetail" component={RestaurantDetail} />
       <Stack.Screen name="TrackOrder" component={TrackOrder} />
       <Stack.Screen name="RatePastOrders" component={RatePastOrders} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
     </Stack.Navigator>
   );
 }

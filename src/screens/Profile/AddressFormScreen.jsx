@@ -283,18 +283,18 @@ export default function AddressFormScreen() {
       await refreshAuthenticatedUser(response?.data);
 
       setTimeout(() => {
-        const tabNavigation = navigation.getParent?.();
-        if (tabNavigation?.navigate) {
-          tabNavigation.navigate('Home', {
-            screen: 'HomePage',
+        navigation.dispatch(
+          CommonActions.navigate({
+            name: 'Home',
             params: {
-              selectedAddress: savedAddressForHome,
-              addressUpdatedAt: Date.now(),
+              screen: 'HomePage',
+              params: {
+                selectedAddress: savedAddressForHome,
+                addressUpdatedAt: Date.now(),
+              },
             },
-          });
-        } else {
-          navigation.pop(2);
-        }
+          })
+        );
       }, 600);
 
     } catch (error) {

@@ -3,7 +3,7 @@
  * Uses Google Maps Geocoding API as primary and OpenStreetMap Nominatim as fallback
  */
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCtzieGBcp-ZKl-tpeE-S-2YZWpmlrjs7M';
+import { GOOGLE_MAPS_API_KEY } from '@env';
 
 export const getAddressFromCoordinates = async (latitude, longitude) => {
   console.log('🔍 [LocationUtils] Reverse geocoding:', latitude, longitude);
@@ -286,4 +286,27 @@ export const searchLocations = async (query) => {
     console.error('❌ [LocationUtils] Search error:', error);
     return [];
   }
+};
+
+/**
+ * Fetch location based on IP address
+ */
+export const getLocationByIP = async () => {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    if (data && data.latitude && data.longitude) {
+      return {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        city: data.city,
+        country: data.country_name,
+        zipCode: data.postal,
+        fullAddress: `${data.city}, ${data.country_name}`,
+      };
+    }
+  } catch (error) {
+    console.error('❌ [LocationUtils] IP location error:', error);
+  }
+  return null;
 };

@@ -53,6 +53,17 @@ export default function CreateAccountScreen() {
   // Country code states
   const [selectedCountry, setSelectedCountry] = useState(countries[0] || {});
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
+
+  const filteredCountries = React.useMemo(() => {
+    if (!countrySearchQuery.trim()) return countries;
+    const q = countrySearchQuery.toLowerCase();
+    return countries.filter(c => 
+      (c.country?.toLowerCase() || '').includes(q) || 
+      (c.code?.toLowerCase() || '').includes(q) || 
+      (c.fullCode?.toLowerCase() || '').includes(q)
+    );
+  }, [countries, countrySearchQuery]);
 
   const handleFirstNameChange = text => {
     const value = text ?? '';
@@ -270,7 +281,10 @@ export default function CreateAccountScreen() {
         if (mobileError) setMobileError('');
       }}
     >
-      <Text style={styles.countryFlag}>{item.flag}</Text>
+      <Image 
+        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
+        style={styles.countryFlagImage} 
+      />
       <View style={styles.countryInfo}>
         <Text style={styles.countryName}>{item.country}</Text>
         <Text style={styles.countryCode}>{item.code}</Text>
@@ -348,7 +362,10 @@ export default function CreateAccountScreen() {
                 style={styles.countryCodeSelector}
                 onPress={() => setShowCountryPicker(true)}
               >
-                <Text style={styles.countryFlagSmall}>{selectedCountry.flag}</Text>
+                <Image 
+                  source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase()}.png` }} 
+                  style={styles.countryFlagSmallImage} 
+                />
                 <Text style={styles.countryCodeText}>{selectedCountry.fullCode}</Text>
                 <Text style={styles.dropdownArrow}>▼</Text>
               </TouchableOpacity>
@@ -444,8 +461,17 @@ export default function CreateAccountScreen() {
                 <Text style={styles.closeButton}>✕</Text>
               </TouchableOpacity>
             </View>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('common.search', 'Search...')}
+                value={countrySearchQuery}
+                onChangeText={setCountrySearchQuery}
+                placeholderTextColor="#999"
+              />
+            </View>
             <FlatList
-              data={countries}
+              data={filteredCountries}
               keyExtractor={(item) => item.code}
               renderItem={renderCountryItem}
               showsVerticalScrollIndicator={false}
@@ -552,9 +578,11 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#D9E0F2',
   },
-  countryFlagSmall: {
-    fontSize: 18,
+  countryFlagSmallImage: {
+    width: 20,
+    height: 15,
     marginRight: 6,
+    borderRadius: 2,
   },
   countryCodeText: {
     fontSize: 14,
@@ -664,6 +692,20 @@ const styles = StyleSheet.create({
     color: '#999',
     padding: 4,
   },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  searchInput: {
+    backgroundColor: '#F2F2F2',
+    borderRadius: scale(8),
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#000',
+  },
   countryItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -671,9 +713,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
-  countryFlag: {
-    fontSize: 30,
+  countryFlagImage: {
+    width: 30,
+    height: 20,
     marginRight: 12,
+    borderRadius: 2,
   },
   countryInfo: {
     flex: 1,

@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, MapPin, Pencil, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Edit2, Trash2 } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
@@ -59,11 +59,31 @@ export default function AddressesScreen() {
             deliveryInstructions: addr.deliveryInstructions || '',
             isDefault: addr.isDefault || false,
             coordinates: addr.location?.coordinates || [],
+            location: addr.location,
             fullAddress: `${addr.addressLine}, ${addr.city}, ${addr.zipCode}`,
           }))
         : [];
+        
+      // De-duplicate addresses based on addressLine and city
+      const uniqueAddresses = [];
+      const seenAddresses = new Set();
       
-      setAddresses(formattedAddresses);
+      formattedAddresses.forEach(addr => {
+        // Use a more robust key: just alphanumeric characters from addressLine
+        const cleanAddress = (addr.addressLine || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanCity = (addr.city || '').toLowerCase().trim();
+        const key = `${cleanAddress}-${cleanCity}`;
+        
+        if (!seenAddresses.has(key) && cleanAddress) {
+          seenAddresses.add(key);
+          uniqueAddresses.push(addr);
+        } else if (!cleanAddress) {
+          // If no address line, just push it (fallback)
+          uniqueAddresses.push(addr);
+        }
+      });
+      
+      setAddresses(uniqueAddresses);
     } catch (err) {
       console.error('Error fetching addresses:', err);
       setError(err.message);
@@ -121,14 +141,58 @@ export default function AddressesScreen() {
     navigation.navigate('AddAddressScreen');
   };
 
+  const handleDeleteAddress = async (id) => {
+    Alert.alert(
+      t('addresses.delete_confirm_title', 'Delete Address'),
+      t('addresses.delete_confirm_message', 'Are you sure you want to delete this address?'),
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('common.delete', 'Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              // Use the endpoint from routes
+              const endpoint = USER_ROUTES.addressById.replace(':id', id);
+              await apiClient.delete(endpoint);
+              fetchAddresses();
+              Alert.alert(t('common.success', 'Success'), t('addresses.deleted_message', 'Address deleted successfully'));
+            } catch (err) {
+              console.error('Error deleting address:', err);
+              Alert.alert(t('common.error', 'Error'), err.message);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePickAddressForDelivery = (address) => {
+    // Navigate back to the Home screen and pass the selected address
+    navigation.navigate('Home', {
+      screen: 'HomePage',
+      params: { selectedAddress: address }
+    });
+  };
+
   const renderAddressItem = ({ item }) => (
-    <View style={styles.addressItem}>
-      <View style={styles.addressContent}>
-        <View style={styles.badgeRow}>
-          <View style={styles.labelBadge}>
-            <Text style={styles.labelBadgeText}>
-              {ADDRESS_LABELS[item.label?.toLowerCase()] || item.label}
-            </Text>
+    <TouchableOpacity 
+      style={styles.addressItem}
+      activeOpacity={0.8}
+      onPress={() => handlePickAddressForDelivery(item)}
+    >
+      <View style={styles.badgeRow}>
+        <View style={styles.labelBadge}>
+          <Text style={styles.labelBadgeText}>
+            {ADDRESS_LABELS[item.label?.toLowerCase()] || item.label}
+          </Text>
+        </View>
+        {item.isDefault && (
+          <View style={styles.defaultBadge}>
+            <Text style={styles.defaultBadgeText}>{t('addresses.default', 'Default')}</Text>
           </View>
           {item.isDefault && (
             <View style={styles.defaultBadge}>
@@ -145,30 +209,36 @@ export default function AddressesScreen() {
           </Text>
         )}
       </View>
+      <Text style={styles.addressText} numberOfLines={2}>
+        {item.fullAddress}
+      </Text>
+      {item.deliveryInstructions && (
+        <Text style={styles.instructionsText} numberOfLines={1}>
+          📝 {item.deliveryInstructions}
+        </Text>
+      )}
       
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => handleEditAddress(item)}
+      {/* Action Buttons */}
+      <View style={styles.actionButtonsRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleSelectAddress(item)}
           activeOpacity={0.7}
         >
-          <Pencil size={18} color="#4B5563" />
+          <Edit2 size={16} color="#E41C26" />
+          <Text style={styles.actionBtnText}>{t('common.edit', 'Edit')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={[styles.iconButton, styles.deleteButton]} 
-          onPress={() => handleDeleteAddress(item._id)}
-          disabled={deletingId === item._id}
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          onPress={() => handleDeleteAddress(item._id)} // Use _id for API
           activeOpacity={0.7}
         >
-          {deletingId === item._id ? (
-            <ActivityIndicator size="small" color="#EF4444" />
-          ) : (
-            <Trash2 size={18} color="#EF4444" />
-          )}
+          <Trash2 size={16} color="#FF4D4F" />
+          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>{t('common.delete', 'Delete')}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmptyState = () => (
@@ -368,6 +438,37 @@ const styles = StyleSheet.create({
     color: '#888',
     fontWeight: '500',
     marginTop: 4,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+    gap: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: '#e0e0e0',
+    paddingTop: 8,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E41C26',
+  },
+  actionBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E41C26',
+  },
+  deleteBtn: {
+    borderColor: '#FF4D4F',
+  },
+  deleteBtnText: {
+    color: '#FF4D4F',
   },
   buttonContainer: {
     paddingHorizontal: width * 0.04,

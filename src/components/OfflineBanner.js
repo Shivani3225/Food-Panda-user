@@ -5,19 +5,19 @@ import { useNetwork } from '../context/NetworkContext';
 
 const OfflineBanner = () => {
   const { t } = useTranslation();
-  const { isInternetReachable } = useNetwork();
-  const [showBanner, setShowBanner] = useState(!isInternetReachable);
-  const [slideAnim] = useState(new Animated.Value(isInternetReachable ? -80 : 0));
+  const { isConnected } = useNetwork();
+  const [showBanner, setShowBanner] = useState(!isConnected);
+  const [slideAnim] = useState(new Animated.Value(isConnected ? -80 : 0));
 
   useEffect(() => {
-    if (!isInternetReachable && !showBanner) {
+    if (!isConnected && !showBanner) {
       setShowBanner(true);
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver: false,
       }).start();
-    } else if (isInternetReachable && showBanner) {
+    } else if (isConnected && showBanner) {
       Animated.timing(slideAnim, {
         toValue: -80,
         duration: 300,
@@ -26,7 +26,7 @@ const OfflineBanner = () => {
         setShowBanner(false);
       });
     }
-  }, [isInternetReachable, showBanner, slideAnim]);
+  }, [isConnected, showBanner, slideAnim]);
 
   if (!showBanner) {
     return null;

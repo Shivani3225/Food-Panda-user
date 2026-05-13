@@ -8,11 +8,14 @@ import { HOME_ROUTES } from '../config/routes';
  * @param {number} params.lng - Longitude for location-based data
  * @returns {Promise<Object>} Home data with banners, categories, sections, and tabs
  */
-export const getHomeData = async ({ lat, lng } = {}) => {
+export const getHomeData = async ({ lat, lng, city } = {}) => {
   const params = {};
   if (lat !== undefined && lng !== undefined) {
     params.lat = lat;
     params.lng = lng;
+  }
+  if (city) {
+    params.city = city;
   }
 
   console.log('🌍 [HomeService] Calling API with params:', params);

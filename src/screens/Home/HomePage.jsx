@@ -23,6 +23,7 @@ import { convertDrawerFiltersToAPI } from '../../services/filterService';
 import { translateText } from '../../services/translationService';
 import Geolocation from '@react-native-community/geolocation';
 import { CartContext } from '../../context/CartContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FavouritesContext } from '../../context/FavouritesContext';
 import { AuthContext, useAuth } from '../../context/AuthContext';
 import { Filter } from 'lucide-react-native';
@@ -276,16 +277,81 @@ export default function HomeScreen() {
   // Fetch home data
   const fetchHomeData = useCallback(async (showLoading = true) => {
     try {
-      // Sirf initial load par skeleton dikhao, background updates par nahi
-      if (showLoading && !isInitialLoadDone.current) {
+      // Show loading indicator when showLoading is true
+      if (showLoading) {
         setIsLoadingRestaurants(true);
       }
 
-      const loc = globalLocation;
-      if (loc) setUserLocation(loc);
+      let lat = null;
+      let lng = null;
+      let city = null;
 
-      console.log(`🏠 [HomePage] Fetching data... (showLoading: ${showLoading})`);
-      const data = await getHomeData({ lat: loc?.latitude, lng: loc?.longitude });
+      // Read stored chosen address if no param
+      let chosenAddr = null;
+      if (!selectedAddressParam) {
+        try {
+          const rawChosen = await AsyncStorage.getItem('chosen_address');
+          if (rawChosen) chosenAddr = JSON.parse(rawChosen);
+        } catch (e) {
+          console.error('Failed to read chosen_address from AsyncStorage:', e);
+        }
+      }
+
+      // Priority 1: Selected address from params
+      if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
+        lng = selectedAddressParam.location.coordinates[0];
+        lat = selectedAddressParam.location.coordinates[1];
+        city = selectedAddressParam.city;
+        console.log('📍 [HomePage] Using selected address coordinates:', lat, lng);
+        
+        // Save it for persistence
+        try {
+          await AsyncStorage.setItem('chosen_address', JSON.stringify(selectedAddressParam));
+        } catch (e) {
+          console.error('Failed to save chosen_address to AsyncStorage:', e);
+        }
+      } 
+      // Priority 1.5: Use stored chosen address
+      else if (chosenAddr && chosenAddr.location?.coordinates) {
+        lng = chosenAddr.location.coordinates[0];
+        lat = chosenAddr.location.coordinates[1];
+        city = chosenAddr.city;
+        console.log('📍 [HomePage] Using stored chosen address coordinates:', lat, lng);
+      }
+      // Priority 2: Use default saved address if available
+      else if (userData?.savedAddresses?.length > 0) {
+        const defAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
+        if (defAddr && defAddr.location?.coordinates) {
+          lng = defAddr.location.coordinates[0];
+          lat = defAddr.location.coordinates[1];
+          city = defAddr.city;
+          console.log('📍 [HomePage] Using saved address coordinates:', lat, lng);
+        }
+      }
+
+      // Priority 3: Fallback to GPS if no address selected/saved
+      if ((lat === null || lng === null) && globalLocation) {
+        lat = globalLocation.latitude;
+        lng = globalLocation.longitude;
+        console.log('📍 [HomePage] Using GPS coordinates:', lat, lng);
+      }
+
+      if (lat !== null && lng !== null) {
+        setUserLocation({ latitude: lat, longitude: lng });
+      }
+
+      // If no city found from address, and we have GPS, reverse geocode it
+      if (!city && lat !== null && lng !== null) {
+        try {
+          const addrData = await getAddressFromCoordinates(lat, lng);
+          city = addrData.city;
+        } catch (e) {
+          console.error('Failed to geocode for fetchHomeData:', e);
+        }
+      }
+
+      console.log(`🏠 [HomePage] Fetching data with city: ${city}`);
+      const data = await getHomeData({ lat, lng, city });
 
       processHomeData(data);
       isInitialLoadDone.current = true;
@@ -294,7 +360,7 @@ export default function HomeScreen() {
     } finally {
       setIsLoadingRestaurants(false);
     }
-  }, [globalLocation, processHomeData]);
+  }, [globalLocation, processHomeData, selectedAddressParam, userData]);
 
   const getAddressUpdatedTime = useCallback((address) => {
     const rawDate = address?.updatedAt || address?.createdAt;
@@ -380,17 +446,52 @@ export default function HomeScreen() {
     }
 
     const runFetch = async () => {
-      const lat = globalLocation?.latitude;
-      const lng = globalLocation?.longitude;
+      let lat = null;
+      let lng = null;
 
-      // Check if location moved significantly (> 500m)
+      // Priority 1: Selected address from params
+      if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
+        lng = selectedAddressParam.location.coordinates[0];
+        lat = selectedAddressParam.location.coordinates[1];
+      } 
+      // Priority 2: Use default saved address if available
+      else if (userData?.savedAddresses?.length > 0) {
+        const defAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
+        if (defAddr && defAddr.location?.coordinates) {
+          lng = defAddr.location.coordinates[0];
+          lat = defAddr.location.coordinates[1];
+        }
+      }
+
+      // Priority 3: Fallback to GPS if no address selected/saved
+      if ((lat === null || lng === null) && globalLocation) {
+        lat = globalLocation.latitude;
+        lng = globalLocation.longitude;
+      }
+
+      const prevLat = prevFetchCoords.current?.lat;
+      const prevLng = prevFetchCoords.current?.lng;
+      const addressId = selectedAddressParam?._id || selectedAddressParam?.id;
+      const addressChanged = addressId && addressId !== prevFetchCoords.current?.addressId;
+
+      // Check if location moved significantly (> 500m) or if we went from undefined to defined
       const moved = !prevFetchCoords.current ||
-        (Math.abs(lat - (prevFetchCoords.current.lat || 0)) > 0.005 ||
-          Math.abs(lng - (prevFetchCoords.current.lng || 0)) > 0.005);
+        prevLat === undefined || 
+        prevLng === undefined ||
+        (lat !== undefined && Math.abs(lat - prevLat) > 0.005) ||
+        (lng !== undefined && Math.abs(lng - prevLng) > 0.005) ||
+        addressChanged;
 
       if (!isInitialLoadDone.current || moved) {
-        if (moved) prevFetchCoords.current = { lat, lng };
-        await fetchHomeData(!isInitialLoadDone.current); // showLoading only on first time
+        if (moved) prevFetchCoords.current = { lat, lng, addressId };
+        
+        // If address explicitly changed by user, force a hard refresh to show loading skeleton
+        if (addressChanged) {
+          setPageNum(0);
+          setRestaurants([]); 
+        }
+        
+        await fetchHomeData(!isInitialLoadDone.current || addressChanged);
       }
 
       // User profile fetch happens once
@@ -400,7 +501,7 @@ export default function HomeScreen() {
     };
 
     runFetch();
-  }, [isAuthenticated, globalLocation, fetchHomeData, fetchUserData, userData]);
+  }, [isAuthenticated, globalLocation, fetchHomeData, fetchUserData, userData, selectedAddressParam]);
 
   // Focus effect for profile only
   useFocusEffect(
@@ -411,6 +512,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const updateHeaderFromLocation = async () => {
+      // If user specifically selected a saved address, DO NOT overwrite the header with GPS location
+      if (selectedAddressParam) {
+        return;
+      }
+
       if (globalLocation) {
         console.log('📍 [HomePage] Updating header with CURRENT location...');
         try {
@@ -426,15 +532,13 @@ export default function HomeScreen() {
           } else {
             setAddressLine(`${globalLocation.latitude.toFixed(4)}, ${globalLocation.longitude.toFixed(4)}`);
           }
-          // Reset the flag once GPS has successfully updated the header
-          hasAppliedSelectedAddressParam.current = false;
         } catch (e) {
           console.error('Failed to geocode current location:', e);
         }
       }
     };
     updateHeaderFromLocation();
-  }, [globalLocation, t, authenticatedUser?.savedAddresses, applyHeaderAddress]);
+  }, [globalLocation, t, authenticatedUser?.savedAddresses, applyHeaderAddress, selectedAddressParam]);
 
   // Fail-safe for loading state
   useEffect(() => {
@@ -476,25 +580,26 @@ export default function HomeScreen() {
     setIsRefreshing(true);
     try {
       setPageNum(0);
-      // Pull-to-refresh should explicitly re-fetch area from current coordinates, overriding any temporary param address
-      if (globalLocation) {
+      
+      // If user has explicitly selected an address, DO NOT overwrite it with GPS on refresh!
+      if (!selectedAddressParam && globalLocation) {
         getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude)
           .then(data => {
             const loc = data.streetArea || data.area || data.neighborhood || data.sublocality || data.landmark;
             if (loc) {
               setAddressLine(loc);
-              setAddressLabel(t('home.address_label', 'Home'));
-              hasAppliedSelectedAddressParam.current = false; // Reset flag as GPS has taken over
+              setAddressLabel(t('home.current_location_label', 'Current Location'));
             }
           }).catch(console.error);
       }
+      
       await Promise.all([fetchHomeData(false), fetchUserData()]);
     } catch (error) {
       console.error('Error refreshing:', error);
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchHomeData, fetchUserData]);
+  }, [fetchHomeData, fetchUserData, selectedAddressParam, globalLocation, t]);
 
   // Build promo cards
   const promoCards = useMemo(() => {
@@ -623,13 +728,25 @@ export default function HomeScreen() {
       const searchQuery = drawerFilters?.searchQuery || currentSearchQuery;
       const apiFilters = convertDrawerFiltersToAPI(drawerFilters);
 
-      console.log('🏠 [HomePage] Applying Filters:', { searchQuery, apiFilters, globalLocation });
+      let loc = globalLocation;
+      if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
+        const [lng, lat] = selectedAddressParam.location.coordinates;
+        loc = { latitude: lat, longitude: lng };
+      } else if (!globalLocation && userData?.savedAddresses) {
+        const defAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
+        if (defAddr && defAddr.location?.coordinates) {
+          const [lng, lat] = defAddr.location.coordinates;
+          loc = { latitude: lat, longitude: lng };
+        }
+      }
+
+      console.log('🏠 [HomePage] Applying Filters:', { searchQuery, apiFilters, userLocation: loc });
 
       navigation.navigate('FilteredResults', {
         drawerFilters,
         searchQuery,
         apiFilters,
-        userLocation: globalLocation
+        userLocation: loc
       });
       setIsFilterOpen(false);
     } catch (error) {
@@ -641,7 +758,7 @@ export default function HomeScreen() {
         duration: 2000,
       });
     }
-  }, [navigation, currentSearchQuery, globalLocation, t]);
+  }, [navigation, currentSearchQuery, globalLocation, t, selectedAddressParam, userData]);
 
   const handleResetFilters = useCallback(async () => {
     try {
@@ -661,6 +778,14 @@ export default function HomeScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#ed1c24']} tintColor="#ed1c24" />
           }
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
+            if (isCloseToBottom && restaurants.length > 0) {
+              loadMoreRestaurants();
+            }
+          }}
+          scrollEventThrottle={400}
         >
           <HomeHeader
             addressLabel={addressLabel}
@@ -675,6 +800,7 @@ export default function HomeScreen() {
             onNotificationPress={handleNotificationPress}
             onSearchPress={handleSearchPress}
             onTabPress={handleTabPress}
+            onAddressPress={() => navigation.navigate('Profile', { screen: 'AddressesScreen' })}
           />
 
           {activeTab === t('home.offers', 'Offers') ? (
@@ -736,12 +862,9 @@ export default function HomeScreen() {
 
               {isLoadingRestaurants ? (
                 <View style={{ marginBottom: hp(5) }}>
-                  <FlatList
-                    data={Array(6).fill(null)}
-                    keyExtractor={(_, index) => `skeleton-${index}`}
-                    scrollEnabled={false}
-                    renderItem={() => <SkeletonCard />}
-                  />
+                  {Array(6).fill(null).map((_, index) => (
+                    <SkeletonCard key={`skeleton-${index}`} />
+                  ))}
                   <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: hp(1.5) }}>
                     <ActivityIndicator size="small" color="#ed1c24" />
                     <Text style={{ marginTop: hp(1), color: '#8E8E93', fontSize: FONT.xs }}>
@@ -750,23 +873,18 @@ export default function HomeScreen() {
                   </View>
                 </View>
               ) : restaurants.length > 0 ? (
-                <FlatList
-                  data={restaurants}
-                  keyExtractor={item => item.id}
-                  scrollEnabled={false}
-                  contentContainerStyle={{ paddingBottom: hp(8) }}
-                  renderItem={({ item }) => (
+                <View style={{ paddingBottom: hp(8) }}>
+                  {restaurants.map((item) => (
                     <RestaurantListCard
+                      key={item.id}
                       item={item}
                       isFavorite={isFavourite?.(item.id, 'restaurant')}
                       onPress={() => handleRestaurantPress(item)}
                       onFavoritePress={() => handleToggleFavorite(item)}
                     />
-                  )}
-                  onEndReached={loadMoreRestaurants}
-                  onEndReachedThreshold={0.5}
-                  ListFooterComponent={<View style={{ height: hp(2) }} />}
-                />
+                  ))}
+                  <View style={{ height: hp(2) }} />
+                </View>
               ) : (
                 <View style={styles.emptyResults}>
                   <TouchableOpacity

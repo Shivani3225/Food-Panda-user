@@ -12,10 +12,7 @@ import { toastConfig } from './src/components/Toasters/popup';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import OfflineBanner from './src/components/OfflineBanner';
 import './src/locales/i18n';
-
-// Your Stripe publishable key
-// IMPORTANT: Re-copy this from Stripe Dashboard. It looks too long/malformed.
-const STRIPE_PUBLISHABLE_KEY = "pk_live_51SyGTiC3ztosLCHOUsZzE11TFVPLeLYG0yHAoBdhfisZcb16N1U46YSgZLys2UOLL1tULBHU13zdGd9JypVZJM8500oiAmRSeJ";
+import { STRIPE_PUBLISHABLE_KEY } from '@env';
 
 const App = () => {
   return (

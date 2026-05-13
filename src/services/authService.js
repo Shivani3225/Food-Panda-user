@@ -43,11 +43,15 @@ export const registerInitiate = async ({
   return response?.data ?? {};
 };
 
-export const registerVerify = async ({ mobile, otp }) => {
+export const registerVerify = async ({ mobile, otp, countryCode }) => {
   const payload = {
     mobile: (mobile ?? '').trim(),
     otp: (otp ?? '').trim(),
   };
+
+  if (countryCode) payload.countryCode = countryCode;
+
+  console.log('Verify payload being sent:', payload);
 
   const response = await apiClient.post(AUTH_ROUTES.registerVerify, payload);
   const data = response?.data ?? {};
