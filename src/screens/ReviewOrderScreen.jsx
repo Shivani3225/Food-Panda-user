@@ -251,6 +251,8 @@ export default function ReviewOrderScreen() {
       tipAmount: tipAmount,
       discount: summary.discount,
       couponId: navCoupon?.id,
+      currency: currencyCode,
+      currencySymbol: currencySymbol,
       ...(stripePaymentIntentId && { paymentIntentId: stripePaymentIntentId }),
     };
 
@@ -341,7 +343,9 @@ export default function ReviewOrderScreen() {
       tipAmount: tipAmount,
       discount: summary.discount,
       couponId: navCoupon?.id,
-      orderStatus: 'pending_payment'
+      orderStatus: 'pending_payment',
+      currency: currencyCode,
+      currencySymbol: currencySymbol,
     };
     
     const orderResponse = await placeOrder(orderPayload);
@@ -353,8 +357,8 @@ export default function ReviewOrderScreen() {
     
     const newOrderId = apiOrder._id;
     
-    // ✅ FIX: Use EUR instead of USD (since your backend is in Germany)
-    const currency = 'eur'; // Change this to 'eur' or get from user's location
+    // ✅ FIX: Use dynamic currency based on user location
+    const currency = currencyCode?.toLowerCase() || 'eur';
     
     const paymentResponse = await fetch(`${API_BASE_URL}/payment/create-payment-intent`, {
       method: 'POST',
