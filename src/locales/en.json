@@ -541,14 +541,16 @@
   "common": {
     "updating": "Updating..."
   },
-  "forget_password": {
+    "forget_password": {
     "title": "Forgot Password",
-    "description": "Enter your registered email and we'll send you a link/OTP to reset your password",
+    "description": "Enter your registered mobile number and we'll send you an OTP to reset your password",
     "email_label": "Email",
     "email_placeholder": "Enter your email",
+    "mobile_label": "Mobile Number",
+    "mobile_placeholder": "Enter your mobile number",
     "send_otp": "Send OTP",
     "otp_sent_title": "OTP Sent Successfully",
-    "otp_sent_message": "Check your email to continue",
+    "otp_sent_message": "Check your mobile to continue",
     "otp_failed_title": "Failed to Send OTP",
     "otp_failed_message": "Unable to send OTP"
   },
@@ -643,6 +645,7 @@
     "did_not_receive": "Didn't receive OTP?",
     "resend": "Resend",
     "change_email": "Change Email",
+    "change_mobile": "Change Mobile number",
     "verified_title": "OTP Verified",
     "verified_success_title": "OTP Verified Successfully",
     "set_new_password": "Please set your new password",

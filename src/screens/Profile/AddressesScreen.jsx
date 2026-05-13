@@ -10,9 +10,10 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, MapPin } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Pencil, Trash2 } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 import useHideTabBar from '../../utils/hooks/useHideTabBar';
 import apiClient from '../../config/apiClient';
 import { USER_ROUTES } from '../../config/routes';
@@ -32,6 +33,7 @@ export default function AddressesScreen() {
   const insets = useSafeAreaInsets();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState(null);
   useHideTabBar(navigation);
 
@@ -83,9 +85,35 @@ export default function AddressesScreen() {
     }, [])
   );
 
-  const handleSelectAddress = (address) => {
+  const handleEditAddress = (address) => {
     // Navigate to AddAddressScreen with the address data for editing
     navigation.navigate('AddAddressScreen', { address });
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    try {
+      setDeletingId(addressId);
+      const url = USER_ROUTES.addressById.replace(':id', addressId);
+      await apiClient.delete(url);
+      
+      Toast.show({
+        type: 'success',
+        text1: t('addresses.deleted_success', 'Address Deleted'),
+        text2: t('addresses.deleted_message', 'Your address has been removed successfully'),
+      });
+      
+      // Refresh list
+      fetchAddresses();
+    } catch (err) {
+      console.error('Error deleting address:', err);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: err.message || 'Failed to delete address',
+      });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleAddNewAddress = () => {
@@ -94,32 +122,53 @@ export default function AddressesScreen() {
   };
 
   const renderAddressItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.addressItem}
-      onPress={() => handleSelectAddress(item)}
-      activeOpacity={0.75}
-    >
-      <View style={styles.badgeRow}>
-        <View style={styles.labelBadge}>
-          <Text style={styles.labelBadgeText}>
-            {ADDRESS_LABELS[item.label?.toLowerCase()] || item.label}
-          </Text>
-        </View>
-        {item.isDefault && (
-          <View style={styles.defaultBadge}>
-            <Text style={styles.defaultBadgeText}>{t('addresses.default', 'Default')}</Text>
+    <View style={styles.addressItem}>
+      <View style={styles.addressContent}>
+        <View style={styles.badgeRow}>
+          <View style={styles.labelBadge}>
+            <Text style={styles.labelBadgeText}>
+              {ADDRESS_LABELS[item.label?.toLowerCase()] || item.label}
+            </Text>
           </View>
+          {item.isDefault && (
+            <View style={styles.defaultBadge}>
+              <Text style={styles.defaultBadgeText}>{t('addresses.default', 'Default')}</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.addressText} numberOfLines={2}>
+          {item.fullAddress}
+        </Text>
+        {item.deliveryInstructions && (
+          <Text style={styles.instructionsText} numberOfLines={1}>
+            📝 {item.deliveryInstructions}
+          </Text>
         )}
       </View>
-      <Text style={styles.addressText} numberOfLines={2}>
-        {item.fullAddress}
-      </Text>
-      {item.deliveryInstructions && (
-        <Text style={styles.instructionsText} numberOfLines={1}>
-          📝 {item.deliveryInstructions}
-        </Text>
-      )}
-    </TouchableOpacity>
+      
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={styles.iconButton} 
+          onPress={() => handleEditAddress(item)}
+          activeOpacity={0.7}
+        >
+          <Pencil size={18} color="#4B5563" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.iconButton, styles.deleteButton]} 
+          onPress={() => handleDeleteAddress(item._id)}
+          disabled={deletingId === item._id}
+          activeOpacity={0.7}
+        >
+          {deletingId === item._id ? (
+            <ActivityIndicator size="small" color="#EF4444" />
+          ) : (
+            <Trash2 size={18} color="#EF4444" />
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 
   const renderEmptyState = () => (
@@ -242,16 +291,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 16,
-    padding: width * 0.045,
+    padding: width * 0.04,
     marginBottom: height * 0.018,
     backgroundColor: '#fafafa',
-    minHeight: 100,
-    justifyContent: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+  },
+  addressContent: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    borderColor: '#fee2e2',
   },
   badgeRow: {
     flexDirection: 'row',

@@ -11,6 +11,8 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
@@ -22,58 +24,67 @@ import { forgotPasswordInitiate } from '../../services/authService';
 import { wp, hp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES as FONT } from '../../theme/typography';
+import { useCountries } from '../../context/CountryContext';
 
 export default function ForgetPass() {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const { countries } = useCountries();
+  const [mobile, setMobile] = useState('');
+  const [mobileError, setMobileError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countries[0] || {});
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
-  const validateEmail = (emailValue) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailValue) {
-      return t('validation.email_required', 'Email is required');
-    }
-    if (!emailRegex.test(emailValue)) {
-      return t('validation.invalid_email', 'Enter a valid email');
-    }
-    return '';
+  const validateMobileNumber = (number, country) => {
+    if (!country || !number) return false;
+    return number.length >= country.minLength && number.length <= country.maxLength;
+  };
+
+  const handleMobileChange = (text) => {
+    const value = text ?? '';
+    const digitsOnly = value.replace(/\D/g, '');
+    const limited = digitsOnly.slice(0, selectedCountry.maxLength);
+    setMobile(limited);
+    if (mobileError) setMobileError('');
   };
 
   const handleSendOtp = async () => {
-    const emailValue = email.trim();
-    const error = validateEmail(emailValue);
-    
-    if (error) {
-      setEmailError(error);
+    const mobileValue = mobile.trim();
+    if (!mobileValue) {
+      setMobileError(t('validation.mobile_required', 'Mobile number is required'));
+      return;
+    }
+    if (!validateMobileNumber(mobileValue, selectedCountry)) {
+      setMobileError(t('validation.invalid_mobile', 'Enter a valid mobile number'));
       return;
     }
 
-    setEmailError('');
+    setMobileError('');
 
     try {
       setIsLoading(true);
-      const response = await forgotPasswordInitiate({ email: emailValue });
+      const fullMobile = `${selectedCountry.fullCode}${mobileValue}`;
+      const response = await forgotPasswordInitiate({ mobile: fullMobile });
 
       Toast.show({
         type: 'topSuccess',
         text1: t('forget_password.otp_sent_title', 'OTP Sent Successfully'),
-        text2: t('forget_password.otp_sent_message', 'Check your email to continue'),
+        text2: t('forget_password.otp_sent_message', 'Check your mobile to continue'),
         position: 'top',
         visibilityTime: 2000,
         autoHide: true,
         props: { showLoader: true },
         onHide: () =>
-          navigation.navigate('Verify', { 
-            flow: 'forget', 
-            email: emailValue,
-            mobile: response?.mobile || ''
+          navigation.navigate('Verify', {
+            flow: 'forget',
+            mobile: fullMobile,
+            email: response?.email || ''
           }),
       });
     } catch (error) {
       const errMsg = error?.response?.data?.message || error?.message || '';
-      
+
       Toast.show({
         type: 'error',
         text1: t('forget_password.otp_failed_title', 'Failed to Send OTP'),
@@ -87,6 +98,27 @@ export default function ForgetPass() {
     }
   };
 
+  const renderCountryItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.countryItem}
+      onPress={() => {
+        setSelectedCountry(item);
+        setShowCountryPicker(false);
+        setMobile('');
+        if (mobileError) setMobileError('');
+      }}
+    >
+      <Text style={styles.countryFlag}>{item.flag}</Text>
+      <View style={styles.countryInfo}>
+        <Text style={styles.countryName}>{item.country}</Text>
+        <Text style={styles.countryCode}>{item.code}</Text>
+      </View>
+      {selectedCountry.code === item.code && (
+        <Text style={styles.checkmark}>✓</Text>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView
@@ -96,7 +128,7 @@ export default function ForgetPass() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.innerContainer}>
-            
+
             <View style={styles.heroWrap} pointerEvents="none">
               <View style={styles.heroCircle} />
               <Image
@@ -106,7 +138,7 @@ export default function ForgetPass() {
               />
             </View>
 
-            
+
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -126,27 +158,42 @@ export default function ForgetPass() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              
+
               <View style={styles.heroSpacer} />
 
-             
+
               <View style={styles.content}>
                 <Text style={styles.desc}>
-                  {t('forget_password.description', 'Enter your registered email and we\'ll send you a link/OTP to reset your password')}
+                  {t('forget_password.description', 'Enter your registered mobile number and we\'ll send you an OTP to reset your password')}
                 </Text>
 
-                <MaterialTextInput
-                  label={t('forget_password.email_label', 'Email')}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder={t('forget_password.email_placeholder', 'Enter your email')}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  error={!!emailError}
-                  errorText={emailError}
-                  returnKeyType="done"
-                  onSubmitEditing={handleSendOtp}
-                />
+                <View style={styles.mobileContainer}>
+                  <Text style={styles.mobileLabel}>{t('forget_password.mobile_label', 'Mobile Number')}</Text>
+                  <View style={[styles.mobileInputWrapper, mobileError && styles.inputWrapperError]}>
+                    <TouchableOpacity
+                      style={styles.countryCodeSelector}
+                      onPress={() => setShowCountryPicker(true)}
+                    >
+                      <Text style={styles.countryFlagSmall}>{selectedCountry.flag}</Text>
+                      <Text style={styles.countryCodeText}>{selectedCountry.fullCode}</Text>
+                      <Text style={styles.dropdownArrow}>▼</Text>
+                    </TouchableOpacity>
+
+                    <TextInput
+                      style={[styles.mobileInput, mobileError && styles.inputError]}
+                      value={mobile}
+                      onChangeText={handleMobileChange}
+                      placeholder={t('forget_password.mobile_placeholder', 'Enter your Mobile Number')}
+                      keyboardType="phone-pad"
+                      maxLength={selectedCountry.maxLength}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  {mobileError ? <Text style={styles.errorText}>{mobileError}</Text> : null}
+                  <Text style={styles.hintText}>
+                    {selectedCountry.country} ({selectedCountry.maxLength} digits)
+                  </Text>
+                </View>
 
                 <TouchableOpacity
                   style={[styles.btn, isLoading && styles.btnDisabled]}
@@ -163,6 +210,30 @@ export default function ForgetPass() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('common.select_country', 'Select Country')}</Text>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={countries}
+              keyExtractor={(item) => item.code}
+              renderItem={renderCountryItem}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -250,4 +321,133 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   btnText: { color: '#FFF', fontSize: FONT.sm, fontWeight: '900' },
+
+  // Mobile number styles
+  mobileContainer: {
+    marginBottom: 16,
+  },
+  mobileLabel: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  mobileInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D9E0F2',
+    backgroundColor: '#F2F2F2',
+    borderRadius: scale(12),
+    overflow: 'hidden',
+  },
+  inputWrapperError: {
+    borderColor: '#E11D2E',
+    borderWidth: 1,
+  },
+  countryCodeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: '#E8E8E8',
+    borderRightWidth: 1,
+    borderRightColor: '#D9E0F2',
+  },
+  countryFlagSmall: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  countryCodeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginRight: 4,
+  },
+  dropdownArrow: {
+    fontSize: 10,
+    color: '#666',
+  },
+  mobileInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  inputError: {
+    borderColor: '#E11D2E',
+  },
+  errorText: {
+    color: '#E11D2E',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 2,
+  },
+  hintText: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 4,
+    marginLeft: 2,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: hp(70),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111',
+  },
+  closeButton: {
+    fontSize: 20,
+    color: '#999',
+    padding: 4,
+  },
+  countryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  countryFlag: {
+    fontSize: 30,
+    marginRight: 12,
+  },
+  countryInfo: {
+    flex: 1,
+  },
+  countryName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111',
+  },
+  countryCode: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  checkmark: {
+    fontSize: 18,
+    color: '#E11D2E',
+    fontWeight: 'bold',
+  },
 });

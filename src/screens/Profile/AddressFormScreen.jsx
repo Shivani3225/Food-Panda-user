@@ -101,20 +101,24 @@ export default function AddressFormScreen() {
   React.useEffect(() => {
     const autoFillCity = async () => {
       const zip = formData.zipCode.trim();
-      const countryName = address?.country || '';
+      // Normalize country name for rule matching
+      const countryName = (address?.country || '').toLowerCase();
 
       if (validateZip(zip, countryName)) {
-        console.log(`🚀 [AddressForm] Fetching location for: ${zip}, ${countryName}`);
+        console.log(`🚀 [AddressForm] Fetching location for: ${zip} in ${countryName}`);
+
+        // Clear error immediately when starting a valid fetch
+        setErrors(prev => ({ ...prev, zipCode: '' }));
+
         const locationData = await getCityFromZipCode(zip, countryName);
 
         if (locationData) {
-          console.log('✅ [AddressForm] Location data received:', locationData);
           setFormData(prev => ({
             ...prev,
-            city: prev.city || locationData.city,
-            state: prev.state || locationData.state,
-            landmark: prev.landmark || locationData.area,
-            streetArea: prev.streetArea || locationData.street || locationData.area,
+            city: locationData.city || prev.city,
+            state: locationData.state || prev.state,
+            landmark: locationData.area || prev.landmark,
+            streetArea: locationData.street || locationData.area || prev.streetArea,
           }));
 
           // Clear errors for fields that were just filled

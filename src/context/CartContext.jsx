@@ -134,7 +134,7 @@ export const CartProvider = ({ children }) => {
             : 0;
           
           // If backend sends basePrice, use it; otherwise calculate it
-          const actualBasePrice = item.basePrice ?? item.product?.basePrice ?? (item.price - variationPrice - addOnsPrice);
+          const actualBasePrice = toNumber(item.basePrice ?? item.product?.basePrice ?? (item.price - variationPrice - addOnsPrice), 0);
 
           console.log('💰 Price breakdown:', {
             totalPrice: item.price,
@@ -145,14 +145,18 @@ export const CartProvider = ({ children }) => {
 
           return {
             id: item._id,
-            menuItemId: item.product,
-            productId: item.product,
+            menuItemId: item.product?._id || item.product,
+            productId: item.product?._id || item.product,
+            product: item.product, // Pass full product object for variations/addons
+            variations: item.product?.variations || [],
+            addOns: item.product?.addOns || [],
             name: item.name,
             image: item.image || item.product?.image || '',
             basePrice: actualBasePrice,
             price: item.price,
             quantity: item.quantity,
             qty: item.quantity,
+            cartLineId: item._id,
             selectedFlavor: item.variation ? {
               id: item.variation._id || item.variation,
               _id: item.variation._id || item.variation,
@@ -161,6 +165,7 @@ export const CartProvider = ({ children }) => {
               price: item.variation.price || 0,
               priceDelta: item.variation.price || 0,
             } : null,
+            // Display array for the cart list UI
             addOns: Array.isArray(item.addOns) ? item.addOns.map(addon => ({
               id: addon._id || addon,
               _id: addon._id || addon,
@@ -168,6 +173,8 @@ export const CartProvider = ({ children }) => {
               name: addon.name,
               price: addon.price || 0,
             })) : [],
+            // Track specifically selected addons for the drawer pre-fill
+            selectedAddOns: Array.isArray(item.addOns) ? item.addOns : [],
             unitTotal: item.price,
             totalPrice: item.price * item.quantity,
             restaurantId: data.cart.restaurant?._id,
@@ -235,31 +242,21 @@ export const CartProvider = ({ children }) => {
   }, [fetchCart, isAuthenticated, isInitialized]);
 
   const updateCartItem = useCallback(async (oldId, newItem) => {
-    console.log('🧪 CartContext: updateCartItem initiated', { oldId, newItem });
+    console.log('🧪 CartContext: updateCartItem initiated (Atomic)', { oldId, newItem });
     try {
       setLoading(true);
       
-      console.log('🧪 CartContext: Step 1 - Removing old item ID:', oldId);
-      await removeItemFromCart(oldId);
-      console.log('🧪 CartContext: Step 1 - Success. Waiting 300ms...');
-      
-      // Small delay to ensure backend consistency
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      console.log('🧪 CartContext: Step 2 - Adding new item configuration:', JSON.stringify(newItem));
-      const result = await addItemToCart(newItem);
-      console.log('🧪 CartContext: Step 2 - Response:', JSON.stringify(result));
-      
-      console.log('🧪 CartContext: Step 3 - Fetching fresh cart state');
+      const payload = {
+        ...newItem,
+        oldItemId: oldId,
+      };
+
+      const result = await addItemToCart(payload);
       await fetchCart();
       
       return result;
     } catch (error) {
-      console.error('❌ CartContext: updateCartItem failed at some step:', error);
-      if (error?.response) {
-        console.error('   Backend Error Data:', JSON.stringify(error.response.data, null, 2));
-        console.error('   Backend Error Status:', error.response.status);
-      }
+      console.error('❌ CartContext: updateCartItem failed:', error);
       await fetchCart();
       const errorMessage = error?.response?.data?.message || error.message || 'Update failed';
       return { error: errorMessage };
@@ -306,6 +303,11 @@ export const CartProvider = ({ children }) => {
       // Only include notes if provided
       if (rawItem.notes && rawItem.notes.trim()) {
         payload.notes = rawItem.notes.trim();
+      }
+
+      // Support for updates using the same route
+      if (rawItem.oldItemId) {
+        payload.oldItemId = rawItem.oldItemId;
       }
 
       console.log('📤 CartContext: Sending payload to API:', JSON.stringify(payload, null, 2));
@@ -663,7 +665,15 @@ export const CartProvider = ({ children }) => {
           console.log('✅ Synced');
         }
       } catch (err) {
-        console.error('❌ Sync failed');
+        console.error('❌ Sync failed:', err);
+        // Revert to backend state on failure
+        fetchCart();
+        Toast.show({
+          type: 'topError',
+          text1: 'Update Failed',
+          text2: 'Could not sync cart changes. Reverting...',
+          position: 'top',
+        });
       }
     }, 350);
   }, []);
@@ -743,7 +753,15 @@ export const CartProvider = ({ children }) => {
           console.log('✅ Synced');
         }
       } catch (err) {
-        console.error('❌ Sync failed');
+        console.error('❌ Sync failed:', err);
+        // Revert to backend state on failure
+        fetchCart();
+        Toast.show({
+          type: 'topError',
+          text1: 'Update Failed',
+          text2: 'Could not sync cart changes. Reverting...',
+          position: 'top',
+        });
       }
     }, 350);
   }, [removeFromCart]);

@@ -11,6 +11,7 @@ import Verify from '../screens/Auth/Verify';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import Signup from '../screens/Auth/Signup';
 import FoodPreference from '../screens/Onboarding/FoodPreference';
+import UpdateEmail from '../screens/Auth/UpdateEmail';
 import HomePage from '../screens/Home/HomePage.jsx';
 import PrivacyPolicy from '../screens/Profile/PrivacyPolicy';
 import TermsConditionScreen from '../screens/Profile/TermsConditionScreen';
@@ -57,6 +58,7 @@ export default function AppNavigator() {
             <Stack.Screen name="ForgetPass" component={ForgetPass} />
             <Stack.Screen name="CreatePassword" component={CreatePassword} />
             <Stack.Screen name="Verify" component={Verify} />
+            <Stack.Screen name="UpdateEmail" component={UpdateEmail} />
             <Stack.Screen name="FoodPreference" component={FoodPreference} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
             <Stack.Screen name="TrackOrder" component={TrackOrder} />
@@ -75,6 +77,7 @@ export default function AppNavigator() {
             <Stack.Screen name="ForgetPass" component={ForgetPass} />
             <Stack.Screen name="CreatePassword" component={CreatePassword} />
             <Stack.Screen name="Verify" component={Verify} />
+            <Stack.Screen name="UpdateEmail" component={UpdateEmail} />
           </>
         )}
       </Stack.Navigator>

@@ -25,6 +25,26 @@ const SCALE = width / FIGMA_WIDTH;
 
 const s = v => v * SCALE;
 
+const PasswordInput = ({ label, value, onChangeText, placeholder, show, setShow, error }) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={[styles.inputWrapper, error && styles.inputError]}>
+      <TextInput
+        style={styles.textInput}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        secureTextEntry={!show}
+        placeholderTextColor="#9CA3AF"
+      />
+      <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeIcon}>
+        {show ? <Eye size={20} color="#9CA3AF" /> : <EyeOff size={20} color="#9CA3AF" />}
+      </TouchableOpacity>
+    </View>
+    {error && <Text style={styles.errorText}>{error}</Text>}
+  </View>
+);
+
 const ChangePasswordScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
@@ -91,25 +111,6 @@ const ChangePasswordScreen = () => {
     }
   };
 
-  const PasswordInput = ({ label, value, onChangeText, placeholder, show, setShow, error }) => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputWrapper, error && styles.inputError]}>
-        <TextInput
-          style={styles.textInput}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          secureTextEntry={!show}
-          placeholderTextColor="#9CA3AF"
-        />
-        <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeIcon}>
-          {show ? <Eye size={20} color="#9CA3AF" /> : <EyeOff size={20} color="#9CA3AF" />}
-        </TouchableOpacity>
-      </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.root}>

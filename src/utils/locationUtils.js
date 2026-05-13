@@ -17,10 +17,10 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
 
     if (data.status === 'OK' && data.results && data.results.length > 0) {
       console.log('✅ [LocationUtils] Google Geocoding success');
-      let result = data.results.find(r => 
-        r.types.includes('street_address') || 
-        r.types.includes('premise') || 
-        r.types.includes('subpremise') || 
+      let result = data.results.find(r =>
+        r.types.includes('street_address') ||
+        r.types.includes('premise') ||
+        r.types.includes('subpremise') ||
         r.types.includes('point_of_interest') ||
         r.types.includes('route') ||
         r.types.includes('neighborhood')
@@ -140,7 +140,7 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
  */
 export const getCityFromZipCode = async (zipCode, countryName = '') => {
   if (!zipCode || zipCode.length < 3) return null;
-  
+
   const fetchFromGoogle = async (q, componentsFilter = '') => {
     let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${GOOGLE_MAPS_API_KEY}`;
     if (componentsFilter) url += `&components=${encodeURIComponent(componentsFilter)}`;
@@ -164,14 +164,14 @@ export const getCityFromZipCode = async (zipCode, countryName = '') => {
     // 3. Global Fallback for Generic results: Agar sirf country return ho (political result), 
     // toh global search try karein
     if (
-      (data.status === 'ZERO_RESULTS' || 
-      (data.status === 'OK' && data.results?.[0]?.types?.includes('country'))) && 
+      (data.status === 'ZERO_RESULTS' ||
+        (data.status === 'OK' && data.results?.[0]?.types?.includes('country'))) &&
       countryName
     ) {
       console.log('🌐 [LocationUtils] Retrying with Global search for:', zipCode);
       data = await fetchFromGoogle(zipCode, `postal_code:${zipCode}`);
     }
-    
+
     if (data.status === 'OK' && data.results && data.results.length > 0) {
       const result = data.results[0];
       console.log('📡 [LocationUtils] Google Formatted Address:', result.formatted_address);
@@ -183,14 +183,14 @@ export const getCityFromZipCode = async (zipCode, countryName = '') => {
       let town = '';
       let street = '';
       let district = ''; // administrative_area_level_2
-      
+
       components.forEach(component => {
         const types = component.types;
-        
+
         // Global Area detection (prioritize most specific)
         if (
-          types.includes('neighborhood') || 
-          types.includes('sublocality_level_2') || 
+          types.includes('neighborhood') ||
+          types.includes('sublocality_level_2') ||
           types.includes('sublocality_level_3')
         ) {
           if (!sublocality) sublocality = component.long_name;
@@ -205,14 +205,14 @@ export const getCityFromZipCode = async (zipCode, countryName = '') => {
         } else if (types.includes('colloquial_area') && !sublocality) { // Common local name
           sublocality = component.long_name;
         }
-        
+
         // Global City detection (prioritize most specific)
         if (types.includes('locality') && !city) {
           city = component.long_name;
         } else if (types.includes('postal_town')) {
           town = component.long_name;
         }
-        
+
         if (types.includes('administrative_area_level_2') && !district) district = component.long_name;
         if (types.includes('administrative_area_level_1') && !state) state = component.long_name;
         if (types.includes('country') && !country) country = component.long_name;
@@ -226,22 +226,22 @@ export const getCityFromZipCode = async (zipCode, countryName = '') => {
       if (!sublocality && result.formatted_address) {
         const parts = result.formatted_address.split(',');
         const firstPart = parts[0].trim();
-        
+
         const cityLower = finalCity.toLowerCase() || '';
         const firstLower = firstPart.toLowerCase();
         const countryLower = country.toLowerCase() || (countryName || '').toLowerCase(); // Use actual country or passed countryName
         const stateLower = state.toLowerCase() || '';
         const districtLower = district.toLowerCase() || '';
-        const zipLower = zipCode.toLowerCase();
+        const zipLower = String(zipCode).toLowerCase();
 
         // Agar formatted address ka pehla hissa City, State, Country, District ya Pincode nahi hai, toh wo Area hai
         if (
-          firstLower !== cityLower && 
-          firstLower !== countryLower && 
+          firstLower !== cityLower &&
+          firstLower !== countryLower &&
           firstLower !== stateLower &&
-          firstLower !== districtLower &&
-          firstLower !== zipLower && 
-          !['india', 'pakistan', 'nepal', 'united states', 'united kingdom', 'germany', 'france', 'canada', 'australia'].includes(firstLower) // Add more common country names
+          !firstLower.includes(cityLower) &&
+          firstLower !== zipLower &&
+          !['india', 'pakistan', 'nepal', 'united states', 'usa', 'germany', 'deutschland', 'france', 'uk'].includes(firstLower)
         ) {
           sublocality = firstPart;
         }

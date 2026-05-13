@@ -306,12 +306,29 @@ export default function OtpVerificationScreen() {
               </Text>
             </Text>
 
-            <TouchableOpacity
-              style={styles.changeEmailButton}
-              onPress={() => navigation.navigate('ForgetPass')}
-            >
-              <Text style={styles.changeEmailText}>{t('otp.change_email', 'Change Email')}</Text>
-            </TouchableOpacity>
+            <View style={styles.changeOptionsRow}>
+              <TouchableOpacity
+                style={styles.changeButton}
+                onPress={() => navigation.navigate('UpdateEmail', { flow, email, mobile })}
+              >
+                <Text style={styles.changeButtonText}>{t('otp.change_email', 'Change Email')}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity
+                style={styles.changeButton}
+                onPress={() => {
+                  if (flow === 'forget') {
+                    navigation.navigate('ForgetPass');
+                  } else {
+                    navigation.navigate('Signup');
+                  }
+                }}
+              >
+                <Text style={styles.changeButtonText}>{t('otp.change_mobile', 'Change Mobile number')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -465,13 +482,26 @@ const styles = StyleSheet.create({
     color: '#999999',
     fontWeight: '400',
   },
-  changeEmailButton: {
-    paddingVertical: hp(1),
+  changeOptionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: hp(1),
   },
-  changeEmailText: {
+  changeButton: {
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(2),
+  },
+  changeButtonText: {
     fontSize: FONT.sm,
     color: '#ed1c24',
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  divider: {
+    width: 1,
+    height: hp(2),
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: wp(2),
   },
 });

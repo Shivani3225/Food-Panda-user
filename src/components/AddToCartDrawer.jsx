@@ -36,14 +36,60 @@ function toNumber(value, fallback = 0) {
   return fallback;
 }
 
+function getItemFeatures(p, nameOverride = null) {
+  if (!p || typeof p !== 'object') return { type: 'other', badge: null };
+
+  const nameValue = nameOverride || (typeof p.name === 'string' ? p.name : (p.name?.en || p.name?.ar || p.name?.de || p.label || p.title || ''));
+  const labelStr = String(nameValue).toLowerCase();
+  const foodTypeLower = (p.type || p.foodType || p.food_type || p.item_type || '')?.toLowerCase()?.trim();
+
+  // Keywords for fallback detection
+  const vegKeywords = ['veg', 'paneer', 'corn', 'mushroom', 'potato', 'aloo', 'onion', 'garlic', 'tomato', 'orange', 'fruit', 'sweet', 'vegetable'];
+  const nonVegKeywords = ['chicken', 'meat', 'beef', 'mutton', 'egg', 'fish', 'prawn', 'bacon', 'ham', 'salami', 'pepperoni', 'nonveg', 'non-veg'];
+  const proteinKeywords = ['protein', 'whey', 'soya', 'soy', 'tofu', 'nut', 'almond', 'peanut'];
+  const fastFoodKeywords = ['cheese', 'cheez', 'pizza', 'burger', 'fries', 'fry', 'junk', 'fastfood', 'nugget', 'hotdog', 'sandwich', 'sauce', 'dip', 'mayo', 'ketchup', 'coke', 'pepsi'];
+
+  const isFastFoodByLabel = fastFoodKeywords.some(k => labelStr.includes(k));
+  const isVegByLabel = vegKeywords.some(k => labelStr.includes(k)) && !nonVegKeywords.some(k => labelStr.includes(k)) && !isFastFoodByLabel;
+  const isNonVegByLabel = nonVegKeywords.some(k => labelStr.includes(k));
+  const isProteinByLabel = proteinKeywords.some(k => labelStr.includes(k));
+
+  const isVeg = 
+    p.isVeg === true || p.veg === true || p.is_veg === true || 
+    p.isVeg === 1 || p.veg === 1 || p.is_veg === 1 ||
+    String(p.isVeg) === 'true' || String(p.veg) === 'true' ||
+    foodTypeLower === 'veg' || foodTypeLower === 'vegetarian' || foodTypeLower === '1' ||
+    isVegByLabel;
+
+  const isNonVeg = 
+    p.isVeg === false || p.veg === false || p.is_veg === false || 
+    p.isNonVeg === true || p.nonVeg === true || p.is_non_veg === true ||
+    p.isVeg === 2 || p.veg === 2 || p.isNonVeg === 1 ||
+    String(p.isVeg) === 'false' || String(p.isNonVeg) === 'true' ||
+    foodTypeLower === 'non-veg' || foodTypeLower === 'nonveg' || foodTypeLower === 'non-vegetarian' || foodTypeLower === '2' ||
+    isNonVegByLabel;
+
+  const isProteinRich = p.isProteinRich === true || p.proteinRich === true || p.is_protein_rich === true || String(p.isProteinRich) === 'true' || isProteinByLabel;
+  const isBestsellerRaw = p.isBestseller === true || p.bestseller === true || p.is_bestseller === true || String(p.isBestseller) === 'true' || labelStr.includes('best');
+
+  let badge = p.badge || null;
+  if (!badge) {
+    if (isVeg && isBestsellerRaw) badge = 'Bestseller';
+    else if (isNonVeg || isProteinRich) badge = 'Protein Rich';
+  }
+
+  const type = isFastFoodByLabel ? 'fastfood' : (isVeg ? 'veg' : (isNonVeg ? 'non-veg' : 'other'));
+  
+  return { type, badge, isVeg, isNonVeg, isProteinRich, isFastFood: isFastFoodByLabel, name: nameValue };
+}
+
 function normalizeFlavors(item) {
   const raw =
     item?.variations ||
     item?.flavors ||
-    item?.flavourOptions ||
-    item?.variants ||
-    item?.options?.flavors ||
-    item?.options?.flavours ||
+    item?.variation ||
+    item?.product?.variations ||
+    item?.product?.flavors ||
     [];
 
   if (!Array.isArray(raw)) return [];
@@ -51,17 +97,18 @@ function normalizeFlavors(item) {
   const normalized = raw
     .map((f, idx) => {
       if (typeof f === 'string') {
-        return { id: String(idx), label: f, priceDelta: 0 };
+        return { id: String(idx), label: f, priceDelta: 0, type: 'other', badge: null };
       }
       if (f && typeof f === 'object') {
-        const nameValue =
-          typeof f.name === 'string'
-            ? f.name
-            : f.name?.en || f.name?.ar || f.name?.de;
+        const features = getItemFeatures(f);
+        console.log(`DEBUG: Flavor "${features.name}" | Type: ${features.type} | Badge: ${features.badge}`);
+
         return {
           id: String(f._id ?? f.id ?? idx),
-          label: String(f.label ?? f.title ?? nameValue ?? `Option ${idx + 1}`),
+          label: features.name,
           priceDelta: toNumber(f.priceDelta ?? f.extraPrice ?? f.price ?? 0, 0),
+          type: features.type,
+          badge: features.badge,
         };
       }
       return null;
@@ -87,17 +134,23 @@ function normalizeFrequentlyBought(item) {
   const normalized = raw
     .map((x, idx) => {
       if (typeof x === 'string') {
-        return { id: String(idx), label: x, price: 0 };
+        return { id: String(idx), label: x, price: 0, image: null };
       }
       if (x && typeof x === 'object') {
+        const itemObj = x.product || x;
+        const nameObj = itemObj.name || itemObj.label || itemObj.title || '';
         const nameValue =
-          typeof x.name === 'string'
-            ? x.name
-            : x.name?.en || x.name?.ar || x.name?.de;
+          typeof nameObj === 'string'
+            ? nameObj
+            : (nameObj.en || nameObj.ar || nameObj.de || String(nameObj));
+
+        console.log(`DEBUG: Add-on "${nameValue}" | Image: ${itemObj.image || 'NONE'}`);
+        
         return {
           id: String(x._id ?? x.id ?? idx),
-          label: String(x.label ?? x.title ?? nameValue ?? `Item ${idx + 1}`),
-          price: toNumber(x.price ?? x.extraPrice ?? 0, 0),
+          label: nameValue,
+          price: toNumber(x.price ?? x.extraPrice ?? itemObj.price ?? 0, 0),
+          image: itemObj.image || itemObj.img || itemObj.coverImage || null,
         };
       }
       return null;
@@ -106,6 +159,47 @@ function normalizeFrequentlyBought(item) {
 
   return normalized;
 }
+
+const AddonItem = ({ item, isChecked, onToggle, currencySymbol }) => {
+  const [imgError, setImgError] = useState(false);
+  const itemImage = !imgError && item.image && String(item.image).length > 0 
+    ? { uri: item.image } 
+    : require('../assets/images/Food.png');
+
+  return (
+    <Pressable
+      style={styles.addonRow}
+      onPress={() => onToggle(item.id)}
+    >
+      <Image 
+        source={itemImage} 
+        style={styles.addonImage} 
+        onError={() => setImgError(true)}
+      />
+      
+      <View style={styles.addonMain}>
+        <Text style={styles.optionLabel}>{item.label}</Text>
+      </View>
+
+      <View style={styles.optionRight}>
+        {toNumber(item.price, 0) > 0 && (
+          <Text style={styles.optionPrice}>
+            {currencySymbol}
+            {toNumber(item.price, 0)}
+          </Text>
+        )}
+        <View
+          style={[
+            styles.checkbox,
+            isChecked && styles.checkboxChecked,
+          ]}
+        >
+          {isChecked && <Text style={styles.checkboxTick}>✓</Text>}
+        </View>
+      </View>
+    </Pressable>
+  );
+};
 
 export default function AddToCartDrawer({
   visible,
@@ -155,10 +249,16 @@ export default function AddToCartDrawer({
 
   const { addToCart, updateCartItem, removeFromCart, freshCartResolvedAt } = useContext(CartContext);
 
-  const basePrice = useMemo(() => toNumber(item?.price ?? 0, 0), [item]);
-  const flavors = useMemo(() => normalizeFlavors(item), [item]);
+  const basePrice = useMemo(() => {
+    // If it's a cart item (edit mode), use item.basePrice which was calculated in CartContext
+    // Otherwise use item.price or item.basePrice (standard product properties)
+    const val = item?.basePrice ?? item?.price ?? 0;
+    return toNumber(val, 0);
+  }, [item]);
+
+  const flavors = useMemo(() => normalizeFlavors(item?.product || item), [item]);
   const frequentlyBought = useMemo(
-    () => normalizeFrequentlyBought(item),
+    () => normalizeFrequentlyBought(item?.product || item),
     [item],
   );
 
@@ -417,7 +517,7 @@ export default function AddToCartDrawer({
         console.log('   - Item Payload:', JSON.stringify(cartItem, null, 2));
         result = await addToCart(cartItem);
       }
-      
+
       console.log('📥 [AddToCartDrawer] Result from Backend:', JSON.stringify(result, null, 2));
 
       if (result?.conflict) {
@@ -686,6 +786,23 @@ export default function AddToCartDrawer({
 
               <View style={styles.titleRow}>
                 <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+
+                    {/* Main Item Protein Rich / Bestseller Badge */}
+                    {(() => {
+                      const features = getItemFeatures(item?.product || item, translatedItemName);
+                      if (features.badge) {
+                        const badgeColor = features.badge === 'Bestseller' ? '#EE5A52' : '#C33989';
+                        return (
+                          <View style={[styles.proteinBadge, { backgroundColor: badgeColor }]}>
+                            <Text style={styles.proteinBadgeText}>{features.badge}</Text>
+                          </View>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </View>
+
                   <Text numberOfLines={2} style={styles.foodName}>
                     {translatedItemName || item?.name}
                   </Text>
@@ -707,6 +824,9 @@ export default function AddToCartDrawer({
 
                   {visibleFlavors.map(f => {
                     const selected = f.id === selectedFlavorId;
+                    const isVeg = f.type === 'veg';
+                    const badgeColor = f.badge === 'Bestseller' ? '#EE5A52' : '#C33989';
+
                     return (
                       <Pressable
                         key={f.id}
@@ -715,9 +835,44 @@ export default function AddToCartDrawer({
                           setSelectedFlavorId(prev => (prev === f.id ? null : f.id));
                         }}
                       >
-                        <Text style={styles.optionLabel}>
-                          {f.labelKey ? t(f.labelKey, f.label) : f.label}
-                        </Text>
+                        {/* Veg/Non-Veg Icon */}
+                        {f.type && (
+                          <View style={[
+                            styles.typeIconContainer, 
+                            { 
+                              borderColor: f.type === 'veg' ? '#0F8A5F' : 
+                                           f.type === 'non-veg' ? '#BC4B4D' : 
+                                           f.type === 'fastfood' ? '#F39C12' : '#5DADE2' 
+                            }
+                          ]}>
+                            {f.type === 'veg' ? (
+                              <View style={styles.vegDot} />
+                            ) : f.type === 'non-veg' ? (
+                              <View style={styles.nonVegTriangle} />
+                            ) : f.type === 'fastfood' ? (
+                              <View style={styles.fastFoodDot} />
+                            ) : (
+                              <View style={styles.otherDot} />
+                            )}
+                          </View>
+                        )}
+
+                        <View style={styles.optionMain}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            {f.badge && (
+                              <Text style={[styles.badgeText, { color: badgeColor }]}>{f.badge}</Text>
+                            )}
+                            {f.badge === 'Protein Rich' && (
+                              <View style={styles.proteinIconSmall}>
+                                <View style={styles.proteinDot} />
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.optionLabel}>
+                            {f.labelKey ? t(f.labelKey, f.label) : f.label}
+                          </Text>
+                        </View>
+
                         <View style={styles.optionRight}>
                           {toNumber(f.priceDelta, 0) > 0 && (
                             <Text style={styles.optionPrice}>
@@ -727,11 +882,11 @@ export default function AddToCartDrawer({
                           )}
                           <View
                             style={[
-                              styles.radioOuter,
-                              selected && styles.radioOuterActive,
+                              styles.selectorOuter,
+                              selected && styles.selectorOuterActive,
                             ]}
                           >
-                            {selected && <View style={styles.radioInner} />}
+                            {selected && <View style={styles.selectorInner} />}
                           </View>
                         </View>
                       </Pressable>
@@ -761,38 +916,15 @@ export default function AddToCartDrawer({
                     <Text style={styles.sectionHint}>({t('common.optional', 'Optional')})</Text>
                   </View>
 
-                  {visibleTogether.map(x => {
-                    const checked = selectedTogetherIds.has(x.id);
-                    return (
-                      <Pressable
-                        key={x.id}
-                        style={styles.optionRow}
-                        onPress={() => toggleTogether(x.id)}
-                      >
-                        <Text style={styles.optionLabel}>
-                          {x.labelKey ? t(x.labelKey, x.label) : x.label}
-                        </Text>
-                        <View style={styles.optionRight}>
-                          {toNumber(x.price, 0) > 0 && (
-                            <Text style={styles.optionPrice}>
-                              + {activeCurrencySymbol}
-                              {toNumber(x.price, 0)}
-                            </Text>
-                          )}
-                          <View
-                            style={[
-                              styles.checkbox,
-                              checked && styles.checkboxChecked,
-                            ]}
-                          >
-                            {checked && (
-                              <Text style={styles.checkboxTick}>✓</Text>
-                            )}
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
+                  {visibleTogether.map(x => (
+                    <AddonItem
+                      key={x.id}
+                      item={x}
+                      isChecked={selectedTogetherIds.has(x.id)}
+                      onToggle={toggleTogether}
+                      currencySymbol={activeCurrencySymbol}
+                    />
+                  ))}
 
                   {hiddenTogetherCount > 0 && (
                     <Pressable
@@ -1013,49 +1145,147 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#111',
-    marginBottom: 10,
   },
   sectionHint: {
-    fontSize: 12,
-    color: '#9AA0A6',
-    fontWeight: '700',
+    fontSize: 13,
+    color: '#777',
+    fontWeight: '400',
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#F3F3F3',
+    paddingVertical: 14,
+    gap: 12,
+  },
+  addonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  addonImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  addonMain: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  typeIconContainer: {
+    width: 16,
+    height: 16,
+    borderWidth: 1.2,
+    borderRadius: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  vegDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#0F8A5F',
+  },
+  nonVegTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderBottomWidth: 7,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#BC4B4D',
+  },
+  otherDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#5DADE2',
+  },
+  fastFoodDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#F39C12', // Orange/Yellow for Fast Food
+  },
+  optionMain: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  proteinBadge: {
+    backgroundColor: '#C33989',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  proteinBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  proteinIconSmall: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#C33989',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  proteinDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFF',
   },
   optionLabel: {
-    flex: 1,
-    color: '#222',
-    fontSize: 13,
-    fontWeight: '600',
+    color: '#111',
+    fontSize: 15,
+    fontWeight: '500',
   },
   optionRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   optionPrice: {
-    color: '#111',
-    fontWeight: '800',
-    fontSize: 13,
+    color: '#333',
+    fontWeight: '600',
+    fontSize: 14,
   },
-  radioOuter: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: '#D0D0D0',
+  selectorOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10, // Circle for radio
+    borderWidth: 1.5,
+    borderColor: '#999',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  selectorOuterActive: {
+    borderColor: '#EE5A52',
+  },
+  selectorInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EE5A52',
   },
   radioOuterActive: {
     borderColor: '#FF3D3D',
@@ -1067,18 +1297,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3D3D',
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: '#D0D0D0',
+    width: 20,
+    height: 20,
+    borderRadius: 4, // Square for checkbox
+    borderWidth: 1.5,
+    borderColor: '#999',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF',
   },
   checkboxChecked: {
-    borderColor: '#FF3D3D',
-    backgroundColor: '#FF3D3D',
+    borderColor: '#EE5A52',
+    backgroundColor: '#EE5A52',
   },
   checkboxTick: {
     color: '#FFF',
@@ -1086,20 +1316,20 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   viewMoreBtn: {
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    height: 28,
-    borderRadius: 14,
+    paddingHorizontal: 24,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E0E0E0',
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   viewMoreText: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '500',
     color: '#111111',
   },
   inputWrap: {

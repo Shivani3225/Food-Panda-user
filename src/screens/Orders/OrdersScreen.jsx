@@ -236,13 +236,49 @@ const OrderCard = memo(function OrderCard({ item }) {
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
 
-  const restaurantName = item?.restaurant?.name?.[currentLang] || item?.restaurant?.name?.en || item?.restaurantName || t('orders.restaurant', 'Restaurant');
-  const [displayName, setDisplayName] = useState(restaurantName);
+  // Robust restaurant name resolution similar to OrderDetailsScreen
+  const getResolvedRestaurantName = useCallback(() => {
+    const rawName = item?.restaurant?.name || item?.restaurant?.title || item?.restaurantName || item?.restaurant?.restaurantName || '';
+    
+    if (typeof rawName === 'object' && rawName !== null) {
+      return rawName[currentLang] || rawName.en || rawName.de || rawName.ar || '';
+    }
+    if (typeof rawName === 'string' && rawName.trim().length > 0) {
+      return rawName;
+    }
+    
+    // Fallback to items if restaurant info is missing
+    const firstItem = Array.isArray(item?.items) ? item.items[0] : null;
+    if (firstItem) {
+      const itemRestName = firstItem.restaurant?.name || firstItem.restaurantName || '';
+      if (typeof itemRestName === 'object' && itemRestName !== null) {
+        return itemRestName[currentLang] || itemRestName.en || '';
+      }
+      if (typeof itemRestName === 'string' && itemRestName.trim().length > 0) {
+        return itemRestName;
+      }
+    }
 
+    return '';
+  }, [item, currentLang]);
+
+  const initialName = getResolvedRestaurantName() || t('orders.restaurant', 'Restaurant');
+  const [displayName, setDisplayName] = useState(initialName);
+
+  // Sync displayName if item or language changes
   useEffect(() => {
-    if (currentLang === 'en') { setDisplayName(restaurantName); return; }
-    translateField(item?.restaurant?.name || item?.restaurantName, currentLang).then(v => { if (v) setDisplayName(v); });
-  }, [currentLang, item?.restaurant?.name, item?.restaurantName]);
+    const resolved = getResolvedRestaurantName();
+    const finalInitial = resolved || t('orders.restaurant', 'Restaurant');
+    setDisplayName(finalInitial);
+
+    // If we have a name and it's not in the current language, try to translate it
+    if (currentLang !== 'en' && resolved) {
+      const sourceForTranslation = item?.restaurant?.name || item?.restaurantName || resolved;
+      translateField(sourceForTranslation, currentLang).then(v => {
+        if (v) setDisplayName(v);
+      });
+    }
+  }, [currentLang, item, getResolvedRestaurantName]);
 
   const items = Array.isArray(item?.items) ? item.items : [];
   const shownItems = items.slice(0, 2);
