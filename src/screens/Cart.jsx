@@ -27,6 +27,8 @@ import { FONT_SIZES } from '../theme/typography';
 import { SPACING } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useTranslatedText } from '../hooks/useTranslatedData';
+import { getRestaurantMenu } from '../services/restaurantService';
+import Toast from 'react-native-toast-message';
 
 function groupByRestaurant(cart) {
   const items = Array.isArray(cart) ? cart : [];
@@ -136,26 +138,45 @@ export default function CartScreen() {
   const handleIncrement = useCallback(id => incrementItem?.(id), [incrementItem]);
   const handleDecrement = useCallback(id => decrementItem?.(id), [decrementItem]);
 
-  const handleEdit = useCallback((item) => {
-    // item.menuItemId contains the full product object from CartContext transformation
-    const product = item.menuItemId || {};
+  const handleEdit = useCallback(async (item) => {
+    try {
+      const menuData = await getRestaurantMenu(item.restaurantId);
+      const products = Array.isArray(menuData?.products) ? menuData.products : [];
+      const product = products.find(p => String(p._id || p.id) === String(item.productId));
+      
+      if (!product) {
+        Toast.show({
+          type: 'error',
+          text1: t('common.error', 'Error'),
+          text2: 'Product details not found',
+        });
+        return;
+      }
 
-    setSelectedItem({
-      ...product,
-      id: product._id || product.id || item.productId,
-      cartLineId: item.id, // Track the actual cart line ID for editing
-      quantity: item.quantity,
-      selectedFlavor: item.selectedFlavor,
-      selectedAddOns: item.addOns,
-      notes: item.notes || '',
-    });
+      setSelectedItem({
+        ...product,
+        id: product._id || product.id,
+        cartLineId: item.id, // Track the actual cart line ID for editing
+        quantity: item.quantity,
+        selectedFlavor: item.selectedFlavor,
+        selectedAddOns: item.addOns,
+        notes: item.notes || '',
+      });
 
-    setSelectedRestaurant(item.restaurant || {
-      id: item.restaurantId,
-      _id: item.restaurantId,
-      name: item.restaurantName,
-    });
-  }, []);
+      setSelectedRestaurant(item.restaurant || {
+        id: item.restaurantId,
+        _id: item.restaurantId,
+        name: item.restaurantName,
+      });
+    } catch (error) {
+      console.error('Error fetching product for edit:', error);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: 'Failed to fetch product details',
+      });
+    }
+  }, [t]);
 
   const handleDelete = useCallback((itemId, itemName) => {
     setDeletingItemId(itemId);

@@ -337,11 +337,14 @@ export default function OrderDetailsScreen() {
     }
 
     translateField(order?.restaurant?.name || order?.restaurantName, currentLang)
-      .then(v => { if (v) setTranslatedRestaurantName(v); else setTranslatedRestaurantName(restaurantName); });
+      .then(v => { if (v) setTranslatedRestaurantName(v); else setTranslatedRestaurantName(restaurantName); })
+      .catch(err => { console.error('Error translating restaurant name:', err); setTranslatedRestaurantName(restaurantName); });
 
     const tagsSource = order?.restaurant?.cuisine?.[0] || order?.restaurantTags;
     if (tagsSource) {
-      translateField(tagsSource, currentLang).then(v => { if (v) setTranslatedRestaurantTags(v); else setTranslatedRestaurantTags(restaurantTags); });
+      translateField(tagsSource, currentLang)
+        .then(v => { if (v) setTranslatedRestaurantTags(v); else setTranslatedRestaurantTags(restaurantTags); })
+        .catch(err => { console.error('Error translating tags:', err); setTranslatedRestaurantTags(restaurantTags); });
     }
   }, [currentLang, order, restaurantName, restaurantTags]);
 

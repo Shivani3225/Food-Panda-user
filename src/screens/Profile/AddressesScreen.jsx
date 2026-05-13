@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, MapPin, Edit2, Trash2 } from 'lucide-react-native';

@@ -237,6 +237,7 @@ export default function AddToCartDrawer({
 
   const totalPrice = useMemo(() => {
     const total = perUnitTotal * Math.max(1, quantity);
+    console.log('💰 [AddToCartDrawer] totalPrice updated:', total, 'perUnitTotal:', perUnitTotal, 'quantity:', quantity);
     return total;
   }, [perUnitTotal, quantity]);
 
