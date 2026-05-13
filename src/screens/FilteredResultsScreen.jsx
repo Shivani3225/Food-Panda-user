@@ -101,6 +101,7 @@ export default function FilteredResultsScreen() {
     switch (sortBy) {
       case 'price_asc':
       case 'price_low_high':
+      case 'cost_low_high':
         sortedProducts.sort((a, b) => {
           const priceA = a.averageCost || a.costForTwo || a.price || 0;
           const priceB = b.averageCost || b.costForTwo || b.price || 0;
@@ -110,6 +111,7 @@ export default function FilteredResultsScreen() {
 
       case 'price_desc':
       case 'price_high_low':
+      case 'cost_high_low':
         sortedProducts.sort((a, b) => {
           const priceA = a.averageCost || a.costForTwo || a.price || 0;
           const priceB = b.averageCost || b.costForTwo || b.price || 0;
@@ -189,23 +191,28 @@ export default function FilteredResultsScreen() {
     const timeValue = item.deliveryTime;
     let timePart = '';
     
-    if (!timeValue) {
-      timePart = `30-40 ${t('home.min', 'min')}`;
-    } else if (typeof timeValue === 'string' && (timeValue.includes('-') || timeValue.includes(' '))) {
-      timePart = `${timeValue} ${t('home.min', 'min')}`;
-    } else {
-      const tVal = parseInt(timeValue);
-      if (isNaN(tVal)) {
+    if (timeValue) {
+      if (typeof timeValue === 'string' && (timeValue.includes('-') || timeValue.includes(' '))) {
         timePart = `${timeValue} ${t('home.min', 'min')}`;
       } else {
-        const lower = Math.max(10, Math.floor(tVal / 10) * 10);
-        const upper = lower + 10;
-        timePart = `${lower}-${upper} ${t('home.min', 'min')}`;
+        const tVal = parseInt(timeValue);
+        if (isNaN(tVal)) {
+          timePart = `${timeValue} ${t('home.min', 'min')}`;
+        } else {
+          const lower = Math.max(10, Math.floor(tVal / 10) * 10);
+          const upper = lower + 10;
+          timePart = `${lower}-${upper} ${t('home.min', 'min')}`;
+        }
       }
     }
 
-    const distPart = hasValidDist ? ` • 📍 ${numericDist.toFixed(1)} ${t('home.km', 'km')}` : '';
-    return `🕒 ${timePart}${distPart}`;
+    const clockIcon = timePart ? '🕒 ' : '';
+    const distPart = hasValidDist ? `📍 ${numericDist.toFixed(1)} ${t('home.km', 'km')}` : '';
+    
+    if (timePart && distPart) {
+      return `${clockIcon}${timePart} • ${distPart}`;
+    }
+    return timePart ? `${clockIcon}${timePart}` : distPart || '';
   }, [userLocation, globalLocation, t]);
 
   // Fetch filtered results
@@ -291,6 +298,26 @@ export default function FilteredResultsScreen() {
           });
         }
 
+        // 2.5 Cost For Two Filter
+        if (drawerFilters?.costForTwo) {
+          const range = drawerFilters.costForTwo;
+          let min = 0;
+          let max = 5000;
+          if (range === '0-200') { max = 200; }
+          else if (range === '200-500') { min = 200; max = 500; }
+          else if (range === '500-1000') { min = 500; max = 1000; }
+          else if (range === '1000+') { min = 1000; }
+          
+          console.log(`💰 [Filter] Applying Cost For Two: ${min}-${max}`);
+          restaurantsToMap = restaurantsToMap.filter(rest => {
+            const cost = parseFloat(rest.averageCost || rest.costForTwo || rest.price || 0);
+            const match = cost >= min && cost <= max;
+            const restName = rest.name?.en || rest.name || 'Unknown';
+            if (!match) console.log(`   ❌ [CostForTwo] ${restName}: ${cost} not in ${min}-${max}`);
+            return match;
+          });
+        }
+
         // 3. Fast Delivery (< 30 mins)
         if (drawerFilters?.timeFilter === 'fast_delivery') {
           console.log('⏱️ [Filter] Applying Fast Delivery (<30m)');
@@ -317,7 +344,7 @@ export default function FilteredResultsScreen() {
         if (drawerFilters?.offers?.includes('free_delivery')) {
           console.log('🚚 [Filter] Applying Free Delivery');
           restaurantsToMap = restaurantsToMap.filter(rest => {
-            const fee = parseFloat(rest.deliveryFee || rest.delivery_fee || 0);
+            const fee = parseFloat(rest.deliveryFee ?? rest.delivery_fee ?? NaN);
             const isFree = fee === 0 || rest.freeDelivery === true || rest.hasFreeDelivery === true;
             const restName = rest.name?.en || rest.name || 'Unknown';
             if (!isFree) console.log(`   ❌ [Fee] ${restName}: fee=${fee}`);
@@ -351,8 +378,8 @@ export default function FilteredResultsScreen() {
               // Lenient check: If isVeg is undefined or true, consider it Veg-compatible
               match = isVeg !== false && foodType !== 'non_veg' && foodType !== 'meat';
             } else if (pref === 'non_veg') {
-              // Strict check: Only show if explicitly marked as non-veg
-              match = isVeg === false || foodType === 'non_veg' || foodType === 'meat';
+              // Lenient check: Show unless explicitly marked as veg
+              match = isVeg !== true && foodType !== 'veg' && foodType !== 'pure_veg';
             }
             
             const restName = rest.name?.en || rest.name || 'Unknown';

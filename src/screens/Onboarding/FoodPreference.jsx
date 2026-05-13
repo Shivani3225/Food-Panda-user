@@ -120,18 +120,6 @@ export default function FoodPreferences({ route }) {
         activeOpacity={0.9}
         style={[styles.button, { bottom: buttonBottom }]}
         onPress={() => {
-          if (selected.length === 0) {
-            Toast.show({
-              type: 'error',
-              text1: t('food_preferences.select_error_title', 'Select Preferences'),
-              text2: t('food_preferences.select_error_message', 'Please select at least one food preference'),
-              position: 'top',
-              visibilityTime: 2000,
-              autoHide: true,
-            });
-            return;
-          }
-
           Toast.show({
             type: 'topSuccess',
             text1: t('food_preferences.saved_title', 'Preferences Saved'),

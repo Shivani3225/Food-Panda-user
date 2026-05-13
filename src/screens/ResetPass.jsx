@@ -91,7 +91,7 @@ const ResetPassword = () => {
           <LogoIcon width={130} height={65} style={styles.logo} />
 
           {/* Title */}
-          <Text style={styles.title}>{t('reset_password.title', 'Reset Your Password')}</Text>
+          <Text style={styles.title}>{t('reset_password.title', 'Create Password')}</Text>
           <Text style={styles.subtitle}>
             {t('reset_password.subtitle', 'Password must be different from previous one')}
           </Text>

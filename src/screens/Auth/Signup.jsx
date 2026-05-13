@@ -433,15 +433,19 @@ export default function CreateAccountScreen() {
               </Text>
             </Text>
 
-            <Text style={styles.footer}>
-              {t('signup.have_account', 'Already have an account?')}{' '}
-              <Text
-                style={styles.register}
-                onPress={() => navigation.replace('LoginScreen')}
-              >
-                {t('signup.login', 'Login')}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10 }}>
+              <Text style={styles.footer}>
+                {t('signup.have_account', 'Already have an account?')}{' '}
               </Text>
-            </Text>
+              <TouchableOpacity 
+                onPress={() => navigation.replace('LoginScreen')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.register}>
+                  {t('signup.login', 'Login')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -527,7 +531,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: wp(6.67),
     paddingTop: hp(11.25),
-    paddingBottom: hp(3),
+    paddingBottom: hp(6),
     zIndex: 1,
   },
 
@@ -659,7 +663,8 @@ const styles = StyleSheet.create({
 
   register: {
     color: '#ed1c24',
-    fontWeight: '600',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 
   // Modal styles

@@ -94,6 +94,20 @@ export default function ContactSupport() {
       },
     ]);
     setInputMessage('');
+
+    // Mock bot response after 1.5 seconds
+    setTimeout(() => {
+      const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\s/g, '');
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: t('support.bot_reply', 'Thank you for contacting us. An agent will be with you shortly.'),
+          type: 'support',
+          time: replyTime,
+        },
+      ]);
+    }, 1500);
   };
 
   return (
@@ -137,7 +151,7 @@ export default function ContactSupport() {
               {messages.map((item, index) => {
                 const isSupport = item.type === 'support';
                 return (
-                  <View key={item.id} style={styles.messageRow}>
+                  <View key={item.id} style={[styles.messageRow, { alignItems: isSupport ? 'flex-start' : 'flex-end' }]}>
                     <View style={[
                       styles.bubble,
                       isSupport ? styles.supportBubble : styles.userBubble
@@ -148,13 +162,13 @@ export default function ContactSupport() {
                       ]}>
                         {item.text}
                       </Text>
+                      <Text style={[
+                        styles.timeText,
+                        isSupport ? styles.supportTime : styles.userTime
+                      ]}>
+                        {item.time}
+                      </Text>
                     </View>
-                    <Text style={[
-                      styles.timeText,
-                      isSupport ? { alignSelf: 'flex-start', marginLeft: 4 } : { alignSelf: 'flex-end', marginRight: 4 }
-                    ]}>
-                      {item.time}
-                    </Text>
                   </View>
                 );
               })}
@@ -226,7 +240,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingVertical: 20,
-    justifyContent: 'flex-end',
   },
 
   dateContainer: {
@@ -261,7 +274,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   userBubble: {
-    backgroundColor: '#000000',
+    backgroundColor: '#E41C26',
     alignSelf: 'flex-end',
     borderBottomRightRadius: 4,
   },
@@ -277,9 +290,15 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 10,
-    color: '#9CA3AF',
     marginTop: 4,
     textTransform: 'uppercase',
+    alignSelf: 'flex-end',
+  },
+  supportTime: {
+    color: '#6B7280',
+  },
+  userTime: {
+    color: '#FFCCCC',
   },
 
   inputBar: {

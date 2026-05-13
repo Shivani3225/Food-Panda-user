@@ -42,7 +42,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: '884532670354-ik8pvdtj2a1abrcco0ukie0annl2j8om.apps.googleusercontent.com',
+      webClientId: '369059791436-v692mmlaa0nisnrcm2ldoj3dii841o6f.apps.googleusercontent.com',
       offlineAccess: true,
     });
   }, []);
@@ -54,14 +54,16 @@ export default function LoginScreen() {
       const { data } = await GoogleSignin.signIn();
 
       if (data?.idToken) {
-        // Call your backend service to authenticate with Google
-        // Example: const result = await socialLogin('google', data.idToken);
         console.log('Google ID Token:', data.idToken);
+        const result = await socialLogin(data.idToken);
+        console.log('Social login result:', result.data);
+
+        const user = result.data?.user || result.data?.data?.user;
 
         Toast.show({
           type: 'topSuccess',
           text1: t('login.success_title', 'Login Successful'),
-          text2: `Welcome ${data.user.name}`,
+          text2: `Welcome ${user?.name || data.user.name}`,
         });
         navigation.replace('MainTabs');
       }

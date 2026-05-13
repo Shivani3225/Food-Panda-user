@@ -486,7 +486,7 @@ export default function AddressFormScreen() {
                         isSelected && styles.tagTextActive,
                       ]}
                     >
-                      {type}
+                      {type === `+ ${t('address_form.add_new', 'Add New')}` && selectedLabel === 'other' && customLabel ? customLabel : type}
                     </Text>
                   </TouchableOpacity>
                 );

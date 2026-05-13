@@ -300,6 +300,9 @@ export default function OrderDetailsScreen() {
     getLocalizedText(order?.restaurant?.name, '', currentLang) ||
     getLocalizedText(order?.restaurant?.title, '', currentLang) ||
     getLocalizedText(order?.restaurantName, '', currentLang) ||
+    getLocalizedText(order?.restaurant_name, '', currentLang) ||
+    getLocalizedText(order?.shopName, '', currentLang) ||
+    getLocalizedText(order?.vendorName, '', currentLang) ||
     (typeof order?.restaurant === 'string' ? order.restaurant : '') ||
     getLocalizedText(order?.restaurant?.restaurantName, '', currentLang) ||
     getLocalizedText(orderData?.restaurant?.name, '', currentLang) ||
@@ -317,10 +320,8 @@ export default function OrderDetailsScreen() {
 
   const restaurantTags =
     (Array.isArray(order?.restaurant?.cuisine) ? order.restaurant.cuisine.map(c => getLocalizedText(c, '', currentLang)).join(', ') : '') ||
-    getLocalizedText(order?.restaurant?.category, '', currentLang) ||
     getLocalizedText(order?.restaurantTags, '', currentLang) ||
     (Array.isArray(items[0]?.restaurant?.cuisine) ? items[0].restaurant.cuisine.map(c => getLocalizedText(c, '', currentLang)).join(', ') : '') ||
-    getLocalizedText(items[0]?.restaurant?.category, '', currentLang) ||
     t('order_details.default_cuisine', 'Pizza, Italian, Fast Food');
 
   // Async translate agar language English nahi hai

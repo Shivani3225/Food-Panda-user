@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeStack from './HomeStack';
 import OrdersStack from './OrdersStack';
@@ -26,8 +27,9 @@ const TAB_ICONS = [HomeIcon, OrdersIcon, SearchIcon, UserIcon];
 
 // Fully custom tab bar — red top border only on the active tab
 function CustomTabBar({ state, descriptors, navigation }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: insets.bottom, height: 60 + insets.bottom }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;

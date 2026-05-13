@@ -9,6 +9,7 @@ export const AUTH_ROUTES = {
   forgotPasswordResendOTP: '/api/auth/forgot-password/resend-otp',
   resetPassword: '/api/auth/reset-password',
   logout: '/api/auth/logout',
+  googleLogin: '/api/auth/google',
 };
 
 export const RESTAURANT_ROUTES = {

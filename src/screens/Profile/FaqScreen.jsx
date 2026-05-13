@@ -18,37 +18,37 @@ const getFaqData = (t) => [
   {
     id: '1',
     title: t('faq.place_order_title', 'How do I place an order?'),
-    open: true,
+    open: false,
     desc: t('faq.place_order_desc', 'You can browse the menu, add items to your cart, and proceed to checkout. Select your location and preferred payment method to confirm the order.'),
   },
   {
     id: '2',
     title: t('faq.track_order_title', 'How can I track my order?'),
-    open: true,
+    open: false,
     desc: t('faq.track_order_desc', 'After placing your order, go to the Orders section to view real-time updates on your delivery status and estimated arrival time.'),
   },
   {
     id: '3',
     title: t('faq.cancel_order_title', 'Can I change or cancel my order after placing it?'),
-    open: true,
+    open: false,
     desc: t('faq.cancel_order_desc', 'Order changes or cancellations depend on the restaurant’s policy and the order status. Please contact customer support as soon as possible for assistance.'),
   },
   {
     id: '4',
     title: t('faq.apply_coupon_title', 'How do I apply a coupon code?'),
-    open: true,
+    open: false,
     desc: t('faq.apply_coupon_desc', 'You can enter your coupon code at checkout in the promo code section before completing your payment.'),
   },
   {
     id: '5',
     title: t('faq.track_order2_title', 'How can I track my order?'),
-    open: true,
+    open: false,
     desc: t('faq.track_order2_desc', 'Track your order in the Orders section. You will see updates on preparation, pickup, and delivery in real time.'),
   },
   {
     id: '6',
     title: t('faq.order_status_title', 'How can I check my order status?'),
-    open: true,
+    open: false,
     desc: t('faq.order_status_desc', 'You can always check the status of your order in the Orders tab. Notifications will also keep you updated.'),
   },
 ];

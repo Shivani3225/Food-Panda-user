@@ -186,7 +186,7 @@ const ProfileScreen = () => {
 
   const validateMobileNumber = (number, country) => {
     if (!country || !number) return false;
-    
+
     // Length check
     const isLengthValid = number.length >= country.minLength && number.length <= country.maxLength;
     if (!isLengthValid) {
@@ -430,21 +430,6 @@ const ProfileScreen = () => {
                   </View>
                   <Text style={styles.hintText}>{selectedCountry.country} ({selectedCountry.maxLength} digits)</Text>
                 </View>
-
-                <View style={styles.languageContainer}>
-                  <Text style={styles.languageLabel}>{t('profile.language', 'Language')}</Text>
-                  <View style={styles.languageButtons}>
-                    <TouchableOpacity style={[styles.languageButton, language === 'en' && styles.languageButtonActive]} onPress={() => setLanguage('en')}>
-                      <Text style={[styles.languageButtonText, language === 'en' && styles.languageButtonTextActive]}>{t('profile.languages.english', 'English')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.languageButton, language === 'de' && styles.languageButtonActive]} onPress={() => setLanguage('de')}>
-                      <Text style={[styles.languageButtonText, language === 'de' && styles.languageButtonTextActive]}>{t('profile.languages.german', 'German')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.languageButton, language === 'ar' && styles.languageButtonActive]} onPress={() => setLanguage('ar')}>
-                      <Text style={[styles.languageButtonText, language === 'ar' && styles.languageButtonTextActive]}>{t('profile.languages.arabic', 'Arabic')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
               </View>
             </>
           )}
@@ -499,13 +484,7 @@ const styles = StyleSheet.create({
   mobileInput: { flex: 1, fontSize: 14, color: '#000', paddingHorizontal: 14, paddingVertical: 14 },
   nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   hintText: { fontSize: 11, color: '#999', marginTop: 4, marginLeft: 2 },
-  languageContainer: { marginTop: 20 },
-  languageLabel: { fontSize: 14, color: '#666666', marginBottom: 12, fontWeight: '500' },
-  languageButtons: { flexDirection: 'row', gap: 10 },
-  languageButton: { flex: 1, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#E0E0E0', backgroundColor: '#FAFAFA', justifyContent: 'center', alignItems: 'center' },
-  languageButtonActive: { backgroundColor: '#ed1c24', borderColor: '#ed1c24' },
-  languageButtonText: { fontSize: 14, color: '#666666', fontWeight: '500' },
-  languageButtonTextActive: { color: '#FFFFFF', fontWeight: '600' },
+
   updateButton: { height: 50, backgroundColor: '#ed1c24', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginHorizontal: 20, marginBottom: 20 },
   updateButtonDisabled: { backgroundColor: '#CCCCCC' },
   updateButtonText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },

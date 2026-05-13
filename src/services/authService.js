@@ -137,6 +137,18 @@ export const resetPassword = async ({ resetToken, newPassword }) => {
   return response?.data ?? {};
 };
 
+export const socialLogin = async (idToken) => {
+  const response = await apiClient.post(AUTH_ROUTES.googleLogin, { idToken });
+  const data = response?.data ?? {};
+  const token = data?.token || data?.accessToken || data?.data?.token;
+  const user = data?.user || data?.data?.user;
+
+  if (token || user) {
+    await saveAuth({ token, user });
+  }
+  return response;
+};
+
 export const logoutApi = async () => {
   const response = await apiClient.post(AUTH_ROUTES.logout);
   return response?.data ?? {};

@@ -9,6 +9,7 @@ import {
 import { Heart, Star } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTranslatedText, useTranslatedArray } from '../../hooks/useTranslatedData';
+import { BASE_URL } from '../../config/api';
 import { hp, wp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES as FONT } from '../../theme/typography';
@@ -38,9 +39,10 @@ export const RestaurantListCard = memo(
       if (!img) return fallbackImage;
       if (typeof img === 'string') {
         const trimmed = img.trim();
-        if (trimmed === '' || trimmed.includes('/uploads/')) return fallbackImage;
+        if (trimmed === '') return fallbackImage;
         if (trimmed.startsWith('http')) return { uri: trimmed };
-        return fallbackImage;
+        if (trimmed.startsWith('/')) return { uri: `${BASE_URL}${trimmed}` };
+        return { uri: `${BASE_URL}/${trimmed}` };
       }
       return img; // Already a source object or require
     };
@@ -60,9 +62,7 @@ export const RestaurantListCard = memo(
     const distanceText = item?.distance || null;
 
     // ✅ Time - DIRECT STRING (no translation to avoid duplication)
-    const timeText = item?.deliveryTime
-      ? item.deliveryTime
-      : '20-30 min';
+    const timeText = item?.deliveryTime || '';
 
     // ✅ Rating - formatted to 1 decimal place
     const ratingValue = formatRating(getRatingAverage(item));
@@ -88,6 +88,10 @@ export const RestaurantListCard = memo(
               setImgSrc(fallbackImage);
             }}
           />
+          {/* Offer Tag */}
+          <View style={styles.offerTag}>
+            <Text style={styles.offerText}>{item.offer || 'Flat 20% OFF'}</Text>
+          </View>
           <TouchableOpacity
             style={styles.listFavBtn}
             activeOpacity={0.8}
@@ -119,8 +123,12 @@ export const RestaurantListCard = memo(
             </Text>
             <View style={styles.listRatingRow}>
               <Star size={14} color="#F5A623" fill="#F5A623" />
-              <Text style={styles.listRatingValue}>{ratingValue}</Text>
-              <Text style={styles.listRatingCount}>({formattedRatingCount})</Text>
+              <Text style={styles.listRatingValue}>
+                {ratingValue === '0.0' ? t('common.new', 'New') : ratingValue}
+              </Text>
+              {ratingValue !== '0.0' && (
+                <Text style={styles.listRatingCount}>({formattedRatingCount})</Text>
+              )}
             </View>
           </View>
 
@@ -128,9 +136,11 @@ export const RestaurantListCard = memo(
             {cuisineText}
           </Text>
 
-          <Text style={styles.listSubMeta} numberOfLines={1}>
-            {timeText}
-          </Text>
+          {timeText ? (
+            <Text style={styles.listSubMeta} numberOfLines={1}>
+              {timeText}
+            </Text>
+          ) : null}
 
           <View style={styles.listBestSellerPill}>
             <Text style={styles.listBestSellerText} numberOfLines={1}>
@@ -279,6 +289,25 @@ const styles = StyleSheet.create({
     height: hp(19.375),
     borderTopLeftRadius: scale(18),
     borderTopRightRadius: scale(18),
+  },
+  offerTag: {
+    position: 'absolute',
+    top: hp(1.25),
+    left: wp(2.78),
+    backgroundColor: '#E23744',
+    paddingHorizontal: wp(2.78),
+    paddingVertical: hp(0.5),
+    borderRadius: scale(6),
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: scale(4),
+    elevation: 3,
+    zIndex: 10,
+  },
+  offerText: {
+    color: '#FFFFFF',
+    fontSize: FONT.xs - scale(1),
+    fontWeight: 'bold',
   },
   listFavBtn: {
     position: 'absolute',

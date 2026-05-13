@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable, TouchableOpacity, FlatList, Dimensions, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -67,6 +67,7 @@ export default function EasyOrderingScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <FlatList
         ref={flatListRef}
         data={ONBOARDING_DATA}

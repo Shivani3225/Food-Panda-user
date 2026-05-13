@@ -93,10 +93,6 @@ export default function HomeScreen() {
 
     const trimmed = String(img).trim();
 
-    // Force local image if path contains '/uploads/' because backend is currently broken (404)
-    if (trimmed.includes('/uploads/')) {
-      return localPlaceholder;
-    }
 
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return { uri: trimmed };
@@ -895,7 +891,7 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-              <View style={{ height: hp(5) }} />
+              <View style={{ height: hp(10) }} />
             </>
           )}
         </ScrollView>

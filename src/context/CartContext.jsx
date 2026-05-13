@@ -239,34 +239,22 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      console.log('🧪 CartContext: Step 1 - Removing old item ID:', oldId);
-      await removeItemFromCart(oldId);
-      console.log('🧪 CartContext: Step 1 - Success. Waiting 300ms...');
+      console.log('🧪 CartContext: Removing old item:', oldId);
+      await removeFromCart(oldId);
       
-      // Small delay to ensure backend consistency
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      console.log('🧪 CartContext: Step 2 - Adding new item configuration:', JSON.stringify(newItem));
-      const result = await addItemToCart(newItem);
-      console.log('🧪 CartContext: Step 2 - Response:', JSON.stringify(result));
-      
-      console.log('🧪 CartContext: Step 3 - Fetching fresh cart state');
-      await fetchCart();
+      console.log('🧪 CartContext: Adding new item:', newItem);
+      const result = await addToCart(newItem);
       
       return result;
     } catch (error) {
-      console.error('❌ CartContext: updateCartItem failed at some step:', error);
-      if (error?.response) {
-        console.error('   Backend Error Data:', JSON.stringify(error.response.data, null, 2));
-        console.error('   Backend Error Status:', error.response.status);
-      }
+      console.error('❌ CartContext: updateCartItem failed:', error);
       await fetchCart();
       const errorMessage = error?.response?.data?.message || error.message || 'Update failed';
       return { error: errorMessage };
     } finally {
       setLoading(false);
     }
-  }, [fetchCart]);
+  }, [removeFromCart, addToCart, fetchCart]);
 
   const addToCart = useCallback(async (rawItem) => {
     try {

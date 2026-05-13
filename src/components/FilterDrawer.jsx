@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { wp, hp } from '../utils/responsive';
 import { scale } from '../utils/scale';
-import { Star } from 'lucide-react-native';
+import { Star, ArrowLeft } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -226,25 +226,12 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       >
         <View style={styles.headerRow}>
           <Pressable onPress={onClose} style={styles.headerBack}>
-            <Image 
-              source={require('../assets/icons/Backarrow.png')} 
-              style={styles.backIcon} 
-            />
+            <ArrowLeft size={24} color="#111111" strokeWidth={3} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('filter.filter', 'Filter')}</Text>
           <Pressable onPress={handleReset} hitSlop={10}>
             <Text style={styles.headerReset}>{t('filter.reset', 'Reset')}</Text>
           </Pressable>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <TextInput
-            placeholder={t('filter.search_placeholder', 'Search (e.g., pizza, burger)')}
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={styles.searchInput}
-          />
         </View>
 
         <ScrollView
@@ -382,7 +369,13 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                 return (
                   <Pressable
                     key={option.id}
-                    onPress={() => setFoodPreference(isActive ? null : option.id)}
+                    onPress={() => {
+                      const nextValue = isActive ? null : option.id;
+                      setFoodPreference(nextValue);
+                      if (nextValue === 'non_veg') {
+                        setAdditionalFilters(prev => prev.filter(f => f !== 'pure_veg'));
+                      }
+                    }}
                     style={[styles.chip, isActive && styles.chipActive]}
                   >
                     <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
@@ -408,6 +401,9 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                         setAdditionalFilters(additionalFilters.filter(f => f !== option.id));
                       } else {
                         setAdditionalFilters([...additionalFilters, option.id]);
+                        if (option.id === 'pure_veg' && foodPreference === 'non_veg') {
+                          setFoodPreference(null);
+                        }
                       }
                     }}
                     style={[styles.chip, isActive && styles.chipActive]}
@@ -453,43 +449,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
             </View>
           </View>
 
-          {/* Price Range (Kept as requested or can be integrated) */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t('filter.price_range', 'PRICE RANGE')}</Text>
-            <View style={styles.sliderContainer}>
-              <View>
-                <Text style={styles.sliderLabel}>{t('filter.min_price', 'Min Price')}</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={MIN_PRICE_RANGE}
-                  maximumValue={maxPrice - 100}
-                  value={minPrice}
-                  onValueChange={value => setMinPrice(Math.round(value))}
-                  step={50}
-                  minimumTrackTintColor="#ed1c24"
-                  maximumTrackTintColor="#ccc"
-                  thumbTintColor="#ed1c24"
-                />
-                <Text style={styles.sliderValueText}>{currencySymbol}{minPrice}</Text>
-              </View>
 
-              <View>
-                <Text style={styles.sliderLabel}>{t('filter.max_price', 'Max Price')}</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={minPrice + 100}
-                  maximumValue={MAX_PRICE_RANGE}
-                  value={maxPrice}
-                  onValueChange={value => setMaxPrice(Math.round(value))}
-                  step={50}
-                  minimumTrackTintColor="#ed1c24"
-                  maximumTrackTintColor="#ccc"
-                  thumbTintColor="#ed1c24"
-                />
-                <Text style={styles.sliderValueText}>{currencySymbol}{maxPrice}</Text>
-              </View>
-            </View>
-          </View>
 
           <Pressable style={styles.searchBtn} onPress={handleApply}>
             <Text style={styles.searchBtnText}>{t('filter.search', 'Search')}</Text>
@@ -549,9 +509,9 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
   headerReset: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
+    color: '#ed1c24',
   },
   searchContainer: {
     paddingHorizontal: 16,

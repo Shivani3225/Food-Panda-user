@@ -56,14 +56,31 @@ export default function PaymentSettingScreen() {
       try {
         const cards = await AsyncStorage.getItem('saved_cards');
         const upis = await AsyncStorage.getItem('saved_upis');
-        if (cards) setSavedCards(JSON.parse(cards));
-        if (upis) setSavedUpi(JSON.parse(upis));
+        
+        if (cards) {
+          const parsedCards = JSON.parse(cards);
+          // Keep default cards and append saved ones
+          setSavedCards([
+            { id: '1', title: t('payment.credit_card', 'Credit Card'), type: 'credit', isDefault: true },
+            { id: '2', title: t('payment.debit_card', 'Debit Card'), type: 'debit', isDefault: true },
+            ...parsedCards.filter(c => !c.isDefault)
+          ]);
+        }
+        
+        if (upis) {
+          const parsedUpis = JSON.parse(upis);
+          setSavedUpi([
+            { id: 'u1', title: t('payment.google_pay', 'Google Pay UPI'), icon: require('../../assets/icons/googlepay.png') },
+            { id: 'u2', title: t('payment.phonepe', 'PhonePe UPI'), icon: require('../../assets/icons/paypal.png') },
+            ...parsedUpis.filter(u => u.id !== 'u1' && u.id !== 'u2')
+          ]);
+        }
       } catch (e) {
         console.error('Failed to load payment data', e);
       }
     };
     loadData();
-  }, []);
+  }, [t]);
 
   const updateForm = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -82,19 +99,20 @@ export default function PaymentSettingScreen() {
       setSavedUpi(updated);
       await AsyncStorage.setItem('saved_upis', JSON.stringify(updated));
     } else {
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
       if (!holderName.trim()) {
         Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.enter_holder_name', 'Enter card holder name') });
         return;
       }
-      if (cardNumber.length < 16) {
+      if (cleanCardNumber.length < 16) {
         Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_card', 'Card number must be 16 digits') });
         return;
       }
 
       let sum = 0;
       let shouldDouble = false;
-      for (let i = cardNumber.length - 1; i >= 0; i--) {
-        let digit = parseInt(cardNumber.charAt(i), 10);
+      for (let i = cleanCardNumber.length - 1; i >= 0; i--) {
+        let digit = parseInt(cleanCardNumber.charAt(i), 10);
         if (shouldDouble) {
           if ((digit *= 2) > 9) digit -= 9;
         }
@@ -121,11 +139,13 @@ export default function PaymentSettingScreen() {
         return;
       }
 
-      const masked = `**** **** **** ${cardNumber.slice(-4)}`;
+      const masked = `**** **** **** ${cleanCardNumber.slice(-4)}`;
       const newItem = { id: Date.now().toString(), title: masked, type: selectedType };
       const updated = [...savedCards, newItem];
       setSavedCards(updated);
-      await AsyncStorage.setItem('saved_cards', JSON.stringify(updated));
+      // Save only non-default cards to storage
+      const cardsToSave = updated.filter(c => !c.isDefault);
+      await AsyncStorage.setItem('saved_cards', JSON.stringify(cardsToSave));
     }
 
     Toast.show({
@@ -162,6 +182,11 @@ export default function PaymentSettingScreen() {
         }
       } catch (err) {
         console.error('An error occurred', err);
+        Toast.show({
+          type: 'error',
+          text1: t('common.error', 'Error'),
+          text2: t('payment.upi_error', 'Failed to open UPI app'),
+        });
       } finally {
         setLoading(false);
       }
@@ -187,11 +212,16 @@ export default function PaymentSettingScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backBtn}
@@ -349,6 +379,7 @@ export default function PaymentSettingScreen() {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Loading Overlay */}
       {loading && (

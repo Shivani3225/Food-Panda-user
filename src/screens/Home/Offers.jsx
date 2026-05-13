@@ -131,44 +131,49 @@ export default function Offers() {
         ) : (
           list.map(item => (
             <View key={item.id} style={styles.card}>
-              <View style={styles.cardLeft}>
-                <Text style={styles.cardTitle}>
-                  {t(item.titleKey, item.title)}
-                </Text>
-                <Text style={styles.amountText}>
-                  {item.amount.toFixed(2)} {currencySymbol}
-                </Text>
-
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaText}>
-                    {t('offers.min_spend', 'Min spend')} {item.minSpend.toFixed(2)} {currencySymbol}
+              <View style={styles.cardContent}>
+                <View style={styles.cardLeft}>
+                  <Text style={styles.cardTitle}>
+                    {t(item.titleKey, item.title)}
                   </Text>
-                  <Text style={styles.metaDot}>•</Text>
-                  <Text style={styles.metaText}>
-                    {t('offers.use_by', 'Use by')} {t(item.expiresKey, item.expires)}
+                  <Text style={styles.amountText}>
+                    {item.amount.toFixed(2)} {currencySymbol}
                   </Text>
-                </View>
 
-                <View style={styles.codeRow}>
-                  <Text style={styles.codeText}>{item.id}</Text>
-                  <TouchableOpacity 
-                    activeOpacity={0.9} 
-                    style={styles.useBtn}
-                    onPress={() => handleUseNow(item)}
-                  >
-                    <Text style={styles.useBtnText}>
-                      {t('offers.use_now', 'Use Now')}
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaText}>
+                      {t('offers.min_spend', 'Min spend')} {item.minSpend.toFixed(2)} {currencySymbol}
                     </Text>
-                  </TouchableOpacity>
+                    <Text style={styles.metaDot}>•</Text>
+                    <Text style={styles.metaText}>
+                      {t('offers.use_by', 'Use by')} {t(item.expiresKey, item.expires)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.codeRow}>
+                    <Text style={styles.codeText}>{item.id}</Text>
+                    <TouchableOpacity 
+                      activeOpacity={0.9} 
+                      style={styles.useBtn}
+                      onPress={() => handleUseNow(item)}
+                    >
+                      <Text style={styles.useBtnText}>
+                        {t('offers.use_now', 'Use Now')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <Text style={styles.terms}>
-                  {t(item.termsKey, item.terms)}
-                </Text>
+                <View style={styles.cardRight}>
+                  <Text style={styles.percent}>%</Text>
+                </View>
               </View>
 
-              <View style={styles.cardRight}>
-                <Text style={styles.percent}>%</Text>
+              {/* Light Blue Terms Banner */}
+              <View style={styles.termsBanner}>
+                <Text style={styles.termsText}>
+                  {t('offers.terms_header', 'Terms:')} {t(item.termsKey, item.terms)}
+                </Text>
               </View>
             </View>
           ))
@@ -234,9 +239,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F0F0F0',
     marginBottom: 12,
-    padding: 12,
-    flexDirection: 'row',
     overflow: 'hidden',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 12,
   },
   cardLeft: { flex: 1, paddingRight: 8 },
   cardTitle: { fontSize: 14, color: '#222', fontWeight: '700' },
@@ -269,7 +276,19 @@ const styles = StyleSheet.create({
   },
   useBtnText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
 
-  terms: { marginTop: 8, fontSize: 9, color: '#9B9B9B' },
+  termsBanner: {
+    backgroundColor: '#E3F2FD', // Light Blue
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#BBDEFB',
+  },
+  termsText: {
+    fontSize: 10,
+    color: '#1976D2', // Darker Blue
+    fontWeight: '500',
+    lineHeight: 14,
+  },
 
   cardRight: {
     width: 52,

@@ -67,7 +67,7 @@ export default function FilterBottomSheet({
     initialFilters?.deliveryTime || null,
   );
   const [cuisines, setCuisines] = useState(initialFilters?.cuisines || []);
-  const [dietary, setDietary] = useState(initialFilters?.dietary || null);
+  const [dietary, setDietary] = useState(initialFilters?.dietary || []);
   const [price, setPrice] = useState(
     initialFilters?.price || { min: PRICE_MIN, max: PRICE_MAX },
   );
@@ -114,7 +114,7 @@ export default function FilterBottomSheet({
     setRating(null);
     setDeliveryTime(null);
     setCuisines([]);
-    setDietary(null);
+    setDietary([]);
     setPrice({ min: PRICE_MIN, max: PRICE_MAX });
   };
 
@@ -123,6 +123,14 @@ export default function FilterBottomSheet({
       prev.includes(cuisine)
         ? prev.filter(c => c !== cuisine)
         : [...prev, cuisine],
+    );
+  };
+
+  const toggleDietary = option => {
+    setDietary(prev =>
+      prev.includes(option)
+        ? prev.filter(o => o !== option)
+        : [...prev, option],
     );
   };
 
@@ -150,7 +158,7 @@ export default function FilterBottomSheet({
               <Text style={styles.title}>{t('filter.title', 'Filters')}</Text>
               <View style={styles.headerActions}>
                 <TouchableOpacity onPress={clearAll}>
-                  <Text style={styles.clearAll}>{t('filter.clear_all', 'Clear All')}</Text>
+                  <Text style={styles.clearAll}>{t('filter.reset', 'Reset')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={onClose}>
                   <Text style={styles.close}>✕</Text>
@@ -208,8 +216,8 @@ export default function FilterBottomSheet({
                 {DIETARY.map(option => (
                   <TouchableOpacity
                     key={option}
-                    style={[styles.pill, dietary === option && styles.pillSelected]}
-                    onPress={() => setDietary(option)}
+                    style={[styles.pill, dietary.includes(option) && styles.pillSelected]}
+                    onPress={() => toggleDietary(option)}
                   >
                     <Text style={styles.pillText}>{option}</Text>
                   </TouchableOpacity>
@@ -311,7 +319,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 80,
+    paddingBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,
@@ -383,10 +391,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   bottomBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     backgroundColor: '#fff',
     padding: 16,
     borderTopWidth: 1,

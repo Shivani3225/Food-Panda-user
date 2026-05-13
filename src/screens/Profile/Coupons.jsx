@@ -147,11 +147,11 @@ export default function Coupons() {
             <View style={styles.cardContent}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.amountText}>{item.amount.toFixed(2)} {currencySymbol}</Text>
+                <Text style={styles.amountText}>{currencySymbol}{item.amount.toFixed(2)}</Text>
 
                 <View style={styles.metaRow}>
                   <Text style={styles.metaText}>
-                    {t('coupons.min_spend', 'Min spend')} {item.minSpend.toFixed(2)} {currencySymbol}
+                    {t('coupons.min_spend', 'Min spend')} {currencySymbol}{item.minSpend.toFixed(2)}
                   </Text>
                   <Text style={styles.metaDot}>•</Text>
                   <Text style={styles.metaText}>

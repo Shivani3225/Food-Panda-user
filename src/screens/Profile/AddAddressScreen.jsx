@@ -99,7 +99,7 @@ export default function AddAddressScreen() {
       } finally {
         setIsFetchingAddress(false);
       }
-    }, 500);
+    }, 200);
   };
 
   const handleSearch = async (text) => {
@@ -189,7 +189,8 @@ export default function AddAddressScreen() {
     }
   };
 
-  const handleRegionChange = () => {
+  const handleRegionChange = (region) => {
+    setMapRegion(region);
     if (!isMoving) {
       setIsMoving(true);
     }

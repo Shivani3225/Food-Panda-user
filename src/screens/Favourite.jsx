@@ -137,6 +137,7 @@ const DishCard = memo(({
   item,
   onPress,
   onToggleFavourite,
+  onAddToCart,
   t,
   currencySymbol
 }) => {
@@ -178,7 +179,7 @@ const DishCard = memo(({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.addDishBtn} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.addDishBtn} activeOpacity={0.7} onPress={onAddToCart}>
         <Plus size={20} color="#000" />
       </TouchableOpacity>
     </TouchableOpacity>
@@ -193,6 +194,8 @@ export default function Favourite() {
 
   const { favourites, favouritesCount, toggleFavourite, isLoading } =
     useContext(FavouritesContext);
+    
+  const { addToCart } = useContext(CartContext);
 
   const { restaurants, products } = useMemo(() => {
     const res = [];
@@ -286,6 +289,7 @@ export default function Favourite() {
                   t={t}
                   currencySymbol={currencySymbol}
                   onToggleFavourite={() => toggleFavourite(p)}
+                  onAddToCart={() => addToCart(p)}
                   onPress={() => {
                     navigation.navigate('RestaurantDetail', {
                       restaurant: {

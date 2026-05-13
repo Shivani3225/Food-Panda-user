@@ -652,12 +652,8 @@ export default function AddToCartDrawer({
           <Pressable style={StyleSheet.absoluteFill} onPress={requestClose} />
         </Animated.View>
 
-        <Pressable style={styles.closeFab} onPress={requestClose}>
-          <Text style={styles.closeFabText}>×</Text>
-        </Pressable>
-
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1, justifyContent: 'flex-end' }}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
@@ -673,6 +669,10 @@ export default function AddToCartDrawer({
             <View style={styles.handleWrap} {...panResponder.panHandlers}>
               <View style={styles.handle} />
             </View>
+
+            <Pressable style={styles.closeButtonNew} onPress={requestClose}>
+              <Text style={styles.closeButtonTextNew}>✕</Text>
+            </Pressable>
 
             <ScrollView
               ref={scrollViewRef}
@@ -907,23 +907,22 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  closeFab: {
+  closeButtonNew: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 58 : 95,
-    alignSelf: 'center',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.1)',
     justifyContent: 'center',
-    zIndex: 5,
+    alignItems: 'center',
   },
-  closeFabText: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#111111',
-    marginTop: -1,
+  closeButtonTextNew: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '700',
   },
   sheet: {
     backgroundColor: '#FFF',
