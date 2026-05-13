@@ -74,7 +74,7 @@ export const LocationProvider = ({ children }) => {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
-          console.log('📍 [LocationContext] Global Location Obtained:', coords);
+          console.log('📍 [LocationContext] GPS DATA RECEIVED:', JSON.stringify(coords));
           setLocation(coords);
           
           // Fetch human-readable address globally

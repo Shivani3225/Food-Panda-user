@@ -757,7 +757,7 @@ export default function AddToCartDrawer({
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
                     <Text style={styles.sectionTitle}>
-                      {t('cart.add_ons', 'Frequently bought together')}
+                      {t('cart.add_ons', 'Add-Ons')}
                     </Text>
                     <Text style={styles.sectionHint}>({t('common.optional', 'Optional')})</Text>
                   </View>

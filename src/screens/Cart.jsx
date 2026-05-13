@@ -72,9 +72,12 @@ function CartItemRow({ item, onIncrement, onDecrement, onEdit, onDelete, isDelet
           <Text style={styles.itemName} numberOfLines={2}>{translatedName || item?.name}</Text>
           <Text style={styles.itemOptions}>{optionsLine}</Text>
           {item.addOns && item.addOns.length > 0 && (
-            <Text style={styles.itemAddons}>
-              + {item.addOns.map(a => a.label).join(', ')}
-            </Text>
+            <View style={styles.addonsContainer}>
+              <Text style={styles.itemAddonsLabel}>{t('cart.add_ons', 'Add-Ons')}: </Text>
+              <Text style={styles.itemAddons} numberOfLines={1}>
+                {item.addOns.map(a => a.label).join(', ')}
+              </Text>
+            </View>
           )}
           <TouchableOpacity onPress={() => onEdit?.(item)} hitSlop={8}>
             <Text style={styles.itemEdit}>{t('cart.edit', 'Edit')}</Text>
@@ -627,8 +630,10 @@ const styles = StyleSheet.create({
   itemInfo: { flex: 1 },
   itemName: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: '#111', lineHeight: scale(18) },
   itemOptions: { fontSize: FONT_SIZES.xs, color: '#777', marginTop: scale(2) },
-  itemAddons: { fontSize: FONT_SIZES.xs, color: '#E53935', marginTop: scale(2) },
-  itemEdit: { color: '#E53935', fontWeight: '700', fontSize: FONT_SIZES.xs, marginTop: scale(2) },
+  itemAddons: { fontSize: FONT_SIZES.xs, color: '#777', flex: 1 },
+  addonsContainer: { flexDirection: 'row', alignItems: 'center', marginTop: scale(2) },
+  itemAddonsLabel: { fontSize: FONT_SIZES.xs, color: '#E53935', fontWeight: '700' },
+  itemEdit: { color: '#E53935', fontWeight: '700', fontSize: FONT_SIZES.xs, marginTop: scale(4) },
   itemFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

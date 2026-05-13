@@ -63,7 +63,7 @@ export default function HomeScreen() {
   const isInitialLoadDone = useRef(false);
   const [activeTab, setActiveTab] = useState(t('home.restaurants', 'Restaurants'));
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { location: globalLocation, permissionStatus } = useLocation();
+  const { location: globalLocation, address: globalAddress, permissionStatus } = useLocation();
   const [userLocation, setUserLocation] = useState(null);
   const hasLocationPermission = permissionStatus === 'granted';
   const [pageNum, setPageNum] = useState(0);
@@ -273,82 +273,62 @@ export default function HomeScreen() {
   // Fetch home data
   const fetchHomeData = useCallback(async (showLoading = true) => {
     try {
-      // Show loading indicator when showLoading is true
-      if (showLoading) {
-        setIsLoadingRestaurants(true);
+      if (showLoading) setIsLoadingRestaurants(true);
+
+      let finalLat = null;
+      let finalLng = null;
+      let finalCity = null;
+
+      // 1. Check for address passed from AddressSheet via navigation params
+      if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
+        finalLng = selectedAddressParam.location.coordinates[0];
+        finalLat = selectedAddressParam.location.coordinates[1];
+        finalCity = selectedAddressParam.city;
+        console.log('📍 [HomePage] Using Selected Address from Params:', { finalLat, finalLng, finalCity });
+      } 
+      // 2. Fallback to Global GPS location from Context
+      else if (globalLocation?.latitude && globalLocation?.longitude) {
+        finalLat = globalLocation.latitude;
+        finalLng = globalLocation.longitude;
+        finalCity = globalAddress?.city || null;
+        console.log('📍 [HomePage] Using Global GPS Location:', { finalLat, finalLng, finalCity });
       }
-
-      let lat = null;
-      let lng = null;
-      let city = null;
-
-      // Read stored chosen address if no param
-      let chosenAddr = null;
-      if (!selectedAddressParam) {
+      // 3. Last resort: Check AsyncStorage for last chosen address
+      else {
         try {
           const rawChosen = await AsyncStorage.getItem('chosen_address');
-          if (rawChosen) chosenAddr = JSON.parse(rawChosen);
+          if (rawChosen) {
+            const chosen = JSON.parse(rawChosen);
+            if (chosen.location?.coordinates) {
+              finalLng = chosen.location.coordinates[0];
+              finalLat = chosen.location.coordinates[1];
+              finalCity = chosen.city;
+              console.log('📍 [HomePage] Using Persistent Chosen Address:', { finalLat, finalLng, finalCity });
+            }
+          }
         } catch (e) {
-          console.error('Failed to read chosen_address from AsyncStorage:', e);
+          console.warn('Failed to read chosen_address:', e);
         }
       }
 
-      // Priority 1: Selected address from params
-      if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
-        lng = selectedAddressParam.location.coordinates[0];
-        lat = selectedAddressParam.location.coordinates[1];
-        city = selectedAddressParam.city;
-        console.log('📍 [HomePage] Using selected address coordinates:', lat, lng);
-        
-        // Save it for persistence
+      // If we still don't have a city name but have coords, try reverse geocoding
+      if (!finalCity && finalLat && finalLng) {
         try {
-          await AsyncStorage.setItem('chosen_address', JSON.stringify(selectedAddressParam));
+          const addrData = await getAddressFromCoordinates(finalLat, finalLng);
+          finalCity = addrData.city;
         } catch (e) {
-          console.error('Failed to save chosen_address to AsyncStorage:', e);
-        }
-      } 
-      // Priority 1.5: Use stored chosen address
-      else if (chosenAddr && chosenAddr.location?.coordinates) {
-        lng = chosenAddr.location.coordinates[0];
-        lat = chosenAddr.location.coordinates[1];
-        city = chosenAddr.city;
-        console.log('📍 [HomePage] Using stored chosen address coordinates:', lat, lng);
-      }
-      // Priority 2: Use default saved address if available
-      else if (userData?.savedAddresses?.length > 0) {
-        const defAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
-        if (defAddr && defAddr.location?.coordinates) {
-          lng = defAddr.location.coordinates[0];
-          lat = defAddr.location.coordinates[1];
-          city = defAddr.city;
-          console.log('📍 [HomePage] Using saved address coordinates:', lat, lng);
+          console.warn('Geocoding failed for fetchHomeData');
         }
       }
 
-      // Priority 3: Fallback to GPS if no address selected/saved
-      if ((lat === null || lng === null) && globalLocation) {
-        lat = globalLocation.latitude;
-        lng = globalLocation.longitude;
-        console.log('📍 [HomePage] Using GPS coordinates:', lat, lng);
+      // Update local state for map/UI
+      if (finalLat && finalLng) {
+        setUserLocation({ latitude: finalLat, longitude: finalLng });
       }
 
-      if (lat !== null && lng !== null) {
-        setUserLocation({ latitude: lat, longitude: lng });
-      }
-
-      // If no city found from address, and we have GPS, reverse geocode it
-      if (!city && lat !== null && lng !== null) {
-        try {
-          const addrData = await getAddressFromCoordinates(lat, lng);
-          city = addrData.city;
-        } catch (e) {
-          console.error('Failed to geocode for fetchHomeData:', e);
-        }
-      }
-
-      console.log(`🏠 [HomePage] Fetching data with city: ${city}`);
-      const data = await getHomeData({ lat, lng, city });
-
+      console.log(`🚀 [API-CALL] getHomeData -> Lat: ${finalLat}, Lng: ${finalLng}, City: ${finalCity}`);
+      
+      const data = await getHomeData({ lat: finalLat, lng: finalLng, city: finalCity });
       processHomeData(data);
       isInitialLoadDone.current = true;
     } catch (error) {
@@ -356,7 +336,7 @@ export default function HomeScreen() {
     } finally {
       setIsLoadingRestaurants(false);
     }
-  }, [globalLocation, processHomeData, selectedAddressParam, userData]);
+  }, [globalLocation, globalAddress, processHomeData, selectedAddressParam, t]);
 
   const getAddressUpdatedTime = useCallback((address) => {
     const rawDate = address?.updatedAt || address?.createdAt;
@@ -445,24 +425,26 @@ export default function HomeScreen() {
       let lat = null;
       let lng = null;
 
-      // Priority 1: Selected address from params
+      // Priority 1: Selected address from params (Explicit user action)
       if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
         lng = selectedAddressParam.location.coordinates[0];
         lat = selectedAddressParam.location.coordinates[1];
+        console.log('📍 [HomePage] Priority 1: Selected Param', { lat, lng });
       } 
-      // Priority 2: Use default saved address if available
+      // Priority 2: Current GPS Location (The Real Truth)
+      else if (globalLocation?.latitude && globalLocation?.longitude) {
+        lat = globalLocation.latitude;
+        lng = globalLocation.longitude;
+        console.log('📍 [HomePage] Priority 2: Current GPS', { lat, lng });
+      }
+      // Priority 3: Fallback to saved address ONLY if GPS is missing
       else if (userData?.savedAddresses?.length > 0) {
         const defAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
         if (defAddr && defAddr.location?.coordinates) {
           lng = defAddr.location.coordinates[0];
           lat = defAddr.location.coordinates[1];
+          console.log('📍 [HomePage] Priority 3: Saved Address fallback', { lat, lng });
         }
-      }
-
-      // Priority 3: Fallback to GPS if no address selected/saved
-      if ((lat === null || lng === null) && globalLocation) {
-        lat = globalLocation.latitude;
-        lng = globalLocation.longitude;
       }
 
       const prevLat = prevFetchCoords.current?.lat;

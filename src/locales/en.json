@@ -25,14 +25,75 @@
       "2": "⭐ Customer Favorite",
       "3": "🎉 Most Ordered",
       "4": "💯 Top Rated"
-    }
+    },
+    "delivery": "Delivery",
+    "delivery_time_with_value": "Delivery {{time}}",
+    "free_delivery": "Free Delivery",
+    "min_order": "Min order",
+    "min_order_with_value": "Min order - {{amount}}",
+    "new": "New",
+    "open": "Open",
+    "closed": "Closed",
+    "delivery_free": "Free Delivery",
+    "distance": "Distance",
+    "info": "Restaurant Info",
+    "reviews": "Reviews",
+    "menu": "Menu",
+    "photos": "Photos"
   },
   "cart": {
+    "items_in_cart": "Items in cart: {{count}}",
     "items_in_cart_one": "{{count}} item in cart",
     "items_in_cart_other": "{{count}} items in cart",
-    "items_in_cart": "{{count}} items in cart",
-    "subtotal": "Subtotal: {{subtotal}}",
-    "go_to_cart": "Go to Cart"
+    "subtotal": "Subtotal {{currencySymbol}}{{subtotal}}",
+    "go_to_cart": "Go to Cart",
+    "cart": "Cart",
+    "title": "Cart",
+    "empty_cart": "Your cart is empty",
+    "empty_title": "Your cart is empty",
+    "empty_message": "Add items from a restaurant to get started.",
+    "checkout": "Checkout",
+    "total": "Total",
+    "remove": "Remove",
+    "update": "Update",
+    "add_more": "Add More Items",
+    "add_more_items": "+ Add More Items",
+    "edit": "Edit",
+    "choice_of_variation": "Choice of Variation",
+    "add_ons": "Add-Ons",
+    "additional_request": "Additional Request",
+    "request_placeholder": "Request",
+    "total_price": "Total Price",
+    "total_price_label": "Total Price",
+    "add_to_cart": "Add to Cart",
+    "update_cart": "Update Cart",
+    "add_failed": "Failed to add item to cart",
+    "base": "Base",
+    "variation": "Variation",
+    "view_more": "View {{count}} More",
+    "added_to_cart": "Added to cart",
+    "cart_updated": "Cart updated",
+    "offers": "Offers",
+    "applied": "Applied",
+    "apply": "Apply",
+    "view_all_coupons": "View all Coupons",
+    "bill_details": "Bill Details",
+    "delivery_fee": "Standard Delivery",
+    "tax": "Tax",
+    "service_fee": "Service Fee",
+    "packaging": "Packaging",
+    "small_cart_fee": "Small Cart Fee",
+    "offer_applied": "Offer Applied",
+    "grand_total": "Grand Total",
+    "popular_with_order": "Popular with your Order",
+    "review_order": "Review Order",
+    "estimated_delivery_label": "Estimated Delivery",
+    "standard_delivery": "Standard (20-35 minutes)",
+    "change": "Change",
+    "items_count": "Items Count",
+    "flat_50_offer": "Get flat {{symbol}}50 off on your first order.",
+    "free": "Free",
+    "original": "Original"
   },
   "promo": {
     "1": {
@@ -49,7 +110,10 @@
       "title": "Weekend Special",
       "subtitle": "Buy 1 Get 1 Free",
       "cta": "Grab Deal"
-    }
+    },
+    "seasonal_favorites": "Seasonal favorites are here",
+    "try_something_new": "try something new today !",
+    "explore_now": "Explore Now"
   },
   "categories": {
     "pizza": "Pizza",
@@ -74,7 +138,29 @@
     "close": "Close",
     "error": "Error",
     "success": "Success",
-    "view_all": "View All"
+    "view_all": "View All",
+    "optional": "Optional",
+    "adding": "Adding...",
+    "edit": "Edit",
+    "apply": "Apply",
+    "unknown": "Unknown",
+    "processing": "Processing...",
+    "add": "Add",
+    "loading": "Loading...",
+    "please_wait": "Please wait...",
+    "fetching_data": "Fetching data...",
+    "saving": "Saving...",
+    "uploading": "Uploading...",
+    "back": "Back",
+    "allow": "Allow",
+    "deny": "Deny",
+    "continue": "Continue",
+    "updating": "Updating...",
+    "sending": "Sending...",
+    "verifying": "Verifying...",
+    "resending": "Resending...",
+    "logging_in": "Logging in...",
+    "creating": "Creating..."
   },
   "dropdown": {
     "select_option": "Select an option",
@@ -97,7 +183,19 @@
     "invalid_phone": "Please enter a valid phone number",
     "password_too_short": "Password must be at least 8 characters",
     "password_mismatch": "Passwords do not match",
-    "invalid_name": "Please enter a valid name"
+    "invalid_name": "Please enter a valid name",
+    "password_requirements": "Password must be 6+ chars with 1 uppercase letter and 1 number",
+    "confirm_password_required": "Confirm password is required",
+    "passwords_do_not_match": "Passwords do not match",
+    "email_required": "Email is required",
+    "password_required": "Password is required",
+    "password_min_length": "Password must be at least 6 characters",
+    "first_name_required": "First name is required",
+    "first_name_min": "First name must be at least 2 characters",
+    "last_name_required": "Last name is required",
+    "last_name_min": "Last name must be at least 2 characters",
+    "mobile_required": "Mobile number is required",
+    "invalid_mobile": "Enter a valid 10-digit mobile number"
   },
   "auth": {
     "email": "Email Address",
@@ -181,20 +279,8 @@
     "report_issue": "🚨 Report an Issue",
     "issue_reported_status": "✓ Issue Reported",
     "report_issue_button": "Report Issue",
-    "issue_looked_into": "✓ We'll look into this soon!",
-    "rating_required_title": "Rating Required",
-    "rating_required_message": "Please provide at least one rating before submitting.",
-    "feedback_required_title": "Feedback Required",
-    "feedback_required_message": "Please share your feedback along with the rating.",
-    "thank_you_title": "Thank You! 🎉",
-    "feedback_submitted": "Your feedback has been submitted successfully.",
-    "submission_failed_title": "Submission Failed",
-    "submission_failed": "Failed to submit rating. Please try again.",
-    "issue_required_title": "Issue Type Required",
-    "issue_required_message": "Please select the type of issue you faced.",
     "issue_reported_title": "Issue Reported ✅",
     "issue_reported_message": "We will look into this and get back to you soon.",
-    "issue_report_failed": "Failed to report issue. Please try again.",
     "missing_order_id": "Order ID is missing. Cannot submit rating or report issue."
   },
   "rating": {
@@ -203,19 +289,11 @@
     "fair": "Fair",
     "good": "Good",
     "very_good": "Very Good",
-    "excellent": "Excellent"
-  },
-  "cart": {
-    "items_in_cart": "Items in cart: {{count}}",
-    "subtotal": "Subtotal {{currencySymbol}}{{subtotal}}",
-    "go_to_cart": "Go to Cart",
-    "cart": "Cart",
-    "empty_cart": "Your cart is empty",
-    "checkout": "Checkout",
-    "total": "Total",
-    "remove": "Remove",
-    "update": "Update",
-    "add_more": "Add More Items"
+    "excellent": "Excellent",
+    "restaurant": "Restaurant",
+    "rate_experience": "Rate Your Experience",
+    "thank_you": "Thank you for your rating!",
+    "review_submitted": "Your review has been submitted successfully."
   },
   "search": {
     "placeholder": "Search Dish Name....",
@@ -235,22 +313,6 @@
     "vegetarian": "Vegetarian",
     "spicy": "Spicy",
     "gluten_free": "Gluten Free"
-  },
-  "restaurant": {
-    "delivery": "Delivery",
-    "delivery_time_with_value": "Delivery {{time}}",
-    "free_delivery": "Free Delivery",
-    "min_order": "Min order",
-    "min_order_with_value": "Min order - {{amount}}",
-    "new": "New",
-    "open": "Open",
-    "closed": "Closed",
-    "delivery_free": "Free Delivery",
-    "distance": "Distance",
-    "info": "Restaurant Info",
-    "reviews": "Reviews",
-    "menu": "Menu",
-    "photos": "Photos"
   },
   "reviews": {
     "title": "Fellow foodies say",
@@ -306,32 +368,6 @@
     "location_permission_denied": "Location permission denied",
     "other": "Other"
   },
-  "cart": {
-    "choice_of_variation": "Choice of Variation",
-    "add_ons": "Add-Ons",
-    "additional_request": "Additional Request",
-    "request_placeholder": "Request",
-    "total_price": "Total Price",
-    "add_to_cart": "Add to Cart",
-    "update_cart": "Update Cart",
-    "add_failed": "Failed to add item to cart",
-    "base": "Base",
-    "variation": "Variation",
-    "view_more": "View {{count}} More",
-    "added_to_cart": "Added to cart",
-    "cart_updated": "Cart updated"
-  },
-  "common": {
-    "optional": "Optional",
-    "error": "Error",
-    "adding": "Adding...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "apply": "Apply",
-    "success": "Success"
-  },
   "conflict": {
     "different_restaurant": "Different Restaurant",
     "cart_has_items_from": "Your cart has items from",
@@ -340,19 +376,6 @@
     "continue_current_order": "Continue Current Order",
     "fresh_cart": "Fresh Cart",
     "clear_cart_warning": "Clearing your cart will remove all current items."
-  },
-  "common": {
-    "unknown": "Unknown",
-    "processing": "Processing...",
-    "optional": "Optional",
-    "error": "Error",
-    "adding": "Adding...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "apply": "Apply",
-    "success": "Success"
   },
   "coupon": {
     "currency_symbol": "{{currencySymbol}}",
@@ -390,14 +413,6 @@
     "select_time": "Select Time",
     "asap": "ASAP"
   },
-  "common": {
-    "add": "Add",
-    "cancel": "Cancel",
-    "save": "Save",
-    "edit": "Edit",
-    "delete": "Delete",
-    "apply": "Apply"
-  },
   "filter": {
     "filter": "Filter",
     "reset": "Reset",
@@ -416,14 +431,6 @@
     "search_placeholder": "Search (e.g., pizza, burger)",
     "search_required_title": "Search Required",
     "search_required_message": "Please enter a search query (e.g., pizza, burger, restaurant name)"
-  },
-  "common": {
-    "loading": "Loading...",
-    "please_wait": "Please wait...",
-    "processing": "Processing...",
-    "fetching_data": "Fetching data...",
-    "saving": "Saving...",
-    "uploading": "Uploading..."
   },
   "offline": {
     "no_connection": "No Connection",
@@ -451,17 +458,24 @@
     "resend": "Resend OTP",
     "resend_in": "Resend in {{seconds}}s",
     "get_started": "Get Started",
-    "verify": "Verify"
-  },
-  "common": {
-    "cancel": "Cancel",
-    "loading": "Loading...",
-    "please_wait": "Please wait...",
-    "processing": "Processing...",
-    "save": "Save",
-    "edit": "Edit",
-    "delete": "Delete",
-    "apply": "Apply"
+    "verify": "Verify",
+    "title": "OTP Verification",
+    "description": "An OTP has been sent to your registered mobile number. Please enter it to continue.",
+    "verify_button": "Verify OTP",
+    "did_not_receive": "Didn't receive OTP?",
+    "change_email": "Change Email",
+    "verified_title": "OTP Verified",
+    "verified_success_title": "OTP Verified Successfully",
+    "set_new_password": "Please set your new password",
+    "verification_failed_title": "OTP Verification Failed",
+    "invalid_otp": "Invalid or expired OTP",
+    "mobile_missing_title": "Mobile number missing",
+    "mobile_missing_message": "Please go back and try signup again.",
+    "unable_to_verify": "Unable to verify OTP",
+    "otp_sent_title": "OTP Sent",
+    "otp_sent_message": "Please check your messages",
+    "resend_failed_title": "Resend Failed",
+    "unable_to_resend": "Unable to resend OTP"
   },
   "payment": {
     "title": "Payment Settings",
@@ -474,22 +488,12 @@
     "phonepe": "PhonePe UPI",
     "cash_on_delivery": "Cash on Delivery"
   },
-  "common": {
-    "apply": "Apply",
-    "cancel": "Cancel",
-    "save": "Save",
-    "edit": "Edit",
-    "delete": "Delete"
-  },
   "product": {
     "delivery_time": "Delivery Time",
     "rating": "Rating",
-    "reviews": "reviews"
-  },
-  "common": {
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success"
+    "reviews": "reviews",
+    "add_to_cart": "Add to Cart",
+    "default_name": "Product"
   },
   "reasons": {
     "title": "Reasons",
@@ -501,15 +505,6 @@
     "better_price": "Found better price elsewhere",
     "changed_mind": "Changed my mind",
     "other": "Other reason"
-  },
-  "rating": {
-    "restaurant": "Restaurant",
-    "italian_fast_food": "Pizza, Italian, Fast Food",
-    "add_message": "Add Message",
-    "submit": "Submit",
-    "rate_experience": "Rate Your Experience",
-    "thank_you": "Thank you for your rating!",
-    "review_submitted": "Your review has been submitted successfully."
   },
   "tabs": {
     "home": "Home",
@@ -533,14 +528,6 @@
     "password_updated_title": "Password Updated",
     "password_updated_message": "Your password has been changed"
   },
-  "validation": {
-    "password_requirements": "Password must be 6+ chars with 1 uppercase letter and 1 number",
-    "confirm_password_required": "Confirm password is required",
-    "passwords_do_not_match": "Passwords do not match"
-  },
-  "common": {
-    "updating": "Updating..."
-  },
   "forget_password": {
     "title": "Forgot Password",
     "description": "Enter your registered email and we'll send you a link/OTP to reset your password",
@@ -551,13 +538,6 @@
     "otp_sent_message": "Check your email to continue",
     "otp_failed_title": "Failed to Send OTP",
     "otp_failed_message": "Unable to send OTP"
-  },
-  "validation": {
-    "email_required": "Email is required",
-    "invalid_email": "Enter a valid email"
-  },
-  "common": {
-    "sending": "Sending..."
   },
   "login": {
     "welcome_back": "Welcome Back!",
@@ -578,15 +558,6 @@
     "failed_message": "Invalid credentials",
     "error_title": "Something went wrong",
     "error_message": "Please try again"
-  },
-  "validation": {
-    "email_required": "Email is required",
-    "invalid_email": "Enter a valid email",
-    "password_required": "Password is required",
-    "password_min_length": "Password must be at least 6 characters"
-  },
-  "common": {
-    "logging_in": "Logging in..."
   },
   "signup": {
     "title": "Create Your Account",
@@ -619,48 +590,6 @@
     "failed_title": "Signup Failed",
     "failed_message": "Unable to create account"
   },
-  "validation": {
-    "first_name_required": "First name is required",
-    "first_name_min": "First name must be at least 2 characters",
-    "last_name_required": "Last name is required",
-    "last_name_min": "Last name must be at least 2 characters",
-    "email_required": "Email is required",
-    "invalid_email": "Enter a valid email address",
-    "mobile_required": "Mobile number is required",
-    "invalid_mobile": "Enter a valid 10-digit mobile number",
-    "password_required": "Password is required",
-    "password_requirements": "Password must be 6+ chars with 1 uppercase letter and 1 number",
-    "confirm_password_required": "Confirm password is required",
-    "passwords_do_not_match": "Passwords do not match"
-  },
-  "common": {
-    "creating": "Creating..."
-  },
-  "otp": {
-    "title": "OTP Verification",
-    "description": "An OTP has been sent to your registered mobile number. Please enter it to continue.",
-    "verify_button": "Verify OTP",
-    "did_not_receive": "Didn't receive OTP?",
-    "resend": "Resend",
-    "change_email": "Change Email",
-    "verified_title": "OTP Verified",
-    "verified_success_title": "OTP Verified Successfully",
-    "set_new_password": "Please set your new password",
-    "please_wait": "Please wait...",
-    "verification_failed_title": "OTP Verification Failed",
-    "invalid_otp": "Invalid or expired OTP",
-    "mobile_missing_title": "Mobile number missing",
-    "mobile_missing_message": "Please go back and try signup again.",
-    "unable_to_verify": "Unable to verify OTP",
-    "otp_sent_title": "OTP Sent",
-    "otp_sent_message": "Please check your messages",
-    "resend_failed_title": "Resend Failed",
-    "unable_to_resend": "Unable to resend OTP"
-  },
-  "common": {
-    "verifying": "Verifying...",
-    "resending": "Resending..."
-  },
   "debug": {
     "title": "Realtime Debug Panel",
     "last_update": "Last update",
@@ -683,16 +612,11 @@
     "none": "None",
     "error_prefix": "Error",
     "troubleshooting": "Troubleshooting",
-    "troubleshooting_text": "1. Auth Token missing? → Login again\n2. Socket disconnected? → Check backend URL\n3. FCM token missing? → Check google-services.json\n4. Pull down to refresh status"
-  },
-  "debug": {
+    "troubleshooting_text": "1. Auth Token missing? → Login again\n2. Socket disconnected? → Check backend URL\n3. FCM token missing? → Check google-services.json\n4. Pull down to refresh status",
     "token_debug": "Token Debug",
     "token_status": "Token Status",
-    "present": "PRESENT",
-    "missing": "MISSING",
     "token_length": "Token Length",
     "characters": "characters",
-    "token_preview": "Token Preview",
     "user_data": "User Data",
     "no_user_data": "NO USER DATA",
     "last_check": "Last Check",
@@ -739,7 +663,6 @@
     "view_all": "View All",
     "explore_restaurants": "Explore Restaurants",
     "nearby_restaurants": "Nearby Restaurants",
-    "explore_restaurants": "Explore Restaurants",
     "filter": "Filter",
     "loading_restaurants": "Loading restaurants...",
     "loading_location": "Loading Location...",
@@ -749,17 +672,6 @@
     "search_required_title": "Search Required",
     "search_required_message": "Please enter a search term in the filter drawer",
     "filter_failed": "Failed to apply filters"
-  },
-  "promo": {
-    "seasonal_favorites": "Seasonal favorites are here",
-    "try_something_new": "try something new today !",
-    "explore_now": "Explore Now"
-  },
-  "common": {
-    "allow": "Allow",
-    "deny": "Deny",
-    "error": "Error",
-    "loading": "Loading..."
   },
   "offers": {
     "title": "Offers",
@@ -777,9 +689,6 @@
     "all_items": "All Items",
     "no_items": "No recommendations available"
   },
-  "common": {
-    "back": "Back"
-  },
   "food_preferences": {
     "title": "Food Preferences",
     "subtitle": "Choose your favorite food types and dietary preferences to personalize your menu and get recommendations you'll love.",
@@ -788,722 +697,12 @@
     "saved_title": "Preferences Saved",
     "saved_message": "Your food preferences have been saved"
   },
-  "common": {
-    "continue": "Continue"
-  },
   "order_details": {
     "fetching_order": "Fetching your order...",
     "order_not_found": "Order not found",
     "restaurant": "Restaurant",
     "default_cuisine": "Italian, Fine Dining",
     "menu": "Menu",
-    "call_restaurant": "Call Restaurant",
-    "call_rider": "Call Rider",
-    "call_now": "Call Now",
-    "items": "Items",
-    "regular": "Regular",
-    "bill_details": "Bill Details",
-    "subtotal": "Subtotal",
-    "delivery_fee": "Delivery Fee",
-    "free": "Free",
-    "tax": "Tax",
-    "packaging": "Packaging",
-    "service_fee": "Service Fee",
-    "offer_applied": "Offer Applied",
-    "tip_for_rider": "Tip for Rider",
-    "grand_total": "Grand Total",
-    "savings_message": "Hurry! You saved {{currencySymbol}} {{amount}} on this order.",
-    "delivering_address": "Delivering Address",
-    "track_order": "Track Order",
-    "address_not_available": "Address not available",
-    "order_id": "Order ID",
-    "payment_method": "Payment Method",
-    "cash_on_delivery": "Cash on Delivery",
-    "credit_debit_card": "Credit/Debit Card",
-    "wallet": "Wallet",
-    "not_specified": "Not specified",
-    "payment_time_date": "Payment Time & Date",
-    "not_available": "—",
-    "on_date_at_time": "on {{date}} at {{time}}",
-    "unable_to_call": "Unable to Call",
-    "call_error": "Could not open the phone dialer. Please try again.",
-    "updated_to": "Order updated to {{status}}",
-    "order_cancelled": "Order was cancelled"
-  },
-  "order_status": {
-    "placed": "Your order has been placed",
-    "accepted": "Restaurant has accepted your order",
-    "preparing": "Your food is being prepared",
-    "ready": "Your order is ready for pickup",
-    "assigned": "Rider has been assigned to your order",
-    "picked_up": "Your order is on its way",
-    "delivery_arrived": "Rider has arrived at your location",
-    "delivered": "Your order has been delivered",
-    "cancelled": "Your order was cancelled",
-    "failed": "Order payment failed",
-    "processing": "Processing your order"
-  },
-  "orders": {
-    "your_orders": "Your Orders",
-    "loading": "Loading your orders...",
-    "no_orders": "No orders yet",
-    "no_filtered_orders": "No {{status}} orders",
-    "orders_appear_here": "Your orders will appear here",
-    "restaurant": "Restaurant",
-    "item": "Item",
-    "qty": "Qty",
-    "more_items": "+{{count}} More",
-    "rating_and_review": "Rating and review",
-    "placed_on": "Order placed on {{day}}, {{month}},",
-    "arriving_soon": "Your order is arriving soon, please be ready at Dock Gate 2",
-    "filter": {
-      "all": "All",
-      "ongoing": "Ongoing",
-      "completed": "Completed",
-      "cancelled": "Cancelled"
-    },
-    "status": {
-      "completed": "Completed",
-      "cancelled": "Cancelled",
-      "ongoing": "Ongoing",
-      "preparing": "Preparing"
-    }
-  },
-  "common": {
-    "months": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec"
-    }
-  },
-  "rate_orders": {
-    "title": "Rate Past Orders",
-    "loading": "Loading orders...",
-    "restaurant": "Restaurant",
-    "item": "item",
-    "items": "items",
-    "tap_to_rate": "Tap to rate this order",
-    "no_delivered_orders": "No Delivered Orders",
-    "empty_message": "Your delivered orders will appear here for rating",
-    "na": "N/A"
-  },
-  "restaurant": {
-    "default_name": "Restaurant",
-    "free_delivery": "Free delivery",
-    "free_delivery_first": "Free delivery for first order",
-    "missing_id": "Restaurant ID is missing.",
-    "unknown": "Unknown",
-    "unknown_product": "Unknown Product",
-    "all": "All",
-    "all_items": "All Items",
-    "menu_failed": "Failed to load menu.",
-    "menu": "Menu",
-    "most_ordered": "Most Order right now",
-    "loading_menu": "Loading menu...",
-    "no_items": "No items available."
-  },
-  "address": {
-    "edit_address": "Edit Address",
-    "add_address": "Add Address",
-    "latitude": "Latitude",
-    "longitude": "Longitude",
-    "latitude_placeholder": "Latitude",
-    "longitude_placeholder": "Longitude",
-    "set_coordinates": "Set Coordinates",
-    "set_coordinates_prompt": "Set latitude and longitude to pick location",
-    "lat_lng_format": "Lat {{lat}}, Lng {{lng}}",
-    "update_address": "Update Address"
-  },
-  "common": {
-    "continue": "Continue"
-  },
-  "addresses": {
-    "title": "Addresses",
-    "default": "Default",
-    "no_addresses": "No Addresses Found",
-    "add_first_address": "Add your first delivery address to get started",
-    "add_new": "Add New Address"
-  },
-  "address_labels": {
-    "home": "Home",
-    "office": "Office",
-    "work": "Work",
-    "other": "Other"
-  },
-  "address_form": {
-    "home": "Home",
-    "work": "Work",
-    "add_new": "Add New",
-    "edit_address": "Edit Address",
-    "add_new_address": "Add New Address",
-    "add_address": "Add Address",
-    "selected_location": "Selected Location",
-    "location_details": "Location Details",
-    "address_placeholder": "Street Address or Building Name",
-    "address_required": "Address is required",
-    "city_placeholder": "City",
-    "city_required": "City is required",
-    "zip_placeholder": "Zip Code",
-    "zip_required": "Zip code is required",
-    "instructions_placeholder": "Delivery Instructions (Optional)",
-    "save_as": "Save Address as",
-    "set_as_default": "Set as default delivery address",
-    "update_address": "Update Address",
-    "add_address_button": "Add Address",
-    "address_updated": "Address updated successfully!",
-    "address_added": "Address added successfully!",
-    "save_failed": "Failed to save address. Please try again.",
-    "no_location_selected": "No location selected. Please select from map."
-  },
-  "change_password": {
-    "title": "Change Password",
-    "subtitle": "Set a new password in just a few steps.",
-    "current_password_label": "Current Password",
-    "current_password_placeholder": "Enter current password",
-    "current_password_required": "Current password is required",
-    "new_password_label": "New Password",
-    "new_password_placeholder": "Enter new password",
-    "new_password_required": "New password is required",
-    "confirm_password_label": "Confirm New Password",
-    "confirm_password_placeholder": "Re-enter new password",
-    "confirm_password_required": "Please confirm your new password",
-    "passwords_do_not_match": "Passwords do not match",
-    "update_button": "Update Password",
-    "password_updated": "Password updated successfully!",
-    "update_failed": "Failed to update password"
-  },
-  "common": {
-    "success": "Success",
-    "error": "Error"
-  },
-  "support": {
-    "title": "Contact Support",
-    "reply_time": "We usually reply in a few time",
-    "start_conversation": "Start a conversation",
-    "empty_message": "Send your issue and our support team will reply shortly.",
-    "message_placeholder": "Type Message..."
-  },
-  "coupons": {
-    "title": "Coupons",
-    "search_placeholder": "Search Coupon...",
-    "min_spend": "Min spend",
-    "use_by": "Use by",
-    "use_now": "Use Now",
-    "shakeys_offer": "500 off in Shakey's Pizza",
-    "expires_jan_2026": "31 Jan 2026",
-    "terms_new_users": "Terms valid for new users only. One-time use."
-  },
-  "delete_account_popup": {
-    "title": "Delete Account",
-    "message": "Are you sure you want to Delete an account",
-    "delete_button": "Delete Account"
-  },
-  "common": {
-    "cancel": "Cancel"
-  },
-  "delete_account": {
-    "title": "Delete Account",
-    "help_text": "Help us understand why you're deactivating your account.",
-    "reason_label": "Reason*",
-    "select_reason": "Select Reason",
-    "checklist_title": "Things to Check Before Deleting an Account:",
-    "delete_button": "Delete Account",
-    "delete_failed": "Failed to delete account. Please try again.",
-    "pending_orders": "Pending Orders",
-    "pending_orders_desc": "Make sure you don't have any active or pending deliveries.",
-    "saved_addresses": "Saved Addresses & Payment Methods",
-    "saved_addresses_desc": "These will be permanently erased.",
-    "order_history": "Order History",
-    "order_history_desc": "You will lose access to past receipts and order details.",
-    "wallet_credits": "Wallet / Credits / Coupons",
-    "wallet_credits_desc": "Any remaining balance, discounts, or rewards will be lost.",
-    "recovery": "Recovery",
-    "recovery_desc": "Once deleted, your account and data cannot be restored.",
-    "reason_break": "I'm taking a break from this platform",
-    "reason_not_useful": "I don't find the service useful anymore",
-    "reason_privacy": "I'm concerned about my privacy",
-    "reason_duplicate": "I created a duplicate account",
-    "reason_support": "I'm not satisfied with the customer support",
-    "reason_results": "I didn't get the results I expected",
-    "reason_alternative": "I found an alternative service I prefer",
-    "reason_technical": "Technical issues or bugs",
-    "reason_other": "Other (Please specify)"
-  },
-  "common": {
-    "error": "Error"
-  },
-  "account_deleted": {
-    "deleting_title": "Deleting Account...",
-    "deleting_subtitle": "Please wait while we process your request",
-    "success_title": "Account deletion completed.",
-    "success_subtitle": "We're sorry to see you go"
-  },
-  "faq": {
-    "title": "Faq's",
-    "subtitle": "Find quick answers to common questions about orders, payments, delivery, and more.",
-    "search_placeholder": "Search ...",
-    "no_results": "No results found",
-    "place_order_title": "How do I place an order?",
-    "place_order_desc": "You can browse the menu, add items to your cart, and proceed to checkout. Select your location and preferred payment method to confirm the order.",
-    "track_order_title": "How can I track my order?",
-    "track_order_desc": "After placing your order, go to the Orders section to view real-time updates on your delivery status and estimated arrival time.",
-    "cancel_order_title": "Can I change or cancel my order after placing it?",
-    "cancel_order_desc": "Order changes or cancellations depend on the restaurant's policy and the order status. Please contact customer support as soon as possible for assistance.",
-    "apply_coupon_title": "How do I apply a coupon code?",
-    "apply_coupon_desc": "You can enter your coupon code at checkout in the promo code section before completing your payment.",
-    "track_order2_title": "How can I track my order?",
-    "track_order2_desc": "Track your order in the Orders section. You will see updates on preparation, pickup, and delivery in real time.",
-    "order_status_title": "How can I check my order status?",
-    "order_status_desc": "You can always check the status of your order in the Orders tab. Notifications will also keep you updated."
-  },
-  "address": {
-    "add_new": "Add New Address",
-    "add_address": "Add Address",
-    "location_details": "Location Details",
-    "street_placeholder": "Street/House Number",
-    "apt_placeholder": "Apt no, Suite, Floor",
-    "save_as": "Save Address as",
-    "home": "Home",
-    "work": "Work",
-    "add_new_tag": "+ Add New",
-    "button": "Add Address"
-  },
-  "notifications": {
-    "title": "Notification Settings",
-    "order_title": "Order Updates",
-    "order_desc": "Get real-time alerts about your order status — from kitchen to delivery",
-    "promo_title": "Promotions & Offers",
-    "promo_desc": "Stay updated on discounts, coupons, and special deals.",
-    "rec_title": "Recommendations",
-    "rec_desc": "Receive personalized food suggestions based on your taste.",
-    "rem_title": "Reminders",
-    "rem_desc": "Meal-time nudges so you never miss lunch or dinner.",
-    "app_title": "App Updates & News",
-    "app_desc": "Be the first to know about new features and announcements",
-    "permission_required": "Permission required",
-    "enable_permission": "Enable notification permissions to receive updates",
-    "enabled": "Notifications enabled",
-    "disabled": "Notifications disabled",
-    "order_on": "Order updates will now be delivered in real-time",
-    "order_off": "Order notifications have been turned off",
-    "update_failed": "Update failed",
-    "update_error": "Could not update notification preference right now"
-  },
-  "privacy_policy": {
-    "title": "Privacy Policy",
-    "section1": "At FoodPanda, we take your privacy seriously. We collect your personal information to provide and improve our services, process your orders, and communicate with you. Your data is stored securely and is only shared with our restaurant partners and delivery riders to fulfill your orders.",
-    "section2_title": "How We Use Your Information",
-    "section2": "We use the information we collect to operate, maintain, and provide the features of our application. We also use your information to personalize your experience, understand and analyze the usage trends, and improve our platform's functionality.",
-    "section3": "We implement a variety of security measures to maintain the safety of your personal information. Your data is protected behind secured networks and is only accessible by a limited number of persons who have special access rights.",
-    "section4": "By using our app, you consent to our privacy policy. If we decide to change our privacy policy, we will post those changes on this page. If you have any questions or concerns, please contact our support team."
-  },
-  "profile": {
-    "title": "Profile",
-    "loading": "Loading profile...",
-    "load_failed": "Failed to load profile data",
-    "change_photo": "Change Profile Picture",
-    "change_photo_title": "Change Profile Picture",
-    "choose_option": "Choose an option",
-    "take_photo": "Take Photo",
-    "choose_gallery": "Choose from Gallery",
-    "image_picker_failed": "Failed to pick image. Please try again.",
-    "full_name": "Full Name",
-    "full_name_placeholder": "Enter your full name",
-    "email": "Email",
-    "email_placeholder": "Enter your email",
-    "mobile_number": "Mobile Number",
-    "mobile_placeholder": "Enter your mobile number",
-    "language": "Language",
-    "update_profile": "Update Profile",
-    "update_success": "Profile updated successfully!",
-    "update_failed": "Failed to update profile",
-    "name_required": "Please enter your name",
-    "mobile_required": "Please enter your mobile number",
-    "email_required": "Please enter your email",
-    "verification_required": "Verification Required",
-    "verification_message": "Please verify your changes with the OTP sent to your email/mobile",
-    "verify_update": "Verify Profile Update",
-    "otp_message": "Enter the OTP sent to your email/mobile",
-    "invalid_otp": "Invalid OTP",
-    "otp_resent": "OTP resent successfully",
-    "otp_resend_failed": "Failed to resend OTP",
-    "languages": {
-      "english": "English",
-      "german": "German",
-      "arabic": "Arabic"
-    }
-  },
-  "profile": {
-    "user": "User",
-    "favourites": "Favourites",
-    "coupons": "Coupons",
-    "wallet": "Wallet",
-    "account": "Account",
-    "your_profile": "Your Profile",
-    "delivery_address": "Delivery Address",
-    "food_preference": "Food Preference",
-    "rate_past_orders": "Rate Past Orders",
-    "help_support": "Help & Support",
-    "faq": "FAQ's",
-    "contact_support": "Contact Support",
-    "settings": "Settings",
-    "notification_settings": "Notification Settings",
-    "payment_setting": "Payment Setting",
-    "change_password": "Change Password",
-    "delete_account": "Delete Account",
-    "about_app": "About App",
-    "privacy_policy": "Privacy Policy",
-    "terms_conditions": "Terms & Condition",
-    "logout": "Logout"
-  },
-  "common": {
-    "na": "N/A"
-  },
-  "payment": {
-    "title": "Payment Settings",
-    "cards": "Cards",
-    "upi": "UPI",
-    "credit_card": "Credit Card",
-    "debit_card": "Debit Card",
-    "google_pay": "Google Pay UPI",
-    "phonepe": "PhonePe UPI",
-    "add_new_upi": "Add new UPI ID",
-    "add_upi_id": "Add UPI ID",
-    "credit_card_details": "Credit Card Details",
-    "debit_card_details": "Debit Card Details",
-    "upi_id_placeholder": "Enter UPI ID",
-    "card_holder_name": "Card Holder Name",
-    "card_number": "Card Number",
-    "expiry_date": "MM/YY",
-    "cvv": "CVV",
-    "save_success": "Payment details saved successfully"
-  },
-  "common": {
-    "success": "Success",
-    "save": "Save"
-  },
-  "terms": {
-    "title": "Terms & Conditions",
-    "section1": "By accessing and using the FoodPanda app, you agree to be bound by these Terms and Conditions. These terms govern your use of our service, including food ordering, delivery, and payment processing. If you disagree with any part of these terms, you may not access our service.",
-    "section2_title": "User Accounts and Responsibilities",
-    "section2": "You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account. You must provide accurate, complete, and current information when creating an account.",
-    "section3": "FoodPanda reserves the right to modify or replace these Terms at any time. We will notify users of any significant changes. Your continued use of the app after such changes constitutes your acceptance of the new Terms.",
-    "section4": "Our service connects you with independent restaurants. We are not responsible for the quality of the food provided by these third-party merchants, though we strive to ensure the best possible experience for our users."
-  },
-  "wallet": {
-    "title": "Wallet",
-    "loading": "Loading wallet...",
-    "total_balance": "Total Wallet Balance",
-    "all_transactions": "All Transactions",
-    "no_transactions": "No Transactions",
-    "empty_message": "No transactions yet. Your transactions will appear here.",
-    "transaction": "Transaction",
-    "payment": "Payment",
-    "currency": "{{currencySymbol}}",
-    "load_error": "Failed to load wallet data. Please try again.",
-    "load_failed": "Failed to load wallet data"
-  },
-  "common": {
-    "error": "Error",
-    "retry": "Retry"
-  },
-  "search": {
-    "title": "Search",
-    "placeholder": "Search Dish name & Restaurant..",
-    "searching": "Searching...",
-    "no_results": "No results found.",
-    "results": "Results",
-    "recent_searches": "Your Recent Searches",
-    "popular_searches": "Popular Searches",
-    "restaurant": "Restaurant",
-    "dish": "Dish",
-    "restaurant_type": "Restaurant",
-    "dish_type": "Dish",
-    "currency": "{{currencySymbol}}",
-    "pizza_tag": "Pizza",
-    "burger_tag": "Burger",
-    "margherita_tag": "Margherita",
-    "italian_tag": "Italian",
-    "fast_food_tag": "Fast Food",
-    "suggestions_timeout": "Suggestions timeout",
-    "search_timeout": "Search timeout",
-    "restaurant_info_missing_title": "Restaurant Info Missing",
-    "restaurant_info_missing_message": "Could not find restaurant information for this dish. Please try another dish or search.",
-    "load_restaurant_failed": "Failed to load restaurant details. Please try again."
-  },
-  "common": {
-    "error": "Error"
-  },
-  "add_to_cart": {
-    "title": "Add to Cart",
-    "cheeseburger_meal": "Cheeseburger w\nFries Small Meal",
-    "meal_description": "Cream Small Fries & Drink",
-    "choose_fries": "Choose your Fries",
-    "regular_fries": "Regular Fries",
-    "curly_fries": "Curly Fries",
-    "potato_wedges": "Potato Wedges",
-    "special_instructions": "Special Instructions",
-    "instructions_placeholder": "Enter your recipe",
-    "extra_ketchup": "Extra Ketchup ({{currencySymbol}}5)",
-    "coke_fries_combo": "Regular Coke + Large Fries ({{currencySymbol}}30)",
-    "corn_salad": "Corn Salad ({{currencySymbol}}40)",
-    "add_to_cart": "Add to Cart"
-  },
-  "cart": {
-    "title": "Cart",
-    "empty_title": "Your cart is empty",
-    "empty_message": "Add items from a restaurant to get started.",
-    "estimated_delivery_label": "Estimated Delivery",
-    "estimated_delivery": "Standard (20-35 minutes)",
-    "add_more_items": "+ Add More Items",
-    "offers": "Offers",
-    "flat_50_offer": "Get flat {{currencySymbol}}50 off on your first order.",
-    "applied": "Applied",
-    "apply": "Apply",
-    "view_all_coupons": "View all Coupons",
-    "bill_details": "Bill Details",
-    "base_price": "Base Price",
-    "variation": "Variation",
-    "addon": "Add-on",
-    "subtotal": "Subtotal",
-    "delivery_fee": "Delivery Fee",
-    "free": "Free",
-    "tax": "Tax",
-    "packaging": "Packaging",
-    "service_fee": "Service Fee",
-    "small_cart_fee": "Small Cart Fee",
-    "offer_applied": "Offer Applied",
-    "grand_total": "Grand Total",
-    "total_price": "Total Price",
-    "review_order": "Review Order",
-    "popular_with_order": "Popular with your Order",
-    "add": "ADD",
-    "regular": "Regular",
-    "item": "Item",
-    "wings_description": "6 pcs chicken wings",
-    "default_cuisine": "Pizza, Italian, Fast Food"
-  },
-  "favourite": {
-    "title": "Favourites",
-    "my_favourites": "My favourites",
-    "restaurants": "Restaurants",
-    "items": "Items",
-    "restaurant": "Restaurant",
-    "add": "ADD",
-    "empty_title": "No favourites yet",
-    "empty_message": "Tap the heart on any dish to save it here.",
-    "browse_dishes": "Browse dishes",
-    "loading": "Loading favourites..."
-  },
-  "filter": {
-    "title": "Filters",
-    "clear_all": "Clear All",
-    "rating": "Rating",
-    "delivery_time": "Delivery Time",
-    "fastest": "Fastest",
-    "within_15_min": "Within 15 min",
-    "within_30_min": "Within 30 min",
-    "cuisines": "Cuisines",
-    "indian": "Indian",
-    "chinese": "Chinese",
-    "italian": "Italian",
-    "burger": "Burger",
-    "pizza": "Pizza",
-    "mexican": "Mexican",
-    "thai": "Thai",
-    "continental": "Continental",
-    "dietary_options": "Dietary Options",
-    "vegetarian": "Vegetarian",
-    "vegan": "Vegan",
-    "halal": "Halal",
-    "price_range": "Price Range",
-    "show_results": "Show Results"
-  },
-  "filter_results": {
-    "title": "Filter Results",
-    "search_label": "Search: ",
-    "no_results_title": "No Results Found",
-    "no_results_message": "No items matching your filters. Try adjusting your search criteria.",
-    "more_items": "{{count}} more items...",
-    "search_query_missing": "Search query not provided",
-    "fetch_error": "Failed to fetch filtered results"
-  },
-  "common": {
-    "back": "← Back",
-    "error": "Error"
-  },
-  "first_next": {
-    "get_started": "Get Started"
-  },
-  "menu_item": {
-    "default_name": "Menu Item",
-    "add_to_cart": "Add to Cart"
-  },
-  "product": {
-    "default_name": "Product",
-    "add_to_cart": "Add to Cart"
-  },
-  "promo": {
-    "title": "Promo Code",
-    "placeholder": "Enter promo code",
-    "apply": "Apply",
-    "available_codes": "Available Promo Codes",
-    "enter_code_error": "Please enter promo code",
-    "code_applied": "{{code}} applied successfully",
-    "summer10_desc": "Get 10% OFF on your next order.",
-    "save50_desc": "{{currencySymbol}}50 discount on orders over {{currencySymbol}}300.",
-    "freeship_desc": "Free delivery for orders over {{currencySymbol}}199.",
-    "you_might_like": "You might also like"
-  },
-  "common": {
-    "error": "Error",
-    "success": "Success"
-  },
-  "reset_password": {
-    "skip": "Skip",
-    "title": "Reset Your Password",
-    "subtitle": "Password must be different from previous one",
-    "new_password_label": "New Password",
-    "new_password_placeholder": "Enter New Password",
-    "confirm_password_label": "Confirm Password",
-    "confirm_password_placeholder": "Confirm Password",
-    "create_button": "Create",
-    "fill_both_fields": "Please fill both fields",
-    "password_length": "Password must be at least 6 characters",
-    "passwords_mismatch": "Passwords do not match",
-    "success_message": "Your password has been reset successfully!"
-  },
-  "common": {
-    "error": "Error",
-    "success": "Success"
-  },
-  "review_order": {
-    "cart": "Cart",
-    "delivering_address": "Delivering Address",
-    "select_address": "Select address",
-    "no_address": "No address selected",
-    "leave_at_door": "Leave at the door",
-    "tip_rider": "Tip your rider",
-    "tip_message": "100% of the tips go to your rider, we dont deduct anything from it",
-    "not_now": "Not Now",
-    "payment_method": "Payment Method",
-    "select_payment": "Select payment method",
-    "bill_details": "Bill Details",
-    "subtotal": "Subtotal",
-    "delivery_fee": "Delivery Fee",
-    "free": "Free",
-    "tax": "Tax",
-    "packaging": "Packaging",
-    "service_fee": "Service Fee",
-    "small_cart_fee": "Small Cart Fee",
-    "offer_applied": "Offer Applied",
-    "discount": "Discount",
-    "total_before_tip": "Total Before Tip",
-    "tip_for_rider": "Tip for Rider",
-    "grand_total": "Grand Total",
-    "total_price": "Total Price",
-    "place_order": "Place Order",
-    "agree_terms": "By completing this order, I agree to all",
-    "terms_condition": "terms & condition",
-    "delivery_type_required": "Please select pick-up or delivery type",
-    "address_required": "Please select a delivery address",
-    "payment_required": "Please select a payment method",
-    "placement_failed": "Unable to place your order. Please check your connection and try again."
-  },
-  "rewards": {
-    "title": "Pay and earn rewards with",
-    "wallet_active": "Your wallet is now active",
-    "refund_instant": "Receive refunds instantly",
-    "refund_desc": "Banks take up to 45 days to process your refund but pandapay only takes seconds! See your refund in your balance instantly.",
-    "cashback": "Earn cashback for your orders",
-    "cashback_desc": "When you pay with pandapay, you can enjoy cashbacks and discounts in your balance on exclusive promotions.",
-    "one_click": "One-click checkout",
-    "one_click_desc": "Use your pandapay balance with ease and convenience to pay for orders across food delivery, pick-up and shops.",
-    "transfer_refunds": "Transfer your refunds",
-    "transfer_refunds_desc": "Read our pandapay Terms and conditions",
-    "explore": "Explore Waspay"
-  },
-  "payment": {
-    "title": "Payment",
-    "total_amount": "Total Amount",
-    "your_cart": "Your Cart",
-    "qty": "Qty",
-    "select_method": "Select Payment Method",
-    "credit_debit_card": "Credit / Debit Card",
-    "upi": "UPI",
-    "paypal": "PayPal",
-    "wallet_balance": "Wallet Balance",
-    "cash_on_delivery": "Cash on Delivery",
-    "add_new_card": "Add New Card",
-    "pay_now": "Pay Now",
-    "select_payment_title": "Select Payment",
-    "select_payment_message": "Please select a payment method first.",
-    "success_title": "Payment Success",
-    "success_message": "Paid via {{method}}",
-    "add_card_title": "Add Card",
-    "add_card_message": "Card addition feature coming soon"
-  },
-  "common": {
-    "loading": "Loading orders...",
-    "error": "Error",
-    "success": "Success",
-    "cancel": "Cancel",
-    "submit": "Submit",
-    "submitting": "Submitting..."
-  },
-  "orders": {
-    "my_orders": "My Orders",
-    "restaurant": "Restaurant",
-    "food": "Food",
-    "original": "Original",
-    "more_items": "+{{count}} more",
-    "order_placed_on": "Order placed on",
-    "rate_order": "Rate Order",
-    "refund": "Refund",
-    "rate_experience": "Rate your Experience",
-    "rating_placeholder": "Tell us more about the food and delivery...",
-    "reorder": "Reorder",
-    "no_orders": "No orders found",
-    "fetch_failed": "Failed to load orders",
-    "thank_you_rating": "Thank you for your rating!",
-    "rating_failed": "Failed to submit rating",
-    "refund_request": "Refund Request",
-    "refund_reason": "Reason for refund:",
-    "refund_failed": "Refund request failed",
-    "order_step": "Order",
-    "preparing_step": "Preparing",
-    "on_the_way_step": "On the way",
-    "delivered_step": "Delivered",
-    "status_placed": "Placed",
-    "status_accepted": "Accepted",
-    "status_preparing": "Preparing",
-    "status_ready": "Ready",
-    "status_picked_up": "Picked Up",
-    "status_out_for_delivery": "Out for Delivery",
-    "status_delivered": "Delivered",
-    "status_cancelled": "Cancelled"
-  },
-  "pickup": {
-    "pizza_hut": "Pizza Hut",
-    "burger_king": "Burger King",
-    "city_mall_address": "Near City Mall",
-    "main_market_address": "Main Market Street"
-  },
-  "restaurant": {
-    "default_cuisine": "Pizza, Italian, Fast Food",
-    "default_time": "20-30 min",
-    "minute": "{{count}} ",
-    "minutes": "{{count}} ",
-    "distance_with_time": "{{distance}} • {{time}}",
-    "popular_choice": "Popular choice"
+    "call_restaurant": "Call Restaurant"
   }
 }
