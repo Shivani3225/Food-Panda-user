@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -64,6 +64,11 @@ export default function CreateAccountScreen() {
       (c.fullCode?.toLowerCase() || '').includes(q)
     );
   }, [countries, countrySearchQuery]);
+  useEffect(() => {
+    if (countries.length > 0 && !selectedCountry.code) {
+      setSelectedCountry(countries[0]);
+    }
+  }, [countries]);
 
   const handleFirstNameChange = text => {
     const value = text ?? '';
@@ -287,7 +292,11 @@ export default function CreateAccountScreen() {
       />
       <View style={styles.countryInfo}>
         <Text style={styles.countryName}>{item.country}</Text>
-        <Text style={styles.countryCode}>{item.code}</Text>
+        <Text style={styles.countryCode}>
+          {item.fullCode?.startsWith('+') ? item.fullCode : 
+           item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
+           item.code}
+        </Text>
       </View>
       {selectedCountry.code === item.code && (
         <Text style={styles.checkmark}>✓</Text>
@@ -363,10 +372,14 @@ export default function CreateAccountScreen() {
                 onPress={() => setShowCountryPicker(true)}
               >
                 <Image 
-                  source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase()}.png` }} 
+                  source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase() || 'un'}.png` }} 
                   style={styles.countryFlagSmallImage} 
                 />
-                <Text style={styles.countryCodeText}>{selectedCountry.fullCode}</Text>
+                <Text style={styles.countryCodeText}>
+                  {selectedCountry.fullCode?.startsWith('+') ? selectedCountry.fullCode : 
+                   selectedCountry.dialCode ? (selectedCountry.dialCode.startsWith('+') ? selectedCountry.dialCode : `+${selectedCountry.dialCode}`) : 
+                   '+1'}
+                </Text>
                 <Text style={styles.dropdownArrow}>▼</Text>
               </TouchableOpacity>
 

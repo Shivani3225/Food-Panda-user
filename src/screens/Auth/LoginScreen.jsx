@@ -21,6 +21,8 @@ import { useAuth } from '../../context/AuthContext';
 import { wp, hp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES as FONT } from '../../theme/typography';
+import { useCountries } from '../../context/CountryContext';
+import { FlatList, Modal, TouchableOpacity } from 'react-native';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -34,6 +36,13 @@ export default function LoginScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { login: authLogin, setAuthenticatedUser } = useAuth();
+  const { countries } = useCountries();
+
+  // Country code states
+  const [selectedCountry, setSelectedCountry] = useState(countries[0] || {});
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
+  const [isMobileLogin, setIsMobileLogin] = useState(false);
 
   useEffect(() => {
     const prefillEmail = route?.params?.email || route?.params?.prefillEmail;
@@ -93,12 +102,59 @@ export default function LoginScreen() {
   const handleEmailChange = text => {
     const value = text ?? '';
     const digitsOnly = value.replace(/\D/g, '');
+    
     if (value.length > 0 && digitsOnly.length === value.length) {
-      setEmail(digitsOnly.slice(0, 16));
+      setIsMobileLogin(true);
+      setEmail(digitsOnly.slice(0, selectedCountry.maxLength || 16));
       return;
     }
+    
+    setIsMobileLogin(false);
     setEmail(value);
   };
+
+  const filteredCountries = React.useMemo(() => {
+    if (!countrySearchQuery.trim()) return countries;
+    const q = countrySearchQuery.toLowerCase();
+    return countries.filter(c => 
+      (c.country?.toLowerCase() || '').includes(q) || 
+      (c.code?.toLowerCase() || '').includes(q) || 
+      (c.fullCode?.toLowerCase() || '').includes(q)
+    );
+  }, [countries, countrySearchQuery]);
+
+  useEffect(() => {
+    if (countries.length > 0 && !selectedCountry.code) {
+      setSelectedCountry(countries[0]);
+    }
+  }, [countries]);
+
+  const renderCountryItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.countryItem}
+      onPress={() => {
+        setSelectedCountry(item);
+        setShowCountryPicker(false);
+        setEmail('');
+      }}
+    >
+      <Image 
+        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
+        style={styles.countryFlagImage} 
+      />
+      <View style={styles.countryInfo}>
+        <Text style={styles.countryName}>{item.country}</Text>
+        <Text style={styles.countryCode}>
+          {item.fullCode?.startsWith('+') ? item.fullCode : 
+           item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
+           item.code}
+        </Text>
+      </View>
+      {selectedCountry.code === item.code && (
+        <Text style={styles.checkmark}>✓</Text>
+      )}
+    </TouchableOpacity>
+  );
 
   const validate = () => {
     let valid = true;
@@ -131,7 +187,8 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const result = await authLogin(email, password);
+      const loginIdentifier = isMobileLogin ? `${selectedCountry.fullCode}${email}` : email;
+      const result = await authLogin(loginIdentifier, password);
       console.log("Login result", result);
 
       if (result.success) {
@@ -183,16 +240,50 @@ export default function LoginScreen() {
             {t('login.subtitle', 'Log in to continue your meal journey')}
           </Text>
 
-          <MaterialTextInput
-            label={t('login.email_label', 'Email')}
-            value={email}
-            onChangeText={handleEmailChange}
-            placeholder={t('login.email_placeholder', 'Enter your email')}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={!!emailError}
-            errorText={emailError}
-          />
+          {isMobileLogin ? (
+            <View style={styles.mobileContainer}>
+              <Text style={styles.mobileLabel}>{t('login.mobile_label', 'Mobile Number')}</Text>
+              <View style={styles.mobileInputWrapper}>
+                <TouchableOpacity
+                  style={styles.countryCodeSelector}
+                  onPress={() => setShowCountryPicker(true)}
+                >
+                  <Image 
+                    source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase() || 'un'}.png` }} 
+                    style={styles.countryFlagSmallImage} 
+                  />
+                  <Text style={styles.countryCodeText}>
+                    {selectedCountry.fullCode?.startsWith('+') ? selectedCountry.fullCode : 
+                     selectedCountry.dialCode ? (selectedCountry.dialCode.startsWith('+') ? selectedCountry.dialCode : `+${selectedCountry.dialCode}`) : 
+                     '+1'}
+                  </Text>
+                  <ChevronDown size={14} color="#666" />
+                </TouchableOpacity>
+
+                <TextInput
+                  style={styles.mobileInput}
+                  value={email}
+                  onChangeText={handleEmailChange}
+                  placeholder={t('login.mobile_placeholder', 'Enter your Mobile Number')}
+                  keyboardType="phone-pad"
+                  maxLength={selectedCountry.maxLength}
+                  placeholderTextColor="#999"
+                />
+              </View>
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+            </View>
+          ) : (
+            <MaterialTextInput
+              label={t('login.email_label', 'Email')}
+              value={email}
+              onChangeText={handleEmailChange}
+              placeholder={t('login.email_placeholder', 'Enter your email')}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={!!emailError}
+              errorText={emailError}
+            />
+          )}
 
           <MaterialTextInput
             label={t('login.password_label', 'Password')}
@@ -248,6 +339,39 @@ export default function LoginScreen() {
           </Text>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('common.select_country', 'Select Country')}</Text>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('common.search', 'Search...')}
+                value={countrySearchQuery}
+                onChangeText={setCountrySearchQuery}
+                placeholderTextColor="#999"
+              />
+            </View>
+            <FlatList
+              data={filteredCountries}
+              keyExtractor={(item) => item.code}
+              renderItem={renderCountryItem}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -320,6 +444,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: hp(1),
     marginBottom: hp(2.75),
+  },
+
+  // Mobile number styles
+  mobileContainer: {
+    marginBottom: 16,
+  },
+  mobileLabel: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  mobileInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D9E0F2',
+    backgroundColor: '#F2F2F2',
+    borderRadius: scale(12),
+    overflow: 'hidden',
+  },
+  countryCodeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: '#E8E8E8',
+    borderRightWidth: 1,
+    borderRightColor: '#D9E0F2',
+    gap: 4,
+  },
+  countryFlagSmallImage: {
+    width: 20,
+    height: 15,
+    marginRight: 2,
+    borderRadius: 2,
+  },
+  countryCodeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  mobileInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  errorText: {
+    color: '#E11D2E',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 2,
   },
 
   forgot: {
@@ -398,5 +576,81 @@ const styles = StyleSheet.create({
   register: {
     color: '#ed1c24',
     fontWeight: '600',
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: hp(70),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111',
+  },
+  closeButton: {
+    fontSize: 20,
+    color: '#999',
+    padding: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  searchInput: {
+    backgroundColor: '#F2F2F2',
+    borderRadius: scale(8),
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#000',
+  },
+  countryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  countryFlagImage: {
+    width: 30,
+    height: 20,
+    marginRight: 12,
+    borderRadius: 2,
+  },
+  countryInfo: {
+    flex: 1,
+  },
+  countryName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111',
+  },
+  countryCode: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  checkmark: {
+    fontSize: 18,
+    color: '#ed1c24',
+    fontWeight: 'bold',
   },
 });

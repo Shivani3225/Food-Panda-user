@@ -12,7 +12,7 @@ export const CountryProvider = ({ children }) => {
     const fetchCountries = async () => {
       try {
         const response = await apiClient.get("/api/settings/countries");
-        if (Array.isArray(response.data)) {
+        if (Array.isArray(response.data) && response.data.length > 0) {
           setCountries(response.data);
         }
       } catch (error) {

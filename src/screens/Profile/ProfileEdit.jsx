@@ -103,7 +103,7 @@ const ProfileScreen = () => {
 
       const fullMobile = user?.mobile || '';
       const { country, number } = parseMobileNumber(fullMobile);
-      setSelectedCountry(country);
+      setSelectedCountry(country || countries[0] || {});
       setMobileNumber(number);
       setMobile(fullMobile);
 
@@ -361,10 +361,17 @@ const ProfileScreen = () => {
         setMobile('');
       }}
     >
-      <Text style={styles.countryFlag}>{item.flag}</Text>
+      <Image 
+        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
+        style={styles.countryFlagImage} 
+      />
       <View style={styles.countryInfo}>
         <Text style={styles.countryName}>{item.country}</Text>
-        <Text style={styles.countryCode}>{item.code}</Text>
+        <Text style={styles.countryCode}>
+          {item.fullCode?.startsWith('+') ? item.fullCode : 
+           item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
+           item.code}
+        </Text>
       </View>
       {selectedCountry.code === item.code && <Text style={styles.checkmark}>✓</Text>}
     </TouchableOpacity>
@@ -422,8 +429,15 @@ const ProfileScreen = () => {
                   <Text style={styles.mobileLabel}>{t('profile.mobile_number', 'Mobile Number')}</Text>
                   <View style={styles.mobileInputWrapper}>
                     <TouchableOpacity style={styles.countryCodeSelector} onPress={() => setShowCountryPicker(true)}>
-                      <Text style={styles.countryFlagSmall}>{selectedCountry.flag}</Text>
-                      <Text style={styles.countryCodeText}>{selectedCountry.fullCode}</Text>
+                      <Image 
+                        source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase() || 'un'}.png` }} 
+                        style={styles.countryFlagSmallImage} 
+                      />
+                      <Text style={styles.countryCodeText}>
+                        {selectedCountry.fullCode?.startsWith('+') ? selectedCountry.fullCode : 
+                         selectedCountry.dialCode ? (selectedCountry.dialCode.startsWith('+') ? selectedCountry.dialCode : `+${selectedCountry.dialCode}`) : 
+                         '+1'}
+                      </Text>
                       <ChevronDown size={14} color="#666" />
                     </TouchableOpacity>
                     <TextInput style={styles.mobileInput} value={mobileNumber} onChangeText={handleMobileChange} placeholder={t('profile.mobile_placeholder', 'Enter your mobile number')} keyboardType="phone-pad" maxLength={selectedCountry.maxLength} placeholderTextColor="#999" />
@@ -479,7 +493,7 @@ const styles = StyleSheet.create({
   mobileLabel: { fontSize: 14, color: '#666666', marginBottom: 8, fontWeight: '500' },
   mobileInputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#D9E0F2', backgroundColor: '#F2F2F2', borderRadius: 12, overflow: 'hidden' },
   countryCodeSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 14, backgroundColor: '#E8E8E8', borderRightWidth: 1, borderRightColor: '#D9E0F2', gap: 6 },
-  countryFlagSmall: { fontSize: 18 },
+  countryFlagSmallImage: { width: 20, height: 15, borderRadius: 2 },
   countryCodeText: { fontSize: 14, fontWeight: '500', color: '#333' },
   mobileInput: { flex: 1, fontSize: 14, color: '#000', paddingHorizontal: 14, paddingVertical: 14 },
   nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
@@ -493,8 +507,7 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' },
   modalTitle: { fontSize: 18, fontWeight: '600', color: '#111' },
   closeButton: { fontSize: 20, color: '#999', padding: 4 },
-  countryItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  countryFlag: { fontSize: 30, marginRight: 12 },
+  countryFlagImage: { width: 30, height: 20, marginRight: 12, borderRadius: 2 },
   countryInfo: { flex: 1 },
   countryName: { fontSize: 16, fontWeight: '500', color: '#111' },
   countryCode: { fontSize: 13, color: '#666', marginTop: 2 },
