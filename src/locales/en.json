@@ -464,6 +464,7 @@
     "verify_button": "Verify OTP",
     "did_not_receive": "Didn't receive OTP?",
     "change_email": "Change Email",
+    "change_mobile": "Change mobile number",
     "verified_title": "OTP Verified",
     "verified_success_title": "OTP Verified Successfully",
     "set_new_password": "Please set your new password",
@@ -514,6 +515,7 @@
   },
   "change_password": {
     "title": "Change Password",
+    "create_title": "Create Password",
     "new_password_label": "Password",
     "new_password_placeholder": "Enter new password",
     "confirm_password_label": "Confirm Password",

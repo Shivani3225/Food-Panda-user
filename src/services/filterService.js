@@ -140,8 +140,16 @@ export const convertDrawerFiltersToAPI = (drawerFilters) => {
   }
 
   // Handle Food Preference
-  if (drawerFilters.foodPreference) {
-    apiFilters.foodType = drawerFilters.foodPreference;
+  if (drawerFilters.foodPreference && drawerFilters.foodPreference.length > 0) {
+    apiFilters.foodType = drawerFilters.foodPreference[0];
+    if (drawerFilters.foodPreference.includes('veg')) {
+      apiFilters.isVeg = true;
+    }
+  }
+
+  // Handle Cuisines
+  if (drawerFilters.cuisines && drawerFilters.cuisines.length > 0) {
+    apiFilters.cuisine = drawerFilters.cuisines[0];
   }
 
   // Handle Additional Filters

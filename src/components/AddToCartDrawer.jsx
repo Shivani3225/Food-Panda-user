@@ -661,9 +661,9 @@ export default function AddToCartDrawer({
         </Animated.View>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1, justifyContent: 'flex-end' }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <Animated.View
             style={[
@@ -915,19 +915,21 @@ const styles = StyleSheet.create({
   },
   closeButtonNew: {
     position: 'absolute',
-    top: 15,
-    right: 15,
-    zIndex: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    top: 12,
+    right: 16,
+    zIndex: 100,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   closeButtonTextNew: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: 14,
+    color: '#374151',
     fontWeight: '700',
   },
   sheet: {

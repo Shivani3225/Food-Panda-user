@@ -95,7 +95,18 @@ export default function PaymentSettingScreen() {
         Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_upi', 'Please enter a valid UPI ID') });
         return;
       }
-      const newItem = { id: Date.now().toString(), title: upiId, icon: require('../../assets/icons/paypal.png') };
+      const appIcon = formData.upiApp === 'googlepay' 
+        ? require('../../assets/icons/googlepay.png') 
+        : require('../../assets/icons/paypal.png');
+      
+      const newItem = { 
+        id: Date.now().toString(), 
+        title: upiId, 
+        type: 'upi',
+        provider: formData.upiApp,
+        token: upiId,
+        icon: appIcon 
+      };
       const updated = [...savedUpi, newItem];
       setSavedUpi(updated);
       await AsyncStorage.setItem('saved_upis', JSON.stringify(updated));
@@ -141,7 +152,14 @@ export default function PaymentSettingScreen() {
       }
 
       const masked = `**** **** **** ${cleanCardNumber.slice(-4)}`;
-      const newItem = { id: Date.now().toString(), title: masked, type: selectedType };
+      const newItem = { 
+        id: Date.now().toString(), 
+        title: masked, 
+        type: 'card', 
+        provider: 'Card',
+        last4: cleanCardNumber.slice(-4),
+        holderName: holderName
+      };
       const updated = [...savedCards, newItem];
       setSavedCards(updated);
       // Save only non-default cards to storage
@@ -157,7 +175,27 @@ export default function PaymentSettingScreen() {
       visibilityTime: 3000,
     });
     setSelectedType(null);
-    setFormData({ holderName: '', cardNumber: '', expiry: '', cvv: '', upiId: '' });
+    setFormData({ holderName: '', cardNumber: '', expiry: '', cvv: '', upiId: '', upiApp: 'googlepay' });
+    
+    // Refresh data
+    const cards = await AsyncStorage.getItem('saved_cards');
+    const upis = await AsyncStorage.getItem('saved_upis');
+    if (cards) {
+      const parsedCards = JSON.parse(cards);
+      setSavedCards([
+        { id: '1', title: t('payment.credit_card', 'Credit Card'), type: 'credit', isDefault: true },
+        { id: '2', title: t('payment.debit_card', 'Debit Card'), type: 'debit', isDefault: true },
+        ...parsedCards.filter(c => !c.isDefault)
+      ]);
+    }
+    if (upis) {
+      const parsedUpis = JSON.parse(upis);
+      setSavedUpi([
+        { id: 'u1', title: t('payment.google_pay', 'Google Pay UPI'), icon: require('../../assets/icons/googlepay.png') },
+        { id: 'u2', title: t('payment.phonepe', 'PhonePe UPI'), icon: require('../../assets/icons/paypal.png') },
+        ...parsedUpis.filter(u => u.id !== 'u1' && u.id !== 'u2')
+      ]);
+    }
   };
 
   const handleUpiPress = async (item) => {
@@ -166,8 +204,8 @@ export default function PaymentSettingScreen() {
     // Artificial delay for "processing" feel
     setTimeout(async () => {
       let url = '';
-      if (item.id === 'u1') url = 'tez://upi/'; // Google Pay
-      else if (item.id === 'u2') url = 'phonepe://upi/'; // PhonePe
+      if (item.id === 'u1' || item.upiApp === 'googlepay') url = 'googlepay://upi/pay';
+      else if (item.id === 'u2' || item.upiApp === 'phonepe') url = 'phonepe://upi/pay';
       else url = 'upi://pay'; // Generic
 
       try {
@@ -306,13 +344,31 @@ export default function PaymentSettingScreen() {
             </View>
 
             {selectedType === 'upi' ? (
-              <TextInput
-                placeholder={t('payment.upi_id_placeholder', 'Enter UPI ID')}
-                style={styles.input}
-                placeholderTextColor="#999"
-                value={formData.upiId}
-                onChangeText={(val) => updateForm('upiId', val)}
-              />
+              <>
+                <View style={styles.upiSelector}>
+                  <TouchableOpacity 
+                    style={[styles.upiOption, formData.upiApp === 'googlepay' && styles.upiOptionActive]}
+                    onPress={() => updateForm('upiApp', 'googlepay')}
+                  >
+                    <Image source={require('../../assets/icons/googlepay.png')} style={styles.upiIcon} />
+                    <Text style={[styles.upiOptionText, formData.upiApp === 'googlepay' && styles.upiOptionTextActive]}>GPay</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.upiOption, formData.upiApp === 'phonepe' && styles.upiOptionActive]}
+                    onPress={() => updateForm('upiApp', 'phonepe')}
+                  >
+                    <Image source={require('../../assets/icons/paypal.png')} style={styles.upiIcon} />
+                    <Text style={[styles.upiOptionText, formData.upiApp === 'phonepe' && styles.upiOptionTextActive]}>PhonePe</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  placeholder={t('payment.upi_id_placeholder', 'Enter UPI ID')}
+                  style={styles.input}
+                  placeholderTextColor="#999"
+                  value={formData.upiId}
+                  onChangeText={(val) => updateForm('upiId', val)}
+                />
+              </>
             ) : (
               <>
                 <TextInput
@@ -583,5 +639,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
+  },
+  upiSelector: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  upiOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+    gap: 8,
+  },
+  upiOptionActive: {
+    borderColor: '#E41C26',
+    backgroundColor: '#FFF5F5',
+  },
+  upiIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+  },
+  upiOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  upiOptionTextActive: {
+    color: '#E41C26',
   },
 });

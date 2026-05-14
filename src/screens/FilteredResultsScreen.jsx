@@ -302,7 +302,7 @@ export default function FilteredResultsScreen() {
         if (drawerFilters?.costForTwo) {
           const range = drawerFilters.costForTwo;
           let min = 0;
-          let max = 5000;
+          let max = 100000;
           if (range === '0-200') { max = 200; }
           else if (range === '200-500') { min = 200; max = 500; }
           else if (range === '500-1000') { min = 500; max = 1000; }
@@ -310,7 +310,8 @@ export default function FilteredResultsScreen() {
           
           console.log(`💰 [Filter] Applying Cost For Two: ${min}-${max}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
-            const cost = parseFloat(rest.averageCost || rest.costForTwo || rest.price || 0);
+            const rawCost = rest.averageCost || rest.costForTwo || rest.price || 0;
+            const cost = parseFloat(String(rawCost).replace(/[^0-9.]/g, '')) || 0;
             const match = cost >= min && cost <= max;
             const restName = rest.name?.en || rest.name || 'Unknown';
             if (!match) console.log(`   ❌ [CostForTwo] ${restName}: ${cost} not in ${min}-${max}`);
@@ -365,25 +366,36 @@ export default function FilteredResultsScreen() {
           });
         }
 
-        // 6. Food Preference (Veg/Non-Veg)
-        if (drawerFilters?.foodPreference) {
-          const pref = drawerFilters.foodPreference;
-          console.log(`🥬 [Filter] Applying Preference: ${pref}`);
+        // 6. Food Preference (Veg/Non-Veg/Vegan)
+        if (drawerFilters?.foodPreference && drawerFilters.foodPreference.length > 0) {
+          const selectedPrefs = drawerFilters.foodPreference;
+          console.log(`🥬 [Filter] Applying Preferences: ${selectedPrefs.join(', ')}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
-            let match = true;
+            const resPref = String(rest.foodPreference || rest.foodType || rest.type || '').toLowerCase();
             const isVeg = rest.isVeg;
-            const foodType = rest.foodType || rest.type;
             
-            if (pref === 'veg') {
-              // Lenient check: If isVeg is undefined or true, consider it Veg-compatible
-              match = isVeg !== false && foodType !== 'non_veg' && foodType !== 'meat';
-            } else if (pref === 'non_veg') {
-              // Lenient check: Show unless explicitly marked as veg
-              match = isVeg !== true && foodType !== 'veg' && foodType !== 'pure_veg';
-            }
-            
+            return selectedPrefs.some(pref => {
+              if (pref === 'veg') {
+                return isVeg === true || resPref === 'veg' || resPref === 'pure_veg' || resPref === 'both';
+              } else if (pref === 'non_veg' || pref === 'non-veg') {
+                return isVeg === false || resPref === 'non_veg' || resPref === 'non-veg' || resPref === 'both' || resPref === 'meat';
+              } else if (pref === 'vegan') {
+                return resPref === 'vegan';
+              }
+              return false;
+            });
+          });
+        }
+
+        // 7. Cuisines Filter
+        if (drawerFilters?.cuisines && drawerFilters.cuisines.length > 0) {
+          const selected = drawerFilters.cuisines.map(c => c.toLowerCase());
+          console.log(`🍜 [Filter] Applying Cuisines: ${selected.join(', ')}`);
+          restaurantsToMap = restaurantsToMap.filter(rest => {
+            const resCuisines = (rest.cuisines || rest.cuisine || []).map(c => String(c).toLowerCase());
+            const match = selected.some(s => resCuisines.includes(s));
             const restName = rest.name?.en || rest.name || 'Unknown';
-            if (!match) console.log(`   ❌ [Pref] ${restName}: isVeg=${isVeg}, foodType=${foodType}, not matched with ${pref}`);
+            if (!match) console.log(`   ❌ [Cuisines] ${restName}: ${resCuisines.join(', ')} not in ${selected.join(', ')}`);
             return match;
           });
         }

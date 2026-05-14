@@ -193,6 +193,7 @@ export default function AddAddressScreen() {
     setMapRegion(region);
     if (!isMoving) {
       setIsMoving(true);
+      setSelectedAddressText(t('address.selecting', 'Selecting...'));
     }
   };
 
@@ -343,18 +344,19 @@ export default function AddAddressScreen() {
             disabled={isFetchingAddress || isMoving}
           >
             <View style={styles.dot} />
-            {isFetchingAddress || isMoving ? (
-              <View style={styles.fetchingContainer}>
-                <ActivityIndicator size="small" color="#E41C26" />
-                <Text style={styles.fetchingText}>
-                  {isMoving ? t('address.selecting_location', 'Selecting location...') : t('address.fetching', 'Fetching address...')}
-                </Text>
-              </View>
-            ) : (
-              <Text style={styles.address} numberOfLines={3}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.address, (isFetchingAddress || isMoving) && { opacity: 0.5 }]} numberOfLines={3}>
                 {selectedAddressText}
               </Text>
-            )}
+              {(isFetchingAddress || isMoving) && (
+                <View style={styles.fetchingIndicatorInline}>
+                  <ActivityIndicator size="small" color="#E41C26" />
+                  <Text style={styles.fetchingTextInline}>
+                    {isMoving ? t('address.selecting', 'Updating...') : t('address.fetching', 'Fetching...')}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -440,10 +442,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 10,
   },
-  fetchingText: {
-    fontSize: 14,
+  fetchingIndicatorInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  fetchingTextInline: {
+    fontSize: 12,
     color: '#999',
-    marginLeft: 10,
+    marginLeft: 6,
     fontStyle: 'italic',
   },
 

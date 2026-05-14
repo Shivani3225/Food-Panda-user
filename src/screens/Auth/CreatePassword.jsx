@@ -142,7 +142,7 @@ const ChangePasswordScreen = () => {
         >
           <ArrowLeft size={20} color="#111" />
         </TouchableOpacity>
-        <Text style={styles.title}>{t('change_password.title', 'Change Password')}</Text>
+        <Text style={styles.title}>{flow === 'forget' ? t('change_password.create_title', 'Create Password') : t('change_password.title', 'Change Password')}</Text>
       </View>
 
       {/* Input Fields */}

@@ -311,6 +311,7 @@ const styles = StyleSheet.create({
     color: '#1976D2', // Darker Blue for text
     fontWeight: '500',
     lineHeight: 14,
+    textAlign: 'center',
   },
 
   cardRight: {

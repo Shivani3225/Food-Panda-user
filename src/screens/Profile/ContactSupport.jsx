@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chatContent: {
-    flexGrow: 1,
     paddingHorizontal: 16,
     paddingVertical: 20,
   },
@@ -274,7 +273,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   userBubble: {
-    backgroundColor: '#E41C26',
+    backgroundColor: '#000000',
     alignSelf: 'flex-end',
     borderBottomRightRadius: 4,
   },

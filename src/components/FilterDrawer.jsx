@@ -98,10 +98,15 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
   const [rating, setRating] = useState(null);
   const [offers, setOffers] = useState([]);
   const [costForTwo, setCostForTwo] = useState(null);
-  const [foodPreference, setFoodPreference] = useState(null);
+  const [foodPreference, setFoodPreference] = useState([]);
   const [additionalFilters, setAdditionalFilters] = useState([]);
   const [radius, setRadius] = useState(null);
   const [isNearby, setIsNearby] = useState(false);
+  const [selectedCuisines, setSelectedCuisines] = useState([]);
+
+  const CUISINE_OPTIONS = useMemo(() => [
+    'Indian', 'Chinese', 'Italian', 'Burger', 'Pizza', 'Mexican', 'Thai', 'Continental'
+  ], []);
 
   const TIME_OPTIONS = useMemo(() => getTimeFilterOptions(t), [t]);
   const RATING_OPTIONS = useMemo(() => getRatingOptions(), []);
@@ -155,10 +160,11 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
     setRating(null);
     setOffers([]);
     setCostForTwo(null);
-    setFoodPreference(null);
+    setFoodPreference([]);
     setAdditionalFilters([]);
     setRadius(null);
     setIsNearby(false);
+    setSelectedCuisines([]);
     if (onReset) {
       onReset();
     }
@@ -175,6 +181,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       costForTwo,
       foodPreference,
       additionalFilters,
+      selectedCuisines,
     });
 
     const safeMinPrice = Math.max(MIN_PRICE_RANGE, Number(minPrice) || MIN_PRICE_RANGE);
@@ -198,6 +205,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       additionalFilters,
       radius,
       isNearby,
+      cuisines: selectedCuisines,
     };
 
     if (onApply) {
@@ -365,15 +373,18 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
             <Text style={styles.cardTitle}>{t('filter.food_preference', 'FOOD PREFERENCE')}</Text>
             <View style={styles.chipContainer}>
               {FOOD_OPTIONS.map(option => {
-                const isActive = foodPreference === option.id;
+                const isActive = foodPreference.includes(option.id);
                 return (
                   <Pressable
                     key={option.id}
                     onPress={() => {
-                      const nextValue = isActive ? null : option.id;
-                      setFoodPreference(nextValue);
-                      if (nextValue === 'non_veg') {
-                        setAdditionalFilters(prev => prev.filter(f => f !== 'pure_veg'));
+                      if (isActive) {
+                        setFoodPreference(foodPreference.filter(p => p !== option.id));
+                      } else {
+                        setFoodPreference([...foodPreference, option.id]);
+                        if (option.id === 'non_veg') {
+                          setAdditionalFilters(prev => prev.filter(f => f !== 'pure_veg'));
+                        }
                       }
                     }}
                     style={[styles.chip, isActive && styles.chipActive]}
@@ -442,6 +453,33 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                   >
                     <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                       {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* CUISINES */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{t('filter.cuisines', 'CUISINES')}</Text>
+            <View style={styles.chipContainer}>
+              {CUISINE_OPTIONS.map(cuisine => {
+                const isActive = selectedCuisines.includes(cuisine);
+                return (
+                  <Pressable
+                    key={cuisine}
+                    onPress={() => {
+                      if (isActive) {
+                        setSelectedCuisines(selectedCuisines.filter(c => c !== cuisine));
+                      } else {
+                        setSelectedCuisines([...selectedCuisines, cuisine]);
+                      }
+                    }}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                      {cuisine}
                     </Text>
                   </Pressable>
                 );

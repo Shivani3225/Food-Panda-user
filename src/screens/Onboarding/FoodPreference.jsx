@@ -7,6 +7,7 @@ import {
   ImageBackground,
   TouchableOpacity,
   useWindowDimensions,
+  StatusBar,
 } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -87,6 +88,7 @@ export default function FoodPreferences({ route }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {/* HEADER */}
       <TouchableOpacity
         style={styles.header}
