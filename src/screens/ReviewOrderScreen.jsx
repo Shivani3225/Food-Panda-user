@@ -20,6 +20,8 @@ import { toNumber } from '../services/cartPricing';
 import { CART_ROUTES } from '../config/routes';
 import apiClient from '../config/apiClient';
 import { useStripe } from '@stripe/stripe-react-native';
+import { API_BASE_URL as ENV_BASE_URL } from '@env';
+
 
 import {
   addAddress,
@@ -38,7 +40,8 @@ import { SPACING } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://api.waseeny.de/api';
+const API_BASE_URL = (ENV_BASE_URL.endsWith('/') ? ENV_BASE_URL.slice(0, -1) : ENV_BASE_URL) + (ENV_BASE_URL.includes('/api') ? '' : '/api');
+
 
 export default function ReviewOrderScreen() {
   const { t } = useTranslation();

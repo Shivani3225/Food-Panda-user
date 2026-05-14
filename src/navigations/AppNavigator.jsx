@@ -23,7 +23,7 @@ const Stack = createNativeStackNavigator();
 
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, loading: isLoading, user } = useAuth();
   
   console.log('[AppNavigator] Auth State:', { 
     isAuthenticated, 
