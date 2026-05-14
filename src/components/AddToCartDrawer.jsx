@@ -349,6 +349,14 @@ export default function AddToCartDrawer({
     });
   };
 
+  const handleSelectAllAddons = () => {
+    if (selectedTogetherIds.size === frequentlyBought.length) {
+      setSelectedTogetherIds(new Set());
+    } else {
+      setSelectedTogetherIds(new Set(frequentlyBought.map(x => x.id)));
+    }
+  };
+
   const decQty = () => setQuantity(q => Math.max(1, q - 1));
   const incQty = () => setQuantity(q => Math.min(99, q + 1));
 
@@ -754,57 +762,75 @@ export default function AddToCartDrawer({
 
               {/* Add-Ons */}
               {frequentlyBought.length > 0 && (
-                <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>
-                      {t('cart.add_ons', 'Add-Ons')}
-                    </Text>
-                    <Text style={styles.sectionHint}>({t('common.optional', 'Optional')})</Text>
-                  </View>
-
-                  {visibleTogether.map(x => {
-                    const checked = selectedTogetherIds.has(x.id);
-                    return (
-                      <Pressable
-                        key={x.id}
-                        style={styles.optionRow}
-                        onPress={() => toggleTogether(x.id)}
-                      >
-                        <Text style={styles.optionLabel}>
-                          {x.labelKey ? t(x.labelKey, x.label) : x.label}
-                        </Text>
-                        <View style={styles.optionRight}>
-                          {toNumber(x.price, 0) > 0 && (
-                            <Text style={styles.optionPrice}>
-                              + {activeCurrencySymbol}
-                              {toNumber(x.price, 0)}
-                            </Text>
-                          )}
-                          <View
-                            style={[
-                              styles.checkbox,
-                              checked && styles.checkboxChecked,
-                            ]}
-                          >
-                            {checked && (
-                              <Text style={styles.checkboxTick}>✓</Text>
-                            )}
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-
-                  {hiddenTogetherCount > 0 && (
-                    <Pressable
-                      style={styles.viewMoreBtn}
-                      onPress={() => setShowAllTogether(true)}
-                    >
-                      <Text style={styles.viewMoreText}>
-                        {t('cart.view_more', 'View {{count}} More', { count: hiddenTogetherCount })}
+                <View style={styles.addOnsWrapper}>
+                  <View style={styles.sectionHeaderNew}>
+                    <View>
+                      <Text style={styles.sectionTitleNew}>
+                        {t('cart.add_ons', 'Add-ons')}
+                      </Text>
+                      <Text style={styles.sectionSubtitleNew}>
+                        {t('cart.select_upto', 'Select upto {{count}}', { count: frequentlyBought.length })}
+                      </Text>
+                    </View>
+                    <Pressable onPress={handleSelectAllAddons}>
+                      <Text style={styles.selectAllText}>
+                        {selectedTogetherIds.size === frequentlyBought.length
+                          ? t('common.deselect_all', 'Deselect All')
+                          : t('common.select_all', 'Select All')}
                       </Text>
                     </Pressable>
-                  )}
+                  </View>
+
+                  <View style={styles.addOnsContainer}>
+                    {visibleTogether.map((x, idx) => {
+                      const checked = selectedTogetherIds.has(x.id);
+                      const isVeg = x.isVeg !== false; // Default to veg if not specified
+                      const badge = idx % 2 === 0 ? 'Bestseller' : 'Protein Rich';
+                      const badgeColor = idx % 2 === 0 ? '#ed1c24' : '#C2185B';
+
+                      return (
+                        <Pressable
+                          key={x.id}
+                          style={[styles.addOnRow, idx === visibleTogether.length - 1 && { borderBottomWidth: 0 }]}
+                          onPress={() => toggleTogether(x.id)}
+                        >
+                          <View style={styles.addOnLeft}>
+                            <View style={[styles.vegIcon, { borderColor: isVeg ? '#4CAF50' : '#E91E63' }]}>
+                              <View style={[styles.vegCircle, { backgroundColor: isVeg ? '#4CAF50' : '#E91E63', borderRadius: isVeg ? 99 : 0 }]} />
+                            </View>
+                            <View style={styles.addOnInfo}>
+                              {badge && (
+                                <Text style={[styles.addOnBadge, { color: badgeColor }]}>{badge}</Text>
+                              )}
+                              <Text style={styles.addOnName}>
+                                {x.labelKey ? t(x.labelKey, x.label) : x.label}
+                              </Text>
+                            </View>
+                          </View>
+                          
+                          <View style={styles.addOnRight}>
+                            <Text style={styles.addOnPrice}>
+                              + {activeCurrencySymbol}{toNumber(x.price, 0)}
+                            </Text>
+                            <View style={[styles.customCheckbox, checked && styles.customCheckboxChecked]}>
+                              {checked && <View style={styles.customCheckboxInner} />}
+                            </View>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+
+                    {hiddenTogetherCount > 0 && (
+                      <Pressable
+                        style={styles.moreAddOnsBtn}
+                        onPress={() => setShowAllTogether(true)}
+                      >
+                        <Text style={styles.moreAddOnsText}>
+                          +{hiddenTogetherCount} more
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               )}
 
@@ -846,50 +872,30 @@ export default function AddToCartDrawer({
             </ScrollView>
 
             {/* Bottom Bar */}
-            <View style={styles.bottomBar}>
-              <View style={styles.bottomTopRow}>
-                <View style={styles.qtyWrap}>
-                  <Pressable onPress={decQty} style={styles.qtyBtn}>
-                    <Text style={styles.qtyBtnText}>−</Text>
+            <View style={styles.footerNew}>
+              <View style={styles.footerRow}>
+                <View style={styles.qtyContainerNew}>
+                  <Pressable onPress={decQty} style={styles.qtyActionBtn}>
+                    <Text style={styles.qtyActionText}>−</Text>
                   </Pressable>
-                  <Text style={styles.qtyText}>{quantity}</Text>
-                  <Pressable onPress={incQty} style={styles.qtyBtn}>
-                    <Text style={styles.qtyBtnText}>＋</Text>
+                  <Text style={styles.qtyValueNew}>{quantity}</Text>
+                  <Pressable onPress={incQty} style={styles.qtyActionBtn}>
+                    <Text style={styles.qtyActionText}>+</Text>
                   </Pressable>
                 </View>
 
-                <View style={styles.totalWrap}>
-                  <Text style={styles.totalValue}>
-                    {activeCurrencySymbol}
-                    {totalPrice}
+                <Pressable
+                  onPress={handleAdd}
+                  style={[styles.mainAddBtn, isSubmitting && styles.addCartBtnDisabled]}
+                  disabled={isSubmitting}
+                >
+                  <Text style={styles.mainAddText}>
+                    {isSubmitting
+                      ? (item?.cartLineId ? t('common.updating', 'Updating...') : t('common.adding', 'Adding...'))
+                      : `${item?.cartLineId ? t('cart.update_item', 'Update Item') : t('cart.add_item', 'Add Item')} | ${activeCurrencySymbol}${totalPrice}`}
                   </Text>
-                  <Text style={styles.totalLabel}>{t('cart.total_price', 'Total Price')}</Text>
-                </View>
+                </Pressable>
               </View>
-
-              {/* Price Breakdown Preview */}
-              {(selectedFlavor || selectedTogetherIds.size > 0) && (
-                <View style={styles.priceBreakdownPreview}>
-                  <Text style={styles.breakdownPreviewText}>
-                    {t('cart.base', 'Base')}: {activeCurrencySymbol}{basePrice}
-                    {selectedFlavor && ` + ${t('cart.variation', 'Variation')}: ${activeCurrencySymbol}${toNumber(selectedFlavor.priceDelta, 0)}`}
-                    {selectedTogetherIds.size > 0 && ` + ${t('cart.add_ons', 'Add-ons')}: ${activeCurrencySymbol}${selectedTogetherTotal}`}
-                    {quantity > 1 && ` × ${quantity}`}
-                  </Text>
-                </View>
-              )}
-
-              <Pressable
-                onPress={handleAdd}
-                style={[styles.addCartBtn, isSubmitting && styles.addCartBtnDisabled]}
-                disabled={isSubmitting}
-              >
-                <Text style={styles.addCartText}>
-                  {isSubmitting
-                    ? (item?.cartLineId ? t('common.updating', 'Updating...') : t('common.adding', 'Adding...'))
-                    : (item?.cartLineId ? t('cart.update_cart', 'Update Cart') : t('cart.add_to_cart', 'Add to Cart'))}
-                </Text>
-              </Pressable>
             </View>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -1215,6 +1221,176 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '900',
     fontSize: 14,
+  },
+  // New Design Styles
+  addOnsWrapper: {
+    marginTop: 20,
+    backgroundColor: '#F7F8FA',
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sectionHeaderNew: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitleNew: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1D1E',
+  },
+  sectionSubtitleNew: {
+    fontSize: 13,
+    color: '#676767',
+    marginTop: 2,
+  },
+  selectAllText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E41C26',
+  },
+  addOnsContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addOnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  addOnLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  vegIcon: {
+    width: 14,
+    height: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 3,
+    marginRight: 10,
+  },
+  vegCircle: {
+    width: 7,
+    height: 7,
+  },
+  addOnInfo: {
+    flex: 1,
+  },
+  addOnBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  addOnName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  addOnRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  addOnPrice: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#444',
+  },
+  customCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#BDC3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customCheckboxChecked: {
+    borderColor: '#1A1D1E',
+    backgroundColor: '#1A1D1E',
+  },
+  customCheckboxInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 1,
+    backgroundColor: '#FFF',
+  },
+  moreAddOnsBtn: {
+    paddingVertical: 14,
+    alignItems: 'flex-start',
+  },
+  moreAddOnsText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+  },
+  footerNew: {
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 12,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  qtyContainerNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E2E2',
+    borderRadius: 8,
+    height: 48,
+    paddingHorizontal: 8,
+    backgroundColor: '#FFF',
+  },
+  qtyActionBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyActionText: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#27AE60',
+  },
+  qtyValueNew: {
+    width: 30,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1D1E',
+  },
+  mainAddBtn: {
+    flex: 1,
+    backgroundColor: '#27AE60',
+    borderRadius: 8,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mainAddText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   // Category drawer specific styles
   categoryHeader: {
