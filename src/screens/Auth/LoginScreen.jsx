@@ -68,13 +68,19 @@ export default function LoginScreen() {
         console.log('Social login result:', result.data);
 
         const user = result.data?.user || result.data?.data?.user;
+        const token = result.data?.token || result.data?.data?.token;
 
-        Toast.show({
-          type: 'topSuccess',
-          text1: t('login.success_title', 'Login Successful'),
-          text2: `Welcome ${user?.name || data.user.name}`,
-        });
-        navigation.replace('MainTabs');
+        if (user && token) {
+          await setAuthenticatedUser(token, user);
+          Toast.show({
+            type: 'topSuccess',
+            text1: t('login.success_title', 'Login Successful'),
+            text2: `Welcome ${user?.name || data.user.name}`,
+          });
+          navigation.replace('MainTabs');
+        } else {
+          throw new Error('Invalid response from server');
+        }
       }
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {

@@ -63,7 +63,7 @@ const getReasons = (t) => [
 export default function DeleteAccountScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   useHideTabBar(navigation);
   const [reasonVisible, setReasonVisible] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
@@ -83,8 +83,17 @@ export default function DeleteAccountScreen() {
     try {
       const finalReason = isOtherSelected ? customReason.trim() : selectedReason;
       await deleteAccount(finalReason);
-      // Navigate to completion screen after successful deletion
-      navigation.navigate('DeletionComplete');
+      
+      // Perform local logout to clear state
+      await logout();
+      
+      Toast.show({
+        type: 'success',
+        text1: t('common.success', 'Success'),
+        text2: t('delete_account.delete_success', 'Your account has been deleted successfully.'),
+      });
+      
+      // Navigation will be handled by AppNavigator observing isAuthenticated change
     } catch (error) {
       console.error('Error deleting account:', error);
       Toast.show({

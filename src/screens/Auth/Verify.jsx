@@ -315,8 +315,8 @@ export default function OtpVerificationScreen() {
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.changeEmailText}>
-                {flow === 'forget' 
-                  ? t('otp.change_email', 'Change Email') 
+                {flow === 'forget'
+                  ? t('otp.change_email', 'Change Email')
                   : t('otp.change_mobile', 'Change Mobile Number')}
               </Text>
             </TouchableOpacity>

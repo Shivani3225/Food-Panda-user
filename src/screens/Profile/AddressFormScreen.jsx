@@ -544,7 +544,7 @@ export default function AddressFormScreen() {
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <Text style={styles.addButtonText}>
-                {t('address_form.add_address', 'Add Address')}
+                {isEditing ? t('address_form.save_changes', 'Save Changes') : t('address_form.add_address', 'Add Address')}
               </Text>
             )}
           </TouchableOpacity>

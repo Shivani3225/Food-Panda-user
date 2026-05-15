@@ -142,7 +142,10 @@ const ChangePasswordScreen = () => {
         >
           <ArrowLeft size={20} color="#111" />
         </TouchableOpacity>
-        <Text style={styles.title}>{flow === 'forget' ? t('change_password.create_title', 'Create Password') : t('change_password.title', 'Change Password')}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{flow === 'forget' ? t('change_password.create_title', 'Create Password') : t('change_password.title', 'Change Password')}</Text>
+        </View>
+        <View style={styles.placeholder} />
       </View>
 
       {/* Input Fields */}
@@ -199,13 +202,25 @@ const styles = StyleSheet.create({
 
   backBtn: {
     padding: scale(4),
+    position: 'absolute',
+    left: 0,
+    zIndex: 10,
+  },
+
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   title: {
     fontSize: FONT.md,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#000000',
-    marginLeft: wp(3.33),
+  },
+
+  placeholder: {
+    width: 24,
   },
 
   inputBlock: {

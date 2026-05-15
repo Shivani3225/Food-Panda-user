@@ -63,26 +63,7 @@ export default function AddressesScreen() {
           }))
         : [];
         
-      // De-duplicate addresses based on addressLine and city
-      const uniqueAddresses = [];
-      const seenAddresses = new Set();
-      
-      formattedAddresses.forEach(addr => {
-        // Use a more robust key: just alphanumeric characters from addressLine
-        const cleanAddress = (addr.addressLine || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanCity = (addr.city || '').toLowerCase().trim();
-        const key = `${cleanAddress}-${cleanCity}`;
-        
-        if (!seenAddresses.has(key) && cleanAddress) {
-          seenAddresses.add(key);
-          uniqueAddresses.push(addr);
-        } else if (!cleanAddress) {
-          // If no address line, just push it (fallback)
-          uniqueAddresses.push(addr);
-        }
-      });
-      
-      setAddresses(uniqueAddresses);
+      setAddresses(formattedAddresses);
     } catch (err) {
       console.error('Error fetching addresses:', err);
       setError(err.message);

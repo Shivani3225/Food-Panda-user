@@ -121,18 +121,25 @@ export default function PaymentSettingScreen() {
         return;
       }
 
+      // Improved Luhn Algorithm
       let sum = 0;
       let shouldDouble = false;
       for (let i = cleanCardNumber.length - 1; i >= 0; i--) {
         let digit = parseInt(cleanCardNumber.charAt(i), 10);
         if (shouldDouble) {
-          if ((digit *= 2) > 9) digit -= 9;
+          digit *= 2;
+          if (digit > 9) digit -= 9;
         }
         sum += digit;
         shouldDouble = !shouldDouble;
       }
+      
       if (sum % 10 !== 0) {
-        Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.fake_card', 'Please enter a valid card number') });
+        Toast.show({ 
+          type: 'error', 
+          text1: t('common.error', 'Error'), 
+          text2: t('payment.invalid_card_checksum', 'Please enter a valid card number') 
+        });
         return;
       }
 
@@ -204,20 +211,36 @@ export default function PaymentSettingScreen() {
     // Artificial delay for "processing" feel
     setTimeout(async () => {
       let url = '';
-      if (item.id === 'u1' || item.upiApp === 'googlepay') url = 'googlepay://upi/pay';
-      else if (item.id === 'u2' || item.upiApp === 'phonepe') url = 'phonepe://upi/pay';
-      else url = 'upi://pay'; // Generic
+      const upiId = item.token || item.title || '';
+      const payeeName = 'Food Panda';
+      
+      // Construct a basic UPI URL
+      const baseUpiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&am=0`;
+
+      if (item.id === 'u1' || item.provider === 'googlepay') {
+        url = Platform.OS === 'ios' ? `gpay://upi/pay?pa=${upiId}` : baseUpiUrl;
+      } else if (item.id === 'u2' || item.provider === 'phonepe') {
+        url = Platform.OS === 'ios' ? `phonepe://pay?pa=${upiId}` : baseUpiUrl;
+      } else {
+        url = baseUpiUrl;
+      }
 
       try {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
           await Linking.openURL(url);
         } else {
-          Toast.show({
-            type: 'error',
-            text1: t('common.error', 'Error'),
-            text2: t('payment.app_not_found', 'Selected UPI app is not installed on this device'),
-          });
+          // Fallback to generic upi:// if specific app fails
+          const genericSupported = await Linking.canOpenURL(baseUpiUrl);
+          if (genericSupported) {
+            await Linking.openURL(baseUpiUrl);
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: t('common.error', 'Error'),
+              text2: t('payment.app_not_found', 'Selected UPI app is not installed on this device'),
+            });
+          }
         }
       } catch (err) {
         console.error('An error occurred', err);
@@ -229,7 +252,7 @@ export default function PaymentSettingScreen() {
       } finally {
         setLoading(false);
       }
-    }, 1500);
+    }, 800);
   };
 
   const handleCloseForm = () => {
@@ -283,11 +306,17 @@ export default function PaymentSettingScreen() {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.row}
-                onPress={() => item.isDefault && setSelectedType(item.type)}
-                activeOpacity={item.isDefault ? 0.7 : 1}
+                onPress={() => setSelectedType(item.type)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.rowText}>{item.title}</Text>
-                {item.isDefault && <Plus size={20} color="#000" strokeWidth={2.5} />}
+                {item.isDefault ? (
+                  <Plus size={20} color="#000" strokeWidth={2.5} />
+                ) : (
+                  <View style={styles.savedBadge}>
+                    <Text style={styles.savedBadgeText}>{t('payment.saved', 'Saved')}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             )}
           />
@@ -673,5 +702,16 @@ const styles = StyleSheet.create({
   },
   upiOptionTextActive: {
     color: '#E41C26',
+  },
+  savedBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  savedBadgeText: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '600',
   },
 });

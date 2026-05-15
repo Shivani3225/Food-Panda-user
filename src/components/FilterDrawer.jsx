@@ -247,7 +247,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
           contentContainerStyle={styles.content}
         >
           {/* SORT BY */}
-          {/* <View style={styles.card}>
+          <View style={styles.card}>
             <Text style={styles.cardTitle}>{t('filter.sort_by', 'SORT BY')}</Text>
             <View style={styles.sortOptions}>
               {SORT_OPTIONS.map(option => {
@@ -273,7 +273,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                 );
               })}
             </View>
-          </View> */}
+          </View>
 
           {/* TIME FILTER */}
           <View style={styles.card}>
@@ -489,9 +489,13 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
 
 
 
-          <Pressable style={styles.searchBtn} onPress={handleApply}>
-            <Text style={styles.searchBtnText}>{t('filter.search', 'Search')}</Text>
-          </Pressable>
+          <TouchableOpacity 
+            style={styles.applyBtn} 
+            onPress={handleApply}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.applyBtnText}>{t('filter.apply', 'Apply Filters')}</Text>
+          </TouchableOpacity>
         </ScrollView>
       </Animated.View>
     </Modal>
@@ -661,19 +665,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 8,
   },
-  searchBtn: {
-    marginTop: 6,
-    marginBottom: 20,
-    height: 48,
+  applyBtn: {
+    marginTop: 12,
+    marginBottom: 30,
+    height: 52,
     borderRadius: 14,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#ed1c24',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#ed1c24',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  searchBtnText: {
+  applyBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   chipContainer: {
     flexDirection: 'row',
