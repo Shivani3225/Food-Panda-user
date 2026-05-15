@@ -135,32 +135,33 @@ export default function LoginScreen() {
     }
   }, [countries]);
 
-  const renderCountryItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.countryItem}
-      onPress={() => {
-        setSelectedCountry(item);
-        setShowCountryPicker(false);
-        setEmail('');
-      }}
-    >
-      <Image 
-        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
-        style={styles.countryFlagImage} 
-      />
-      <View style={styles.countryInfo}>
-        <Text style={styles.countryName}>{item.country}</Text>
-        <Text style={styles.countryCode}>
-          {item.fullCode?.startsWith('+') ? item.fullCode : 
-           item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
-           item.code}
-        </Text>
-      </View>
-      {selectedCountry.code === item.code && (
-        <Text style={styles.checkmark}>✓</Text>
-      )}
-    </TouchableOpacity>
-  );
+  const renderCountryItem = ({ item }) => {
+    const displayCode = item.fullCode?.startsWith('+') ? item.fullCode : 
+                       item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
+                       item.code;
+    
+    return (
+      <TouchableOpacity
+        style={styles.countryItem}
+        onPress={() => {
+          setSelectedCountry(item);
+          setShowCountryPicker(false);
+          setEmail('');
+        }}
+      >
+        <Image 
+          source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
+          style={styles.countryFlagImage} 
+        />
+        <View style={styles.countryInfo}>
+          <Text style={styles.countryName}>{item.country} ({displayCode})</Text>
+        </View>
+        {selectedCountry.code === item.code && (
+          <Text style={styles.checkmark}>✓</Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const validate = () => {
     let valid = true;
