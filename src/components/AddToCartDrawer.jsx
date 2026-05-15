@@ -426,7 +426,7 @@ export default function AddToCartDrawer({
         console.log('   - Item Payload:', JSON.stringify(cartItem, null, 2));
         result = await addToCart(cartItem);
       }
-      
+
       console.log('📥 [AddToCartDrawer] Result from Backend:', JSON.stringify(result, null, 2));
 
       if (result?.conflict) {
@@ -678,9 +678,13 @@ export default function AddToCartDrawer({
               <View style={styles.handle} />
             </View>
 
-            <Pressable style={styles.closeButtonNew} onPress={requestClose}>
-              <Text style={styles.closeButtonTextNew}>✕</Text>
-            </Pressable>
+            <View style={styles.floatingHeader}>
+              <Pressable style={styles.headerCloseBtn} onPress={requestClose}>
+                <View style={styles.headerCloseBtnInner}>
+                  <Text style={styles.headerCloseBtnText}>✕</Text>
+                </View>
+              </Pressable>
+            </View>
 
             <ScrollView
               ref={scrollViewRef}
@@ -710,7 +714,7 @@ export default function AddToCartDrawer({
               {flavors.length > 0 && (
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>{t('cart.choice_of_variation', 'Choice of Flavor')}</Text>
+                    <Text style={styles.sectionTitle}>{t('cart.choice_of_flavour', 'Choice of Flavour')}</Text>
                     <Text style={styles.sectionHint}>({t('common.optional', 'Optional')})</Text>
                   </View>
 
@@ -736,11 +740,11 @@ export default function AddToCartDrawer({
                           )}
                           <View
                             style={[
-                              styles.radioOuter,
-                              selected && styles.radioOuterActive,
+                              styles.customCheckbox,
+                              selected && styles.customCheckboxChecked,
                             ]}
                           >
-                            {selected && <View style={styles.radioInner} />}
+                            {selected && <View style={styles.customCheckboxInner} />}
                           </View>
                         </View>
                       </Pressable>
@@ -807,7 +811,7 @@ export default function AddToCartDrawer({
                               </Text>
                             </View>
                           </View>
-                          
+
                           <View style={styles.addOnRight}>
                             <Text style={styles.addOnPrice}>
                               + {activeCurrencySymbol}{toNumber(x.price, 0)}
@@ -913,30 +917,46 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  closeButtonNew: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    zIndex: 100,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  closeButtonTextNew: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '700',
-  },
   sheet: {
     backgroundColor: '#FFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: 'hidden',
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: -40,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    zIndex: 100,
+  },
+  headerCloseBtn: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCloseBtnInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  headerCloseBtnText: {
+    fontSize: 18,
+    color: '#000',
+    fontWeight: '700',
   },
   handleWrap: {
     paddingTop: 10,
@@ -1135,7 +1155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#f36b72ff',
+    borderColor: '#ed1c24',
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 6,
@@ -1227,7 +1247,7 @@ const styles = StyleSheet.create({
   // New Design Styles
   addOnsWrapper: {
     marginTop: 20,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: '#FFFFFF',
     marginHorizontal: -16,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -1357,7 +1377,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E2E2',
+    borderColor: '#ed1c24',
     borderRadius: 8,
     height: 48,
     paddingHorizontal: 8,
@@ -1372,7 +1392,7 @@ const styles = StyleSheet.create({
   qtyActionText: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#27AE60',
+    color: '#ed1c24',
   },
   qtyValueNew: {
     width: 30,
@@ -1383,7 +1403,7 @@ const styles = StyleSheet.create({
   },
   mainAddBtn: {
     flex: 1,
-    backgroundColor: '#27AE60',
+    backgroundColor: '#ed1c24',
     borderRadius: 8,
     height: 48,
     alignItems: 'center',

@@ -179,7 +179,12 @@ const DishCard = memo(({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.addDishBtn} activeOpacity={0.7} onPress={onAddToCart}>
+      <TouchableOpacity 
+        style={styles.addDishBtn} 
+        activeOpacity={0.7} 
+        onPress={onAddToCart}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
         <Plus size={20} color="#000" />
       </TouchableOpacity>
     </TouchableOpacity>
@@ -561,6 +566,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
+    marginRight: scale(20),
+    marginTop: scale(-45),
+    zIndex: 10,
   },
 
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },

@@ -22,7 +22,7 @@ export const ORDER_ROUTES = {
   getOrders: '/api/orders/my-orders',
   getOrderById: '/api/orders/:id/details',
   getOrderByIdCustomer: '/api/orders/:id/customer',
-  
+
   //dummy api
   rateOrder: '/api/orders/:id/rate',
   rateRestaurant: '/api/restaurants/:id/rate',
@@ -38,6 +38,10 @@ export const SEARCH_ROUTES = {
 
 export const HOME_ROUTES = {
   getHomeData: '/api/home',
+};
+
+export const COUPON_ROUTES = {
+  getCoupons: '/api/cms/promocodes',
 };
 
 export const CART_ROUTES = {

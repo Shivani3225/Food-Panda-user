@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import { translateField } from '../../services/translationService';
+import { translateField, getLocalizedText } from '../../services/translationService';
 
 import { CartContext } from '../../context/CartContext';
 import { useNavigation } from '@react-navigation/native';
@@ -236,13 +236,21 @@ const OrderCard = memo(function OrderCard({ item }) {
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
 
-  const restaurantName = item?.restaurant?.name?.[currentLang] || item?.restaurant?.name?.en || item?.restaurantName || t('orders.restaurant', 'Restaurant');
-  const [displayName, setDisplayName] = useState(restaurantName);
-
-  useEffect(() => {
-    if (currentLang === 'en') { setDisplayName(restaurantName); return; }
-    translateField(item?.restaurant?.name || item?.restaurantName, currentLang).then(v => { if (v) setDisplayName(v); });
-  }, [currentLang, item?.restaurant?.name, item?.restaurantName]);
+  const firstItem = item?.items?.[0];
+  const restaurantName =
+    getLocalizedText(item?.restaurant?.name, currentLang) ||
+    getLocalizedText(item?.restaurant?.title, currentLang) ||
+    getLocalizedText(item?.restaurantName, currentLang) ||
+    getLocalizedText(item?.restaurant_name, currentLang) ||
+    getLocalizedText(item?.shopName, currentLang) ||
+    getLocalizedText(item?.vendorName, currentLang) ||
+    getLocalizedText(item?.restaurant?.restaurantName, currentLang) ||
+    getLocalizedText(firstItem?.restaurant?.name, currentLang) ||
+    getLocalizedText(firstItem?.product?.restaurant?.name, currentLang) ||
+    getLocalizedText(firstItem?.restaurantName, currentLang) ||
+    // Only use item.restaurant if it's not a hex ID
+    (typeof item?.restaurant === 'string' && !/^[0-9a-fA-F]{24}$/.test(item.restaurant) ? item.restaurant : '') ||
+    t('orders.restaurant', 'Restaurant');
 
   const items = Array.isArray(item?.items) ? item.items : [];
   const shownItems = items.slice(0, 2);
@@ -255,7 +263,7 @@ const OrderCard = memo(function OrderCard({ item }) {
     <Pressable style={styles.card} onPress={() => navigation.navigate("OrderDetailsScreen", { orderId: item._id || item.id })}>
       <View style={styles.rowBetween}>
         <View>
-          <Text style={styles.restaurant}>{displayName}</Text>
+          <Text style={styles.restaurant}>{restaurantName}</Text>
           <Text style={styles.cuisine} numberOfLines={1}>{cuisineLine || '—'}</Text>
         </View>
         <ChevronRight size={18} color="#BDBDBD" />

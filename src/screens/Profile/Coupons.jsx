@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -15,81 +16,48 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import CouponDetailsDrawer from '../../components/CouponDetailsDrawer';
 import { useAuth } from '../../context/AuthContext';
+import { getCoupons as fetchCouponsFromApi } from '../../services/couponService';
 
-const getCoupons = (t) => [
-  {
-    id: 'PICHAPIE',
-    title: t('coupons.shakeys_offer', "500 off in Shakey's Pizza"),
-    titleKey: 'coupons.shakeys_offer',
-    amount: 500,
-    minSpend: 1000,
-    expires: t('coupons.expires_jan_2026', '31 Jan 2026'),
-    expiresKey: 'coupons.expires_jan_2026',
-    terms: t('coupons.terms_new_users', 'Terms valid for new users only. One-time use.'),
-    termsKey: 'coupons.terms_new_users',
-  },
-  {
-    id: 'PICHAPIE-2',
-    title: t('coupons.shakeys_offer', "500 off in Shakey's Pizza"),
-    titleKey: 'coupons.shakeys_offer',
-    amount: 500,
-    minSpend: 1000,
-    expires: t('coupons.expires_jan_2026', '31 Jan 2026'),
-    expiresKey: 'coupons.expires_jan_2026',
-    terms: t('coupons.terms_new_users', 'Terms valid for new users only. One-time use.'),
-    termsKey: 'coupons.terms_new_users',
-  },
-  {
-    id: 'PICHAPIE-3',
-    title: t('coupons.shakeys_offer', "500 off in Shakey's Pizza"),
-    titleKey: 'coupons.shakeys_offer',
-    amount: 500,
-    minSpend: 1000,
-    expires: t('coupons.expires_jan_2026', '31 Jan 2026'),
-    expiresKey: 'coupons.expires_jan_2026',
-    terms: t('coupons.terms_new_users', 'Terms valid for new users only. One-time use.'),
-    termsKey: 'coupons.terms_new_users',
-  },
-  {
-    id: 'PICHAPIE-4',
-    title: t('coupons.shakeys_offer', "500 off in Shakey's Pizza"),
-    titleKey: 'coupons.shakeys_offer',
-    amount: 500,
-    minSpend: 1000,
-    expires: t('coupons.expires_jan_2026', '31 Jan 2026'),
-    expiresKey: 'coupons.expires_jan_2026',
-    terms: t('coupons.terms_new_users', 'Terms valid for new users only. One-time use.'),
-    termsKey: 'coupons.terms_new_users',
-  },
-  {
-    id: 'PICHAPIE-5',
-    title: t('coupons.shakeys_offer', "500 off in Shakey's Pizza"),
-    titleKey: 'coupons.shakeys_offer',
-    amount: 500,
-    minSpend: 1000,
-    expires: t('coupons.expires_jan_2026', '31 Jan 2026'),
-    expiresKey: 'coupons.expires_jan_2026',
-    terms: t('coupons.terms_new_users', 'Terms valid for new users only. One-time use.'),
-    termsKey: 'coupons.terms_new_users',
-  },
-];
 
 export default function Coupons() {
   const { t } = useTranslation();
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [selectedCoupon, setSelectedCoupon] = useState(null);
 
-  const COUPONS = useMemo(() => getCoupons(t), [t]);
+  const fetchCoupons = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await fetchCouponsFromApi();
+      const promoList = Array.isArray(data) ? data : data?.promocodes || [];
+      setCoupons(promoList);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching coupons:', err);
+      setError('Failed to load coupons');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCoupons();
+  }, [fetchCoupons]);
 
   const list = useMemo(() => {
-    if (!query.trim()) return COUPONS;
+    if (!query.trim()) return coupons;
     const q = query.toLowerCase();
-    return COUPONS.filter(c =>
-      [c.id, c.title, c.terms].some(v => v.toLowerCase().includes(q)),
-    );
-  }, [query, COUPONS]);
+    return coupons.filter(c => {
+      const code = (c.code || c.id || '').toLowerCase();
+      const title = (c.title || '').toLowerCase();
+      const description = (c.description || c.terms || '').toLowerCase();
+      return code.includes(q) || title.includes(q) || description.includes(q);
+    });
+  }, [query, coupons]);
 
   const handleUseNow = useCallback((coupon) => {
     if (!coupon) return;
@@ -142,48 +110,73 @@ export default function Coupons() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        {list.map(item => (
-          <View key={item.id} style={styles.card}>
-            <View style={styles.cardContent}>
-              <View style={styles.cardLeft}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.amountText}>{currencySymbol}{item.amount.toFixed(2)}</Text>
-
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaText}>
-                    {t('coupons.min_spend', 'Min spend')} {currencySymbol}{item.minSpend.toFixed(2)}
-                  </Text>
-                  <Text style={styles.metaDot}>•</Text>
-                  <Text style={styles.metaText}>
-                    {t('coupons.use_by', 'Use by')} {item.expires}
-                  </Text>
-                </View>
-
-                <View style={styles.codeRow}>
-                  <Text style={styles.codeText}>{item.id}</Text>
-                  <Pressable
-                    style={styles.useBtn}
-                    onPress={() => handleUseNow(item)}
-                    android_ripple={{ color: '#FF4444', borderless: false }}
-                  >
-                    <Text style={styles.useBtnText}>{t('coupons.use_now', 'Use Now')}</Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              <View style={styles.cardRight}>
-                <Text style={styles.percent}>%</Text>
-              </View>
-            </View>
-
-            {/* Light Blue Terms Banner */}
-            <View style={styles.termsBanner}>
-              <Text style={styles.termsText}>
-                {t('coupons.terms_header', 'Terms:')} {item.terms}
-              </Text>
-            </View>
+        {loading ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color="#E53935" />
           </View>
-        ))}
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={fetchCoupons}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : list.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>{t('favourite.no_dishes', 'No coupons yet')}</Text>
+          </View>
+        ) : (
+          list.map(item => (
+            <View key={item._id || item.id} style={styles.card}>
+              <View style={styles.cardContent}>
+                <View style={styles.cardLeft}>
+                  <Text style={styles.cardTitle}>{item.title || item.code}</Text>
+                  <Text style={styles.amountText}>
+                    {item.discountType === 'percentage' 
+                      ? `${item.discountValue}% OFF` 
+                      : `${currencySymbol}${item.discountValue || item.amount}`}
+                  </Text>
+
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaText}>
+                      {t('coupons.min_spend', 'Min spend')} {currencySymbol}{item.minOrderValue || item.minSpend || 0}
+                    </Text>
+                    {item.expirationDate && (
+                      <>
+                        <Text style={styles.metaDot}>•</Text>
+                        <Text style={styles.metaText}>
+                          {t('coupons.use_by', 'Use by')} {new Date(item.expirationDate).toLocaleDateString()}
+                        </Text>
+                      </>
+                    )}
+                  </View>
+
+                  <View style={styles.codeRow}>
+                    <Text style={styles.codeText}>{item.code || item.id}</Text>
+                    <Pressable
+                      style={styles.useBtn}
+                      onPress={() => handleUseNow(item)}
+                      android_ripple={{ color: '#FF4444', borderless: false }}
+                    >
+                      <Text style={styles.useBtnText}>{t('coupons.use_now', 'Use Now')}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={styles.cardRight}>
+                  <Text style={styles.percent}>%</Text>
+                </View>
+              </View>
+
+              {/* Light Blue Terms Banner */}
+              <View style={styles.termsBanner}>
+                <Text style={styles.termsText}>
+                  {t('coupons.terms_header', 'Terms:')} {item.description || item.terms || 'T&C Apply'}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
 
       <CouponDetailsDrawer
@@ -324,4 +317,32 @@ const styles = StyleSheet.create({
     color: '#F0F0F0',
     fontWeight: '800',
   },
+  centerBox: {
+    paddingVertical: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: '#E53935',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFF',
+    fontWeight: '700',
+  },
+  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100 },
+  emptyText: { fontSize: 16, color: '#999', textAlign: 'center' },
 });

@@ -476,15 +476,16 @@ export default function OrderDetailsScreen() {
                     <Text style={styles.restaurantImageName}>{translatedRestaurantName}</Text>
                     <Text style={styles.restaurantImageTags}>{translatedRestaurantTags}</Text>
                     <TouchableOpacity
-                      style={styles.menuButtonContainer}
+                      style={styles.menuLink}
                       activeOpacity={0.7}
                       onPress={() => {
-                        if (order?.restaurant?._id) {
-                          navigation.navigate('RestaurantDetail', { restaurant: order.restaurant });
+                        const res = order?.restaurantData || order?.restaurant;
+                        if (res?._id || res?.id) {
+                          navigation.navigate('RestaurantDetail', { restaurant: res });
                         }
                       }}
                     >
-                      <Text style={styles.menuButtonText}>{t('order_details.menu', 'Menu')} &gt;</Text>
+                      <Text style={styles.menuLinkText}>{t('order_details.menu', 'Menu')} &gt;</Text>
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity style={styles.callButton} activeOpacity={0.85} onPress={handleCallNow}>
@@ -529,80 +530,68 @@ export default function OrderDetailsScreen() {
             </View>
 
             <View style={styles.billSection}>
-              <Text style={styles.sectionTitle}>{t('order_details.bill_details', 'Bill Details')}</Text>
-
               <View style={styles.billCard}>
-                <View style={styles.billRow}>
+                <Text style={styles.infoTitle}>{t('order_details.bill_details', 'Bill Details')}</Text>
+                <View style={styles.billRowBordered}>
                   <Text style={styles.billLabel}>{t('order_details.subtotal', 'Subtotal')}</Text>
-                  <Text style={styles.billValue}>{totals.subtotal.toFixed(2)} {currencySymbol}</Text>
+                  <Text style={styles.billValue}>{currencySymbol}{totals.subtotal.toFixed(2)}</Text>
                 </View>
 
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>{t('order_details.delivery_fee', 'Delivery Fee')}</Text>
+                <View style={styles.billRowBordered}>
+                  <Text style={styles.billLabel}>{t('order_details.standard_delivery', 'Standard Delivery')}</Text>
                   {totals.delivery === 0 ? (
                     <Text style={styles.deliveryFree}>{t('order_details.free', 'Free')}</Text>
                   ) : (
-                    <Text style={styles.billValue}>{totals.delivery.toFixed(2)} {currencySymbol}</Text>
+                    <Text style={styles.billValue}>{currencySymbol}{totals.delivery.toFixed(2)}</Text>
                   )}
                 </View>
 
-                {totals.tax > 0 && (
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>{t('order_details.tax', 'Tax')}</Text>
-                    <Text style={styles.billValue}>{totals.tax.toFixed(2)} {currencySymbol}</Text>
-                  </View>
-                )}
-
-                {totals.packaging > 0 && (
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>{t('order_details.packaging', 'Packaging')}</Text>
-                    <Text style={styles.billValue}>{totals.packaging.toFixed(2)} {currencySymbol}</Text>
-                  </View>
-                )}
-
-                <View style={styles.billRow}>
+                <View style={styles.billRowBordered}>
                   <Text style={styles.billLabel}>{t('order_details.service_fee', 'Service Fee')}</Text>
-                  <Text style={styles.billValue}>{totals.serviceFee.toFixed(2)} {currencySymbol}</Text>
+                  <Text style={styles.billValue}>{currencySymbol}{totals.serviceFee.toFixed(2)}</Text>
+                </View>
+
+                <View style={styles.billRowGap}>
+                  <Text style={styles.billStrong}>{t('order_details.grand_total', 'Grand Total')}</Text>
+                  <Text style={styles.billStrong}>{currencySymbol}{totals.grandTotal.toFixed(2)}</Text>
                 </View>
 
                 {totals.discount > 0 && (
                   <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>{t('order_details.offer_applied', 'Offer Applied')}</Text>
-                    <Text style={styles.couponValue}>-{totals.discount.toFixed(2)} {currencySymbol}</Text>
-                  </View>
-                )}
-
-                <View style={styles.billDivider} />
-
-                {totals.tip > 0 && (
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>{t('order_details.tip_for_rider', 'Tip for Rider')}</Text>
-                    <Text style={styles.tipValue}>{totals.tip.toFixed(2)} {currencySymbol}</Text>
+                    <Text style={styles.couponLabel}>
+                      {t('order_details.coupon_applied', 'Coupon Applied')} - {order?.couponId || order?.couponCode || 'DISCOUNT'}
+                    </Text>
+                    <Text style={styles.billValue}>-{currencySymbol}{totals.discount.toFixed(2)}</Text>
                   </View>
                 )}
 
                 <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>{t('order_details.grand_total', 'Grand Total')}</Text>
-                  <Text style={styles.grandTotal}>{totals.grandTotal.toFixed(2)} {currencySymbol}</Text>
+                  <Text style={styles.billStrong}>{t('order_details.paid', 'Paid')}</Text>
+                  <Text style={styles.billStrong}>{currencySymbol}{totals.grandTotal.toFixed(2)}</Text>
                 </View>
-              </View>
 
-              {totals.discount > 0 && (
-                <View style={styles.savingsBox}>
-                  <Text style={styles.savingsText}>
-                    {t('order_details.savings_message', 'Hurry! You saved {{symbol}} {{amount}} on this order.', {
-                      symbol: currencySymbol,
-                      amount: totals.discount.toFixed(2)
-                    })}
-                  </Text>
-                </View>
-              )}
+                {totals.discount > 0 && (
+                  <View style={styles.savingsBanner}>
+                    <Text style={styles.savingsBannerText}>
+                      {t('order_details.savings_hurray', 'Hurray! You saved {{symbol}}{{amount}} on this order', {
+                        symbol: currencySymbol,
+                        amount: totals.discount.toFixed(2)
+                      })}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
 
             <View style={styles.infoCard}>
               <View style={styles.infoBlock}>
                 <View style={styles.rowBetween}>
-                  <Text style={styles.infoTitle}>{t('order_details.delivering_address', 'Delivering Address')}</Text>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={styles.infoTitle}>{t('order_details.delivering_address', 'Delivering Address')}</Text>
+                    <Text style={styles.address}>
+                      {order?.deliveryAddress?.addressLine || order?.address?.addressLine || order?.address || t('order_details.address_not_available', 'Address not available')}
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     style={styles.trackOrderButton}
                     onPress={() => navigation.navigate('TrackOrder', { orderId: order?._id || order?.id })}
@@ -610,19 +599,12 @@ export default function OrderDetailsScreen() {
                     <Text style={styles.trackOrderButtonText}>{t('order_details.track_order', 'Track Order')}</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.address}>
-                  {order?.deliveryAddress?.addressLine || order?.address?.addressLine || order?.address || t('order_details.address_not_available', 'Address not available')}
-                </Text>
               </View>
-
-              <View style={styles.divider} />
 
               <View style={styles.infoBlockCompact}>
                 <Text style={styles.infoLabel}>{t('order_details.order_id', 'Order ID')}</Text>
                 <Text style={styles.infoValue}>#{order?.id || order?._id || 'N/A'}</Text>
               </View>
-
-              <View style={styles.divider} />
 
               <View style={styles.infoBlockCompact}>
                 <Text style={styles.infoLabel}>{t('order_details.payment_method', 'Payment Method')}</Text>
@@ -631,22 +613,22 @@ export default function OrderDetailsScreen() {
                     const rawMethod = order?.paymentMethod || order?.payment || '';
                     const method = (typeof rawMethod === 'object' ? rawMethod?.method : String(rawMethod)).toLowerCase();
 
+                    let methodLabel = '';
                     if (method === 'cod' || method === 'cash')
-                      return t('order_details.cash_on_delivery', 'Cash on Delivery');
-                    if (method === 'card' || method === 'stripe' || method === 'credit_card')
-                      return t('order_details.credit_debit_card', 'Credit/Debit Card');
-                    if (method === 'wallet')
-                      return t('order_details.wallet', 'Wallet');
-                    if (method === 'upi' || method === 'gpay' || method === 'phonepe')
-                      return t('order_details.upi', 'UPI');
+                      methodLabel = t('order_details.cash_on_delivery', 'Cash on Delivery');
+                    else if (method === 'card' || method === 'stripe' || method === 'credit_card')
+                      methodLabel = t('order_details.credit_debit_card', 'Credit Card');
+                    else if (method === 'wallet')
+                      methodLabel = t('order_details.wallet', 'Wallet');
+                    else if (method === 'upi' || method === 'gpay' || method === 'phonepe')
+                      methodLabel = t('order_details.upi', 'UPI');
+                    else
+                      methodLabel = typeof rawMethod === 'object' ? rawMethod?.method : String(rawMethod);
 
-                    const finalLabel = typeof rawMethod === 'object' ? rawMethod?.method : String(rawMethod);
-                    return finalLabel || t('order_details.not_specified', 'Not specified');
+                    return `${t('order_details.via', 'Via')} ${methodLabel || t('order_details.not_specified', 'Not specified')}`;
                   })()}
                 </Text>
               </View>
-
-              <View style={styles.divider} />
 
               <View style={styles.infoBlockCompact}>
                 <Text style={styles.infoLabel}>{t('order_details.payment_time_date', 'Payment Time & Date')}</Text>
@@ -790,15 +772,15 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
 
-  menuButtonContainer: {
+  menuLink: {
     alignSelf: 'flex-start',
     paddingVertical: scale(6),
   },
 
-  menuButtonText: {
+  menuLinkText: {
     color: '#E53935',
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
+    fontSize: scale(14),
+    fontWeight: '700',
   },
 
   callButton: {
@@ -827,7 +809,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     paddingHorizontal: scale(14),
     paddingVertical: SPACING.md,
-    borderRadius: scale(12),
+    borderRadius: scale(16),
   },
 
   statusText: {
@@ -892,41 +874,59 @@ const styles = StyleSheet.create({
   billSection: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
-    borderBottomWidth: 1,
-    borderColor: '#EEEEEE',
   },
 
   billCard: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: scale(8),
+    borderRadius: scale(12),
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF',
   },
 
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-    paddingVertical: scale(2),
+    paddingVertical: scale(8),
+  },
+
+  billRowBordered: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: scale(10),
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F0F0F0',
+  },
+
+  billRowGap: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: scale(20),
+    paddingBottom: scale(8),
   },
 
   billLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: '#4F4F4F',
+    fontSize: scale(13),
+    color: '#555555',
+    fontWeight: '400',
   },
 
   billValue: {
-    fontSize: FONT_SIZES.xs,
+    fontSize: scale(13),
     color: '#000000',
-    fontWeight: '500',
+    fontWeight: '700',
+  },
+
+  billStrong: {
+    fontSize: scale(14),
+    color: '#000000',
+    fontWeight: '800',
   },
 
   deliveryFree: {
-    fontSize: FONT_SIZES.xs,
-    color: '#EB5757',
+    fontSize: scale(13),
+    color: '#ed1c24',
     fontWeight: '500',
   },
 
@@ -980,18 +980,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  savingsBox: {
-    marginTop: SPACING.lg,
+  savingsBanner: {
     backgroundColor: '#FDEEEE',
-    padding: SPACING.md,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(12),
     borderRadius: scale(8),
-    borderWidth: 1,
-    borderColor: '#FFE4B5',
+    marginTop: scale(12),
+    borderWidth: 0.5,
+    borderColor: '#FADADA',
   },
-
-  savingsText: {
-    fontSize: FONT_SIZES.xs,
-    color: '#D35400',
+  savingsBannerText: {
+    color: '#ed1c24',
+    fontSize: scale(12),
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#EDEDED',
-    borderRadius: scale(12),
+    borderRadius: scale(16),
     paddingHorizontal: scale(14),
     paddingVertical: SPACING.md,
   },
@@ -1025,57 +1025,48 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#EFEFEF',
+    backgroundColor: '#F8F8F8',
   },
 
   infoTitle: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
+    fontSize: scale(15),
+    fontWeight: '700',
     color: '#000000',
+    marginBottom: scale(6),
   },
 
   trackOrderButton: {
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: '#E0E0E0',
     borderRadius: scale(8),
-    paddingHorizontal: scale(12),
-    paddingVertical: scale(6),
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(8),
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
 
   trackOrderButtonText: {
-    fontSize: FONT_SIZES.xs - 1,
-    color: '#000000',
-    fontWeight: '600',
-  },
-
-  address: {
-    fontSize: FONT_SIZES.xs,
-    color: '#4F4F4F',
-    lineHeight: scale(18),
-    marginTop: scale(6),
-  },
-
-  infoLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: '#828282',
-    marginBottom: scale(2),
-  },
-
-  infoValue: {
-    fontSize: FONT_SIZES.xs,
+    fontSize: scale(13),
     color: '#000000',
     fontWeight: '500',
   },
 
-  billDivider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: SPACING.xs,
+  address: {
+    fontSize: scale(12),
+    color: '#555555',
+    lineHeight: scale(18),
   },
 
-  tipValue: {
-    fontSize: FONT_SIZES.xs,
-    color: '#EB5757',
-    fontWeight: '600',
+  infoLabel: {
+    fontSize: scale(15),
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: scale(4),
+  },
+
+  infoValue: {
+    fontSize: scale(12),
+    color: '#555555',
   },
 });
