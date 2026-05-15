@@ -81,7 +81,7 @@ const MIN_PRICE_GAP = 50;
 
 export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
   const { t } = useTranslation();
-  const { currencySymbol } = useAuth();
+  const { user, currencySymbol } = useAuth();
   const translateX = useRef(new Animated.Value(screenWidth)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const drawerWidth = useMemo(() => Math.min(screenWidth, 360), []);
@@ -98,7 +98,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
   const [rating, setRating] = useState(null);
   const [offers, setOffers] = useState([]);
   const [costForTwo, setCostForTwo] = useState(null);
-  const [foodPreference, setFoodPreference] = useState([]);
+  const [foodPreference, setFoodPreference] = useState(user?.foodPreferences || []);
   const [additionalFilters, setAdditionalFilters] = useState([]);
   const [radius, setRadius] = useState(null);
   const [isNearby, setIsNearby] = useState(false);
@@ -120,6 +120,11 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
     if (visible) {
       translateX.setValue(screenWidth);
       overlayOpacity.setValue(0);
+      
+      // Sync food preferences from user profile if not already set
+      if (foodPreference.length === 0 && user?.foodPreferences?.length > 0) {
+        setFoodPreference(user.foodPreferences);
+      }
 
       requestAnimationFrame(() => {
         Animated.parallel([
@@ -149,7 +154,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
         }),
       ]).start();
     }
-  }, [visible, drawerWidth, translateX, overlayOpacity]);
+  }, [visible, drawerWidth, translateX, overlayOpacity, user]);
 
   const handleReset = () => {
     setMinPrice(MIN_PRICE_RANGE);

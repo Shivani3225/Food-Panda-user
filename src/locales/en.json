@@ -224,7 +224,11 @@
     "help_center": "Help Center",
     "about_us": "About Us",
     "delete_account": "Delete Account",
-    "version": "Version"
+    "version": "Version",
+    "dietary_preferences": "Dietary Preferences",
+    "manage_preferences": "Manage",
+    "personalize_experience": "Personalize your food experience",
+    "n_selected": "{{count}} Selected"
   },
   "feedback": {
     "label": "Feedback",

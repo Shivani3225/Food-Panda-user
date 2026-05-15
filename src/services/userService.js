@@ -53,3 +53,8 @@ export const getNotificationStatus = async () => {
   const response = await apiClient.get(USER_ROUTES.notificationStatus);
   return response.data;
 };
+
+export const updateFoodPreferences = async (preferences) => {
+  const response = await apiClient.post(USER_ROUTES.foodPreferences, { foodPreferences: preferences });
+  return response.data;
+};

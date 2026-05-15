@@ -239,11 +239,9 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      console.log('🧪 CartContext: Removing old item:', oldId);
-      await removeFromCart(oldId);
-      
-      console.log('🧪 CartContext: Adding new item:', newItem);
-      const result = await addToCart(newItem);
+      // Use the atomic update mechanism provided by the backend
+      console.log('🧪 CartContext: Performing atomic update for item:', oldId);
+      const result = await addToCart({ ...newItem, oldItemId: oldId });
       
       return result;
     } catch (error) {
@@ -254,7 +252,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [removeFromCart, addToCart, fetchCart]);
+  }, [addToCart, fetchCart]);
 
   const addToCart = useCallback(async (rawItem) => {
     try {
@@ -284,6 +282,7 @@ export const CartProvider = ({ children }) => {
         productId,
         quantity,
         addOnsIds: addOnsIds || [],
+        oldItemId: rawItem.oldItemId || null,
       };
 
       // Only include variationId if it exists

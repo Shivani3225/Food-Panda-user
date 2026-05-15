@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import AppNavigator from './src/navigations/AppNavigator';
 import { CartProvider } from './src/context/CartContext';
@@ -26,7 +27,11 @@ const App = () => {
                 <FavouritesProvider>
                   <OfflineBanner />
                   <AppNavigator />
-                  <Toast config={toastConfig} />
+                  <Toast 
+                    config={toastConfig} 
+                    topOffset={Platform.OS === 'ios' ? 60 : 40}
+                    bottomOffset={60}
+                  />
                 </FavouritesProvider>
               </CartProvider>
               </CountryProvider>

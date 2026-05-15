@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { wp, hp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES as FONT } from '../../theme/typography';
+import { updateFoodPreferences } from '../../services/userService';
 
 const HORIZONTAL_PADDING = wp(4.44);
 const GAP = wp(3.33);
@@ -26,13 +27,14 @@ const BUTTON_HEIGHT = hp(6.75);
 
 export default function FoodPreferences({ route }) {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState([]);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { setAuthenticatedUser } = useAuth();
+  const { user, setAuthenticatedUser } = useAuth();
 
   const flow = route?.params?.flow || 'profile'; // 'onboarding' or 'profile'
+  
+  const [selected, setSelected] = useState(user?.foodPreferences || []);
 
   const numColumns = width < 340 ? 2 : 3;
 
@@ -121,50 +123,73 @@ export default function FoodPreferences({ route }) {
       <TouchableOpacity
         activeOpacity={0.9}
         style={[styles.button, { bottom: buttonBottom }]}
-        onPress={() => {
-          Toast.show({
-            type: 'topSuccess',
-            text1: t('food_preferences.saved_title', 'Preferences Saved'),
-            text2: t('food_preferences.saved_message', 'Your food preferences have been saved'),
-            position: 'top',
-            visibilityTime: 2000,
-            autoHide: true,
-          });
-          setTimeout(async () => {
-            console.log('FoodPreference Continue timeout triggered. Flow:', flow);
-            if (flow === 'onboarding') {
-              const { token, user } = route?.params || {};
-              console.log('FoodPreference token exists:', !!token, 'user exists:', !!user);
-              if (token) {
-                try {
-                  console.log('FoodPreference received user:', user);
-                  console.log('FoodPreference received countryCode:', user?.countryCode);
-                  console.log('Calling setAuthenticatedUser...');
-                  await setAuthenticatedUser(token, user);
-                  console.log('setAuthenticatedUser completed. Resetting navigation to MainTabs...');
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'MainTabs' }],
-                    })
-                  );
-                } catch (err) {
-                  console.error('Error in setAuthenticatedUser:', err);
+        onPress={async () => {
+          try {
+            // If user is already logged in (profile flow), save to backend immediately
+            if (flow !== 'onboarding') {
+              await updateFoodPreferences(selected);
+            }
+
+            Toast.show({
+              type: 'topSuccess',
+              text1: t('food_preferences.saved_title', 'Preferences Saved'),
+              text2: t('food_preferences.saved_message', 'Your food preferences have been saved'),
+              position: 'top',
+              visibilityTime: 2000,
+              autoHide: true,
+            });
+
+            setTimeout(async () => {
+              console.log('FoodPreference Continue timeout triggered. Flow:', flow);
+              if (flow === 'onboarding') {
+                const { token, user } = route?.params || {};
+                console.log('FoodPreference token exists:', !!token, 'user exists:', !!user);
+                
+                if (token) {
+                  try {
+                    // Update user object with preferences before authenticating
+                    const updatedUser = { ...user, foodPreferences: selected };
+                    
+                    // In onboarding, we might want to save to backend too if the account is already created
+                    // But usually setAuthenticatedUser handles the final state.
+                    // If the backend doesn't support preferences during register-verify, we call it here.
+                    await updateFoodPreferences(selected).catch(err => console.log('Failed to save prefs in onboarding (might be unauth):', err.message));
+
+                    console.log('Calling setAuthenticatedUser...');
+                    await setAuthenticatedUser(token, updatedUser);
+                    
+                    console.log('setAuthenticatedUser completed. Resetting navigation to MainTabs...');
+                    navigation.dispatch(
+                      CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'MainTabs' }],
+                      })
+                    );
+                  } catch (err) {
+                    console.error('Error in setAuthenticatedUser:', err);
+                  }
+                } else {
+                  console.log('No token found, navigating to LoginScreen');
+                  navigation.replace('LoginScreen');
                 }
               } else {
-                console.log('No token found, navigating to LoginScreen');
-                navigation.replace('LoginScreen');
+                console.log('Flow is profile, navigating back');
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.replace('MainTabs');
+                }
               }
-            } else {
-              console.log('Flow is profile, navigating back or to LoginScreen');
-              // Existing user from profile - go back
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.replace('LoginScreen');
-              }
-            }
-          }, 500);
+            }, 500);
+          } catch (error) {
+            console.error('Error saving food preferences:', error);
+            Toast.show({
+              type: 'error',
+              text1: t('common.error', 'Error'),
+              text2: t('food_preferences.save_failed', 'Failed to save preferences'),
+              position: 'top',
+            });
+          }
         }}
       >
         <Text style={styles.buttonText}>{t('common.continue', 'Continue')}</Text>

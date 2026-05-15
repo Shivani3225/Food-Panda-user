@@ -82,14 +82,18 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (status === 401) {
-    console.error('🚫 [ApiClient] 401 Unauthorized - Token missing or expired');
-    const token = await AsyncStorage.getItem('auth_token');
-    if (token) {
-      console.error('❌ Token exists but backend rejected it:', token.substring(0, 20) + '...');
-    } else {
-      console.error('❌ No token in AsyncStorage - user not logged in');
-    }
-    console.error('User needs to log in or refresh token');
+      console.error('🚫 [ApiClient] 401 Unauthorized - Token missing or expired');
+      
+      const token = await AsyncStorage.getItem('auth_token');
+      if (token) {
+        console.error('❌ Token exists but backend rejected it. Clearing session...');
+        // Clear auth data so the app redirects to login screen
+        await AsyncStorage.multiRemove(['auth_token', 'userData']);
+      } else {
+        console.error('❌ No token in AsyncStorage - user not logged in');
+      }
+      
+      console.error('Session cleared. User needs to log in again.');
     }
 
     // Handle network errors

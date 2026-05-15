@@ -215,37 +215,41 @@ const ProfileScreen = () => {
     console.log('🔍 [ProfileEdit] Validating inputs...', { firstName, lastName, email, mobileNumber });
 
     if (!firstName.trim()) {
-      Alert.alert(t('common.error', 'Error'), t('profile.firstname_required', 'Please enter your first name'));
+      Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('profile.firstname_required', 'Please enter your first name'), position: 'top' });
       return;
     }
     if (!lastName.trim()) {
-      Alert.alert(t('common.error', 'Error'), t('profile.lastname_required', 'Please enter your last name'));
+      Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('profile.lastname_required', 'Please enter your last name'), position: 'top' });
       return;
     }
     if (!mobileNumber.trim()) {
-      Alert.alert(t('common.error', 'Error'), t('profile.mobile_required', 'Please enter your mobile number'));
+      Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('profile.mobile_required', 'Please enter your mobile number'), position: 'top' });
       return;
     }
     if (!validateMobileNumber(mobileNumber, selectedCountry)) {
       console.log(`❌ [ProfileEdit] Invalid mobile number: ${mobileNumber} (Length: ${mobileNumber.length}) for ${selectedCountry.country}`);
-      Alert.alert(
-        t('common.error', 'Error'),
-        t('profile.invalid_mobile', `Mobile number ${mobileNumber} is invalid for ${selectedCountry.country}. It should be ${selectedCountry.minLength === selectedCountry.maxLength ? selectedCountry.minLength : selectedCountry.minLength + '-' + selectedCountry.maxLength} digits long (currently ${mobileNumber.length} digits).`)
-      );
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: t('profile.invalid_mobile', `Mobile number ${mobileNumber} is invalid for ${selectedCountry.country}. It should be ${selectedCountry.minLength === selectedCountry.maxLength ? selectedCountry.minLength : selectedCountry.minLength + '-' + selectedCountry.maxLength} digits long (currently ${mobileNumber.length} digits).`),
+        position: 'top'
+      });
       return;
     }
     if (!email.trim()) {
-      Alert.alert(t('common.error', 'Error'), t('profile.email_required', 'Please enter your email'));
+      Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('profile.email_required', 'Please enter your email'), position: 'top' });
       return;
     }
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email.trim())) {
       console.log(`❌ [ProfileEdit] Invalid email address: ${email}`);
-      Alert.alert(
-        t('common.error', 'Error'),
-        t('profile.invalid_email', `The email address "${email}" is invalid. Please enter a valid email format like name@example.com.`)
-      );
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: t('profile.invalid_email', `The email address "${email}" is invalid. Please enter a valid email format like name@example.com.`),
+        position: 'top'
+      });
       return;
     }
 
@@ -444,6 +448,28 @@ const ProfileScreen = () => {
                   </View>
                   <Text style={styles.hintText}>{selectedCountry.country} ({selectedCountry.maxLength} digits)</Text>
                 </View>
+
+                {/* Dietary Preferences Link */}
+                <TouchableOpacity
+                  style={styles.preferenceLink}
+                  onPress={() => navigation.navigate('FoodPreference', { flow: 'profile' })}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.preferenceLabelWrap}>
+                    <Text style={styles.preferenceLabel}>{t('profile.dietary_preferences', 'Dietary Preferences')}</Text>
+                    <Text style={styles.preferenceHint}>{t('profile.personalize_experience', 'Personalize your food experience')}</Text>
+                  </View>
+                  <View style={styles.preferenceValueWrap}>
+                    <Text style={styles.preferenceValue}>
+                      {user?.foodPreferences?.length > 0 
+                        ? t('profile.n_selected', '{{count}} Selected', { count: user.foodPreferences.length })
+                        : t('profile.manage_preferences', 'Manage')}
+                    </Text>
+                    <View style={styles.arrowIconWrap}>
+                      <ChevronDown size={16} color="#ed1c24" style={{ transform: [{ rotate: '-90deg' }] }} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
               </View>
             </>
           )}
@@ -512,4 +538,49 @@ const styles = StyleSheet.create({
   countryName: { fontSize: 16, fontWeight: '500', color: '#111' },
   countryCode: { fontSize: 13, color: '#666', marginTop: 2 },
   checkmark: { fontSize: 18, color: '#ed1c24', fontWeight: 'bold' },
+
+  // Preference Link Styles
+  preferenceLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  preferenceLabelWrap: {
+    flex: 1,
+  },
+  preferenceLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  preferenceHint: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  preferenceValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  preferenceValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#ed1c24',
+  },
+  arrowIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

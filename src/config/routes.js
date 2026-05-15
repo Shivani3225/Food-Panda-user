@@ -60,6 +60,7 @@ export const USER_ROUTES = {
   saveFcmToken: '/api/user/fcm-token',
   removeFcmToken: '/api/user/fcm-token',
   notificationStatus: '/api/user/notification-status',
+  foodPreferences: '/api/user/food-preferences',
 };
 
 export const FAVORITE_ROUTES = {

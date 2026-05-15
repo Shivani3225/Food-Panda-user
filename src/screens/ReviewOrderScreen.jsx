@@ -410,7 +410,7 @@ export default function ReviewOrderScreen() {
     const { error: initError } = await initPaymentSheet({
       paymentIntentClientSecret: secret,
       merchantDisplayName: 'Food Delivery',
-      merchantCountryCode: 'DE',
+      merchantCountryCode: (user?.countryCode || 'DE').toUpperCase(),
       stripeAccountId: paymentData.stripeAccountId || undefined,
       defaultBillingDetails: {
         name: user?.name || 'Customer',
