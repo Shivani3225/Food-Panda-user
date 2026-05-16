@@ -20,6 +20,7 @@ import { CartContext } from '../context/CartContext';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import AddToCartDrawer from '../components/AddToCartDrawer';
 import { RefreshableWrapper } from '../components/RefreshableWrapper';
+import { useLocation } from '../context/LocationContext';
 import { toNumber } from '../services/cartPricing';
 import { wp, hp } from '../utils/responsive';
 import { scale } from '../utils/scale';
@@ -125,7 +126,8 @@ export default function CartScreen() {
   const { t } = useTranslation();
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
-  const { cart, totals, incrementItem, decrementItem, removeFromCart, addToCart } = useContext(CartContext);
+  const { cart, totals, incrementItem, decrementItem, removeFromCart, addToCart, address } = useContext(CartContext);
+  const { address: globalAddress } = useLocation();
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState(null);
@@ -289,14 +291,18 @@ export default function CartScreen() {
           <>
             {/* Estimated Delivery Banner */}
             <View style={styles.deliveryBanner}>
-              <Text style={styles.deliveryLabel}>{t('cart.estimated_delivery_label', 'Estimated Delivery')}</Text>
-              <Text style={styles.deliveryValue}>{t('cart.standard_delivery', 'Standard (20-35 minutes)')}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.deliveryLabel}>{t('cart.delivering_to', 'Delivering to')}</Text>
+                <Text style={styles.deliveryValue} numberOfLines={1}>
+                  {address?.label || address?.addressLine || globalAddress?.addressLine || t('cart.current_location', 'Current Location')}
+                </Text>
+              </View>
               <TouchableOpacity
                 hitSlop={8}
                 onPress={() => navigation.navigate('MainTabs', {
                   screen: 'Profile',
                   params: {
-                    screen: 'AddAddressScreen'
+                    screen: 'AddressesScreen'
                   }
                 })}
               >
@@ -621,6 +627,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     marginBottom: scale(8),
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   deliveryLabel: { fontSize: FONT_SIZES.sm, color: '#777', fontWeight: '600' },
   deliveryValue: { fontSize: FONT_SIZES.md, fontWeight: '800', color: '#111', marginTop: scale(2) },

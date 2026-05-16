@@ -86,7 +86,7 @@ export default function ReviewOrderScreen() {
   const [errors, setErrors] = useState({});
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
   const { user, currencySymbol, currencyCode } = useAuth();
-  const { address: globalAddress } = useLocation();
+  const { address: globalAddress, selectedAddress } = useLocation();
 
   const placeOrderTimerRef = useRef(null);
 
@@ -191,7 +191,13 @@ export default function ReviewOrderScreen() {
       setAddresses(list);
 
       if (!address?.id && list.length > 0) {
-        const defaultAddr = list.find(a => a.isDefault) || list[0];
+        // If the user has NOT explicitly selected an address (selectedAddress is null),
+        // then we should default to 'Current Location' (which is at index 0 in the list).
+        // Otherwise, we use their saved default address.
+        const defaultAddr = (!selectedAddress && list[0]?.id === 'current_location') 
+          ? list[0] 
+          : (list.find(a => a.isDefault) || list[0]);
+          
         if (defaultAddr) setAddress(defaultAddr);
       }
       return list;

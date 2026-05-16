@@ -289,41 +289,26 @@ export default function HomeScreen() {
     try {
       if (showLoading) setIsLoadingRestaurants(true);
 
-      let finalLat = null;
-      let finalLng = null;
-      let finalCity = null;
+      // Use LocationContext as the single source of truth for the "Central Point"
+      // Priority is already handled inside the Context (Selected Address > GPS > Storage)
+      let finalLat = globalLocation?.latitude;
+      let finalLng = globalLocation?.longitude;
+      let finalCity = globalAddress?.city || null;
 
-      // 1. Check for address passed from AddressSheet via navigation params
+      // Temporary override for immediate parameter application (before context syncs)
       if (selectedAddressParam && selectedAddressParam.location?.coordinates) {
         finalLng = selectedAddressParam.location.coordinates[0];
         finalLat = selectedAddressParam.location.coordinates[1];
         finalCity = selectedAddressParam.city;
-        console.log('📍 [HomePage] Using Selected Address from Params:', { finalLat, finalLng, finalCity });
       } 
-      // 2. Fallback to Global GPS location from Context
-      else if (globalLocation?.latitude && globalLocation?.longitude) {
-        finalLat = globalLocation.latitude;
-        finalLng = globalLocation.longitude;
-        finalCity = globalAddress?.city || null;
-        console.log('📍 [HomePage] Using Global GPS Location:', { finalLat, finalLng, finalCity });
+
+      if (!finalLat || !finalLng) {
+        console.log('⚠️ [HomePage] No location available for fetching restaurants');
+        setIsLoadingRestaurants(false);
+        return;
       }
-      // 3. Last resort: Check AsyncStorage for last chosen address
-      else {
-        try {
-          const rawChosen = await AsyncStorage.getItem('chosen_address');
-          if (rawChosen) {
-            const chosen = JSON.parse(rawChosen);
-            if (chosen.location?.coordinates) {
-              finalLng = chosen.location.coordinates[0];
-              finalLat = chosen.location.coordinates[1];
-              finalCity = chosen.city;
-              console.log('📍 [HomePage] Using Persistent Chosen Address:', { finalLat, finalLng, finalCity });
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to read chosen_address:', e);
-        }
-      }
+
+      console.log('📍 [HomePage] Fetching home data for central point:', { finalLat, finalLng, finalCity });
 
       // If we still don't have a city name but have coords, try reverse geocoding
       if (!finalCity && finalLat && finalLng) {
@@ -410,46 +395,23 @@ export default function HomeScreen() {
       if (user && setAuthenticatedUser) {
         setAuthenticatedUser(null, { ...user, savedAddresses });
       }
-
-      // Priority 1: Use selected address parameter if just changed
-      if (selectedAddressParam) {
-        const label = selectedAddressParam.label || t('home.home', 'Home');
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
-        setAddressLabel(capitalizedLabel);
-        setAddressLine(getAddressLine(selectedAddressParam));
-      }
-      // Priority 2: Use "locked" or chosen address from Context
-      else if (lockedAddress) {
-        const label = lockedAddress.label || t('home.home', 'Home');
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
-        setAddressLabel(capitalizedLabel);
-        setAddressLine(getAddressLine(lockedAddress));
-      }
-      // Priority 3: Use GPS address from Context
-      else if (globalAddress) {
-        const currentLine = getAddressLine(globalAddress);
-        if (currentLine) {
-          setAddressLabel(globalAddress?.label || t('home.current_location_label', 'Current Location'));
-          setAddressLine(currentLine);
-        }
-      }
-      // Priority 4: Fallback to saved addresses if nothing else is available
-      else if (!isLocationLoading && userData?.savedAddresses?.length > 0 && (addressLine === t('home.loading_address', 'loading address...') || !addressLine)) {
-        applyHeaderAddress(userData.savedAddresses);
-      }
     } catch (error) {
       console.warn('Error fetching user data:', error);
     }
-  }, [applyHeaderAddress, selectedAddressParam, setAuthenticatedUser]);
+  }, [setAuthenticatedUser]);
 
   useEffect(() => {
     if (selectedAddressParam) {
+      console.log('📍 [HomePage] Applying selectedAddressParam and clearing navigation params');
       applyHeaderAddress([selectedAddressParam]);
       // Lock it in context so other screens (ReviewOrder, etc) use it
       setSelectedAddress(selectedAddressParam);
-      setCartAddress(selectedAddressParam);
+      if (setCartAddress) setCartAddress(selectedAddressParam);
+      
+      // Clear the param so it doesn't get re-applied on subsequent renders/refocus
+      navigation.setParams({ selectedAddress: undefined });
     }
-  }, [applyHeaderAddress, selectedAddressParam]);
+  }, [selectedAddressParam, setSelectedAddress, setCartAddress, applyHeaderAddress, navigation]);
 
   // Single source of truth for home data fetching
   const prevFetchCoords = useRef(null);
@@ -488,27 +450,23 @@ export default function HomeScreen() {
 
       const prevLat = prevFetchCoords.current?.lat;
       const prevLng = prevFetchCoords.current?.lng;
-      const addressId = selectedAddressParam?._id || selectedAddressParam?.id;
-      const addressChanged = addressId && addressId !== prevFetchCoords.current?.addressId;
+      const latDiff = Math.abs((lat || 0) - (prevFetchCoords.current?.lat || 0));
+      const lngDiff = Math.abs((lng || 0) - (prevFetchCoords.current?.lng || 0));
+      
+      // Check if the "Source of Truth" address object changed (e.g. from GPS to Home)
+      const currentAddressId = lockedAddress?._id || lockedAddress?.id || 'gps';
+      const addressIdChanged = currentAddressId !== prevFetchCoords.current?.addressId;
 
-      // Check if location moved significantly (> 500m) or if we went from undefined to defined
-      const moved = !prevFetchCoords.current ||
-        prevLat === undefined || 
-        prevLng === undefined ||
-        (lat !== undefined && Math.abs(lat - prevLat) > 0.005) ||
-        (lng !== undefined && Math.abs(lng - prevLng) > 0.005) ||
-        addressChanged;
-
-      if (!isInitialLoadDone.current || moved) {
-        if (moved) prevFetchCoords.current = { lat, lng, addressId };
+      if (!isInitialLoadDone.current || latDiff > 0.0001 || lngDiff > 0.0001 || addressIdChanged) {
+        prevFetchCoords.current = { lat, lng, addressId: currentAddressId };
         
         // If address explicitly changed by user, force a hard refresh to show loading skeleton
-        if (addressChanged) {
+        if (addressIdChanged) {
           setPageNum(0);
           setRestaurants([]); 
         }
         
-        await fetchHomeData(!isInitialLoadDone.current || addressChanged);
+        await fetchHomeData(!isInitialLoadDone.current || addressIdChanged);
       }
 
       // User profile fetch happens once
@@ -518,7 +476,7 @@ export default function HomeScreen() {
     };
 
     runFetch();
-  }, [isAuthenticated, globalLocation, fetchHomeData, fetchUserData, userData, selectedAddressParam]);
+  }, [isAuthenticated, globalLocation, fetchHomeData, fetchUserData, userData, selectedAddressParam, lockedAddress]);
 
   // Focus effect for profile only
   useFocusEffect(
@@ -615,7 +573,17 @@ export default function HomeScreen() {
 
   const handleStayAtCurrentLocation = useCallback(() => {
     setIsLocationPopupVisible(false);
-  }, []);
+    // Explicitly clear selected address so we fall back to real-time GPS
+    setSelectedAddress(null);
+    if (setCartAddress) setCartAddress(null);
+    
+    // Force header refresh for immediate feedback
+    if (globalAddress) {
+      setAddressLabel(t('home.current_location_label', 'Current Location'));
+      const locality = globalAddress.streetArea || globalAddress.area || globalAddress.neighborhood || globalAddress.sublocality || globalAddress.landmark;
+      setAddressLine(locality || globalAddress.city || '');
+    }
+  }, [setSelectedAddress, setCartAddress, globalAddress, t]);
 
   const handleSetDefaultLocation = useCallback(() => {
     setIsLocationPopupVisible(false);

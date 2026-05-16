@@ -105,6 +105,8 @@ export const CartProvider = ({ children }) => {
     setAddress(addr);
     if (addr) {
       await AsyncStorage.setItem('chosen_address', JSON.stringify(addr));
+    } else {
+      await AsyncStorage.removeItem('chosen_address');
     }
   }, []);
 
