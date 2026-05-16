@@ -490,8 +490,13 @@ export default function HomeScreen() {
       // 1. Priority: Explicitly selected address from navigation (immediate user intent)
       if (selectedAddressParam) {
         console.log('📍 [HomePage] Updating header with selectedAddressParam:', selectedAddressParam.label);
-        const label = selectedAddressParam.label || t('home.home', 'Home');
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        let label = selectedAddressParam.label;
+        if (typeof label === 'object') {
+          label = label[i18n.language] || label.en || label.label || t('home.home', 'Home');
+        }
+        if (!label) label = t('home.home', 'Home');
+        
+        const capitalizedLabel = String(label).charAt(0).toUpperCase() + String(label).slice(1);
         setAddressLabel(capitalizedLabel);
         setAddressLine(getAddressLine(selectedAddressParam));
         return;
@@ -500,8 +505,13 @@ export default function HomeScreen() {
       // 2. Priority: Locked/Chosen address from LocationContext
       if (lockedAddress) {
         console.log('📍 [HomePage] Updating header with lockedAddress:', lockedAddress.label);
-        const label = lockedAddress.label || t('home.home', 'Home');
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        let label = lockedAddress.label;
+        if (typeof label === 'object') {
+          label = label[i18n.language] || label.en || label.label || t('home.home', 'Home');
+        }
+        if (!label) label = t('home.home', 'Home');
+
+        const capitalizedLabel = String(label).charAt(0).toUpperCase() + String(label).slice(1);
         setAddressLabel(capitalizedLabel);
         setAddressLine(getAddressLine(lockedAddress));
         return;

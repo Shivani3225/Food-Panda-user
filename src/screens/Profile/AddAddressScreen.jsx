@@ -38,6 +38,7 @@ export default function AddAddressScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const searchDebounce = useRef(null);
+  const hasInitializedFromGPS = useRef(false);
 
   const initialLat = Number(address?.coordinates?.[1]) || globalLocation?.latitude || 25.276987;
   const initialLng = Number(address?.coordinates?.[0]) || globalLocation?.longitude || 55.296249;
@@ -68,9 +69,10 @@ export default function AddAddressScreen() {
   }, []);
 
   React.useEffect(() => {
-    if (globalLocation && !isEditing && !address?.coordinates) {
-      console.log('📍 [AddAddressScreen] Syncing with global location:', globalLocation);
+    if (globalLocation && !isEditing && !address?.coordinates && !hasInitializedFromGPS.current) {
+      console.log('📍 [AddAddressScreen] Initial sync with global location:', globalLocation);
       setCoordinates(globalLocation.latitude, globalLocation.longitude, true);
+      hasInitializedFromGPS.current = true;
     }
   }, [globalLocation, isEditing, address?.coordinates]);
 
@@ -198,10 +200,23 @@ export default function AddAddressScreen() {
   };
 
   const handleRegionChangeComplete = region => {
+    console.log('📍 [AddAddress] Region change complete');
     setMapRegion(region);
     setIsMoving(false);
     fetchAddress(region.latitude, region.longitude);
   };
+
+  // Watchdog: If isMoving hangs for > 5s, force clear it
+  React.useEffect(() => {
+    let timer;
+    if (isMoving) {
+      timer = setTimeout(() => {
+        console.log('⚠️ [AddAddress] isMoving hung for 5s, force clearing...');
+        setIsMoving(false);
+      }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [isMoving]);
 
   const handleMapPress = event => {
     const { latitude, longitude } = event.nativeEvent.coordinate;

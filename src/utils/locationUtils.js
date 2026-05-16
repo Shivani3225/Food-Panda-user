@@ -8,11 +8,19 @@ import { GOOGLE_MAPS_API_KEY } from '@env';
 export const getAddressFromCoordinates = async (latitude, longitude) => {
   console.log('🔍 [LocationUtils] Reverse geocoding:', latitude, longitude);
 
+  // Helper for fetch with timeout
+  const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+    return Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request Timeout')), timeout))
+    ]);
+  };
+
   // 1. Try Google Maps Geocoding API (Preferred for production/reliability)
   try {
     const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
     console.log('📡 [LocationUtils] Calling Google Geocoding...');
-    const response = await fetch(googleUrl);
+    const response = await fetchWithTimeout(googleUrl);
     const data = await response.json();
 
     if (data.status === 'OK' && data.results && data.results.length > 0) {
@@ -100,7 +108,7 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         'User-Agent': 'FoodDeliveryApp/1.0',
       },
@@ -146,7 +154,13 @@ export const getCityFromZipCode = async (zipCode, countryName = '') => {
   const fetchFromGoogle = async (q, componentsFilter = '') => {
     let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${GOOGLE_MAPS_API_KEY}`;
     if (componentsFilter) url += `&components=${encodeURIComponent(componentsFilter)}`;
-    const response = await fetch(url);
+    
+    const fetchWithTimeout = (u, t = 10000) => Promise.race([
+      fetch(u),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), t))
+    ]);
+    
+    const response = await fetchWithTimeout(url);
     return await response.json();
   };
 
@@ -272,7 +286,7 @@ export const searchLocations = async (query) => {
   try {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${GOOGLE_MAPS_API_KEY}`;
     console.log('📡 [LocationUtils] Searching location:', query);
-    const response = await fetch(url);
+    const response = await fetchWithTimeout(url);
     const data = await response.json();
 
     if (data.status === 'OK' && data.results) {
@@ -295,7 +309,7 @@ export const searchLocations = async (query) => {
  */
 export const getLocationByIP = async () => {
   try {
-    const response = await fetch('https://ipapi.co/json/');
+    const response = await fetchWithTimeout('https://ipapi.co/json/');
     const data = await response.json();
     if (data && data.latitude && data.longitude) {
       return {

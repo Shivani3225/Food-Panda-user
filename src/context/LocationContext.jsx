@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import { PermissionsAndroid, Platform, Linking, ToastAndroid } from 'react-native';
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
+import { PermissionsAndroid, Platform, Linking, ToastAndroid, AppState } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAddressFromCoordinates } from '../utils/locationUtils';
@@ -214,11 +214,20 @@ export const LocationProvider = ({ children }) => {
     };
 
     initLocation();
+    
+    // Add AppState listener to re-fetch location on foreground
+    const appStateListener = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('🔄 [LocationContext] App returned to foreground, re-fetching location...');
+        fetchLocation().catch(err => console.warn('Foreground fetch failed:', err));
+      }
+    });
 
     return () => {
       if (watchId !== null) {
         Geolocation.clearWatch(watchId);
       }
+      appStateListener.remove();
     };
   }, [requestPermission, fetchLocation]);
 
