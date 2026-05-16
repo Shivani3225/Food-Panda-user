@@ -64,7 +64,14 @@ export default function HomeScreen() {
   const isInitialLoadDone = useRef(false);
   const [activeTab, setActiveTab] = useState(t('home.restaurants', 'Restaurants'));
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { location: globalLocation, address: globalAddress, permissionStatus, isLoading: isLocationLoading } = useLocation();
+  const { 
+    location: globalLocation, 
+    address: globalAddress, 
+    permissionStatus, 
+    isLoading: isLocationLoading,
+    selectedAddress: lockedAddress,
+    setSelectedAddress
+  } = useLocation();
   const [userLocation, setUserLocation] = useState(null);
   const hasLocationPermission = permissionStatus === 'granted';
   const [pageNum, setPageNum] = useState(0);
@@ -77,7 +84,7 @@ export default function HomeScreen() {
   const [addressLine, setAddressLine] = useState(t('home.loading_address', 'loading address...')); // Initial state: Loading address details
   const [userData, setUserData] = useState(null);
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
-  const { cartCount } = useContext(CartContext);
+  const { cartCount, setAddress: setCartAddress } = useContext(CartContext);
   const { isFavourite, toggleFavourite } = useContext(FavouritesContext);
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const hasAppliedSelectedAddressParam = useRef(false); // New ref to track param application
@@ -402,10 +409,11 @@ export default function HomeScreen() {
         setAuthenticatedUser(null, { ...user, savedAddresses });
       }
 
-      // Priority 1: Use Global GPS Location if available (The real truth)
-      if (globalAddress && globalAddress.fullAddress) {
-        setAddressLabel(t('home.current_location', 'Current Location'));
-        setAddressLine(globalAddress.city || globalAddress.fullAddress.split(',')[0]);
+      // Priority 1: Use Global address from Context (could be GPS or locked)
+      const currentLine = getAddressLine(globalAddress);
+      if (currentLine) {
+        setAddressLabel(globalAddress?.label || t('home.current_location', 'Current Location'));
+        setAddressLine(currentLine);
       }
       // Priority 2: Fallback to saved addresses
       else if (!isLocationLoading && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
@@ -419,6 +427,9 @@ export default function HomeScreen() {
   useEffect(() => {
     if (selectedAddressParam) {
       applyHeaderAddress([selectedAddressParam]);
+      // Lock it in context so other screens (ReviewOrder, etc) use it
+      setSelectedAddress(selectedAddressParam);
+      setCartAddress(selectedAddressParam);
     }
   }, [applyHeaderAddress, selectedAddressParam]);
 
@@ -500,8 +511,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const updateHeaderFromLocation = async () => {
-      // If user specifically selected a saved address, DO NOT overwrite the header with GPS location
-      if (selectedAddressParam) {
+      // If user specifically selected an address or it's locked in context, 
+      // DO NOT overwrite the header with GPS location
+      if (selectedAddressParam || lockedAddress) {
+        if (lockedAddress) {
+          setAddressLabel(lockedAddress.label || t('home.home', 'Home'));
+          setAddressLine(getAddressLine(lockedAddress));
+        }
         return;
       }
 
@@ -624,7 +640,7 @@ export default function HomeScreen() {
       setPageNum(0);
       
       // If user has explicitly selected an address, DO NOT overwrite it with GPS on refresh!
-      if (!selectedAddressParam && globalLocation) {
+      if (!selectedAddressParam && !lockedAddress && globalLocation) {
         getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude)
           .then(data => {
             const loc = data.streetArea || data.area || data.neighborhood || data.sublocality || data.landmark;

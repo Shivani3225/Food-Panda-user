@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useMemo, useState, useEffect } from 'react';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
 import { useRef } from 'react';
 
@@ -83,6 +84,30 @@ export const CartProvider = ({ children }) => {
     time: null,
   });
   const [address, setAddress] = useState(null);
+  
+  // Load persisted address on mount
+  useEffect(() => {
+    const loadPersistedAddress = async () => {
+      try {
+        const raw = await AsyncStorage.getItem('chosen_address');
+        if (raw) {
+          console.log('📦 [CartContext] Restoring address from storage');
+          setAddress(JSON.parse(raw));
+        }
+      } catch (e) {
+        console.warn('Failed to load address in CartContext');
+      }
+    };
+    loadPersistedAddress();
+  }, []);
+
+  const handleSetAddress = useCallback(async (addr) => {
+    setAddress(addr);
+    if (addr) {
+      await AsyncStorage.setItem('chosen_address', JSON.stringify(addr));
+    }
+  }, []);
+
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking'); 
@@ -873,7 +898,7 @@ export const CartProvider = ({ children }) => {
           checkout,
           setCheckout,
           address,
-          setAddress,
+          setAddress: handleSetAddress,
           paymentMethod,
           setPaymentMethod,
           clearCheckoutFlow,

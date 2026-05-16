@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { PermissionsAndroid, Platform, Linking, ToastAndroid } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAddressFromCoordinates } from '../utils/locationUtils';
 
 const LocationContext = createContext();
@@ -8,9 +9,36 @@ const LocationContext = createContext();
 export const LocationProvider = ({ children }) => {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null); // Stores { city, country, fullAddress }
+  const [selectedAddress, setSelectedAddress] = useState(null); // Explicitly chosen by user
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState('undetermined');
+
+  // Load persisted chosen address on mount
+  useEffect(() => {
+    const loadChosenAddress = async () => {
+      try {
+        const raw = await AsyncStorage.getItem('chosen_address');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          console.log('📍 [LocationContext] Restoring chosen address from storage:', parsed.city);
+          setSelectedAddress(parsed);
+        }
+      } catch (e) {
+        console.warn('Failed to load chosen address');
+      }
+    };
+    loadChosenAddress();
+  }, []);
+
+  const handleSetSelectedAddress = useCallback(async (addr) => {
+    setSelectedAddress(addr);
+    if (addr) {
+      await AsyncStorage.setItem('chosen_address', JSON.stringify(addr));
+    } else {
+      await AsyncStorage.removeItem('chosen_address');
+    }
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -203,7 +231,14 @@ export const LocationProvider = ({ children }) => {
         isLoading,
         permissionStatus,
         fetchLocation,
-        requestPermission
+        requestPermission,
+        selectedAddress,
+        setSelectedAddress: handleSetSelectedAddress,
+        address: selectedAddress || address, // Selected takes priority
+        location: selectedAddress ? {
+          latitude: selectedAddress.location?.coordinates[1],
+          longitude: selectedAddress.location?.coordinates[0]
+        } : location
       }}
     >
       {children}

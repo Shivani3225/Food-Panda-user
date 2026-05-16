@@ -258,32 +258,57 @@ export default function ReviewOrderScreen() {
 
     const checkoutSnapshot = latestCheckoutRef.current;
     const addressSnapshot = latestAddressRef.current;
-    const paymentSnapshot = finalPaymentMethod ?? latestPaymentMethodRef.current;
-
-    const paymentCode = paymentSnapshot?.id || 'cod';
-
-    const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
-
-    const formattedItems = latestCartRef.current.map(item => ({
-      productId: item.productId || item._id,
-      quantity: item.quantity,
-      price: item.price,
-      name: item.name
-    }));
-
-    const orderPayload = {
-      restaurantId: restaurantId,
-      items: formattedItems,
-      addressId: addressSnapshot?.id,
-      paymentMethod: paymentCode === 'stripe' ? 'online' : paymentCode,
-      totalAmount: summary.grandTotal,
-      tipAmount: tipAmount,
-      discount: summary.discount,
-      couponId: navCoupon?.id,
-      currency: currencyCode,
-      currencySymbol: currencySymbol,
-      ...(stripePaymentIntentId && { paymentIntentId: stripePaymentIntentId }),
-    };
+      const paymentSnapshot = finalPaymentMethod ?? latestPaymentMethodRef.current;
+  
+      const paymentCode = paymentSnapshot?.id || 'cod';
+  
+      // --- AUTO-SAVE VIRTUAL ADDRESS ---
+      let effectiveAddressId = addressSnapshot?.id;
+      if (effectiveAddressId === 'current_location') {
+        try {
+          console.log('[ReviewOrder] Auto-saving current location for order...');
+          const saveResponse = await addAddress({
+            label: 'Other',
+            addressLine: addressSnapshot.addressLine,
+            city: addressSnapshot.city || '',
+            zipCode: addressSnapshot.zipCode || '',
+            location: addressSnapshot.location
+          });
+          effectiveAddressId = saveResponse?.address?._id || saveResponse?._id;
+          if (!effectiveAddressId) throw new Error('Failed to get saved address ID');
+          console.log('[ReviewOrder] Address auto-saved:', effectiveAddressId);
+        } catch (addrError) {
+          console.error('[ReviewOrder] Address save failed:', addrError);
+          Alert.alert('Address Error', 'Unable to process your current location. Please save the address in your profile first.');
+          setIsPlacing(false);
+          return;
+        }
+      }
+  
+      const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
+  
+      const formattedItems = latestCartRef.current.map(item => ({
+        productId: item.productId || item._id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name
+      }));
+  
+      const orderPayload = {
+        restaurantId: restaurantId,
+        items: formattedItems,
+        addressId: effectiveAddressId,
+        paymentMethod: paymentCode === 'stripe' ? 'online' : paymentCode,
+        totalAmount: summary.grandTotal,
+        tipAmount: tipAmount,
+        discount: summary.discount,
+        couponId: navCoupon?.id,
+        currency: currencyCode,
+        currencySymbol: currencySymbol,
+        ...(stripePaymentIntentId && { paymentIntentId: stripePaymentIntentId }),
+        // Keep currentAddress for backends that DO support it
+        currentAddress: addressSnapshot?.id === 'current_location' ? addressSnapshot : undefined,
+      };
 
     try {
       const response = await placeOrder(orderPayload);
@@ -368,10 +393,30 @@ export default function ReviewOrderScreen() {
         name: item.name
       }));
 
+      // --- AUTO-SAVE VIRTUAL ADDRESS ---
+      let effectiveAddressId = addressSnapshot.id;
+      if (effectiveAddressId === 'current_location') {
+        try {
+          console.log('[ReviewOrder] Auto-saving current location for Stripe order...');
+          const saveResponse = await addAddress({
+            label: 'Other',
+            addressLine: addressSnapshot.addressLine,
+            city: addressSnapshot.city || '',
+            zipCode: addressSnapshot.zipCode || '',
+            location: addressSnapshot.location
+          });
+          effectiveAddressId = saveResponse?.address?._id || saveResponse?._id;
+          if (!effectiveAddressId) throw new Error('Failed to get saved address ID');
+        } catch (addrError) {
+          console.error('[ReviewOrder] Address save failed:', addrError);
+          throw new Error('Unable to process your current location. Please save the address in your profile first.');
+        }
+      }
+
       const orderPayload = {
         restaurantId: restaurantId,
         items: formattedItems,
-        addressId: addressSnapshot.id,
+        addressId: effectiveAddressId,
         paymentMethod: 'online',
         totalAmount: summary.grandTotal,
         tipAmount: tipAmount,
@@ -380,6 +425,8 @@ export default function ReviewOrderScreen() {
         orderStatus: 'pending_payment',
         currency: currencyCode,
         currencySymbol: currencySymbol,
+        // Keep currentAddress for backends that support it
+        currentAddress: addressSnapshot.id === 'current_location' ? addressSnapshot : undefined,
       };
 
       const orderResponse = await placeOrder(orderPayload);
@@ -541,6 +588,26 @@ export default function ReviewOrderScreen() {
       const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
       if (!restaurantId) throw new Error('Restaurant information not found.');
 
+      // --- AUTO-SAVE VIRTUAL ADDRESS ---
+      let effectiveAddressId = addressSnapshot.id;
+      if (effectiveAddressId === 'current_location') {
+        try {
+          console.log('[ReviewOrder] Auto-saving current location for UPI order...');
+          const saveResponse = await addAddress({
+            label: 'Other',
+            addressLine: addressSnapshot.addressLine,
+            city: addressSnapshot.city || '',
+            zipCode: addressSnapshot.zipCode || '',
+            location: addressSnapshot.location
+          });
+          effectiveAddressId = saveResponse?.address?._id || saveResponse?._id;
+          if (!effectiveAddressId) throw new Error('Failed to get saved address ID');
+        } catch (addrError) {
+          console.error('[ReviewOrder] Address save failed:', addrError);
+          throw new Error('Unable to process your current location. Please save the address in your profile first.');
+        }
+      }
+
       // Create order first with pending_payment status
       const orderPayload = {
         restaurantId,
@@ -550,7 +617,7 @@ export default function ReviewOrderScreen() {
           price: item.price,
           name: item.name
         })),
-        addressId: addressSnapshot.id,
+        addressId: effectiveAddressId,
         paymentMethod: 'upi',
         totalAmount: summary.grandTotal,
         tipAmount,
@@ -559,6 +626,8 @@ export default function ReviewOrderScreen() {
         orderStatus: 'pending_payment',
         currency: currencyCode,
         currencySymbol,
+        // Keep currentAddress for backends that support it
+        currentAddress: addressSnapshot?.id === 'current_location' ? addressSnapshot : undefined,
       };
 
       const orderResponse = await placeOrder(orderPayload);
