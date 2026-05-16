@@ -29,6 +29,7 @@ import OTPVerificationModal from '../../components/OTPVerificationModal';
 import { useCountries } from '../../context/CountryContext';
 import { clearTranslationCache } from '../../services/translationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
 
 
 
@@ -36,6 +37,8 @@ const ProfileScreen = () => {
   const { t, i18n } = useTranslation();
   const { countries } = useCountries();
   const navigation = useNavigation();
+  const { user } = useAuth();
+
   useHideTabBar(navigation);
 
   // Profile data states
@@ -366,16 +369,16 @@ const ProfileScreen = () => {
         setMobile('');
       }}
     >
-      <Image 
-        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }} 
-        style={styles.countryFlagImage} 
+      <Image
+        source={{ uri: `https://flagcdn.com/w40/${item.code?.toLowerCase() || 'un'}.png` }}
+        style={styles.countryFlagImage}
       />
       <View style={styles.countryInfo}>
         <Text style={styles.countryName}>{item.country}</Text>
         <Text style={styles.countryCode}>
-          {item.fullCode?.startsWith('+') ? item.fullCode : 
-           item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) : 
-           item.code}
+          {item.fullCode?.startsWith('+') ? item.fullCode :
+            item.dialCode ? (item.dialCode.startsWith('+') ? item.dialCode : `+${item.dialCode}`) :
+              item.code}
         </Text>
       </View>
       {selectedCountry.code === item.code && <Text style={styles.checkmark}>✓</Text>}
@@ -434,14 +437,14 @@ const ProfileScreen = () => {
                   <Text style={styles.mobileLabel}>{t('profile.mobile_number', 'Mobile Number')}</Text>
                   <View style={styles.mobileInputWrapper}>
                     <TouchableOpacity style={styles.countryCodeSelector} onPress={() => setShowCountryPicker(true)}>
-                      <Image 
-                        source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase() || 'un'}.png` }} 
-                        style={styles.countryFlagSmallImage} 
+                      <Image
+                        source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code?.toLowerCase() || 'un'}.png` }}
+                        style={styles.countryFlagSmallImage}
                       />
                       <Text style={styles.countryCodeText}>
-                        {selectedCountry.fullCode?.startsWith('+') ? selectedCountry.fullCode : 
-                         selectedCountry.dialCode ? (selectedCountry.dialCode.startsWith('+') ? selectedCountry.dialCode : `+${selectedCountry.dialCode}`) : 
-                         '+1'}
+                        {selectedCountry.fullCode?.startsWith('+') ? selectedCountry.fullCode :
+                          selectedCountry.dialCode ? (selectedCountry.dialCode.startsWith('+') ? selectedCountry.dialCode : `+${selectedCountry.dialCode}`) :
+                            '+1'}
                       </Text>
                       <ChevronDown size={14} color="#666" />
                     </TouchableOpacity>
@@ -462,7 +465,7 @@ const ProfileScreen = () => {
                   </View>
                   <View style={styles.preferenceValueWrap}>
                     <Text style={styles.preferenceValue}>
-                      {user?.foodPreferences?.length > 0 
+                      {user?.foodPreferences?.length > 0
                         ? t('profile.n_selected', '{{count}} Selected', { count: user.foodPreferences.length })
                         : t('profile.manage_preferences', 'Manage')}
                     </Text>
