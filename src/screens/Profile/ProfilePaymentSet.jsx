@@ -88,28 +88,37 @@ export default function PaymentSettingScreen() {
   };
 
   const handleSave = async () => {
-    const { holderName, cardNumber, expiry, cvv, upiId } = formData;
+    const { holderName, cardNumber, expiry, cvv, upiId, upiApp } = formData;
 
     if (selectedType === 'upi') {
       if (!upiId.trim() || !upiId.includes('@')) {
-        Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_upi', 'Please enter a valid UPI ID') });
+        Toast.show({ 
+          type: 'error', 
+          text1: t('common.error', 'Error'), 
+          text2: t('payment.invalid_upi', 'Please enter a valid UPI ID') 
+        });
         return;
       }
-      const appIcon = formData.upiApp === 'googlepay' 
+      
+      const appIcon = upiApp === 'googlepay' 
         ? require('../../assets/icons/googlepay.png') 
-        : require('../../assets/icons/paypal.png');
+        : require('../../assets/icons/paypal.png'); // Using paypal as placeholder for PhonePe
       
       const newItem = { 
-        id: Date.now().toString(), 
+        id: `upi_${Date.now()}`, 
         title: upiId, 
         type: 'upi',
-        provider: formData.upiApp,
+        provider: upiApp,
         token: upiId,
         icon: appIcon 
       };
+      
       const updated = [...savedUpi, newItem];
       setSavedUpi(updated);
-      await AsyncStorage.setItem('saved_upis', JSON.stringify(updated));
+      
+      // Save only custom UPIs to storage
+      const upisToSave = updated.filter(u => u.id !== 'u1' && u.id !== 'u2');
+      await AsyncStorage.setItem('saved_upis', JSON.stringify(upisToSave));
     } else {
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
       if (!holderName.trim()) {
@@ -147,12 +156,7 @@ export default function PaymentSettingScreen() {
         Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_expiry', 'Enter valid expiry (MM/YY)') });
         return;
       }
-      const [month, year] = expiry.split('/');
-      const m = parseInt(month, 10);
-      if (m < 1 || m > 12) {
-        Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_month', 'Month must be between 01 and 12') });
-        return;
-      }
+      
       if (cvv.length < 3) {
         Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('payment.invalid_cvv', 'Enter valid CVV') });
         return;
@@ -160,15 +164,17 @@ export default function PaymentSettingScreen() {
 
       const masked = `**** **** **** ${cleanCardNumber.slice(-4)}`;
       const newItem = { 
-        id: Date.now().toString(), 
+        id: `card_${Date.now()}`, 
         title: masked, 
         type: 'card', 
         provider: 'Card',
         last4: cleanCardNumber.slice(-4),
         holderName: holderName
       };
+      
       const updated = [...savedCards, newItem];
       setSavedCards(updated);
+      
       // Save only non-default cards to storage
       const cardsToSave = updated.filter(c => !c.isDefault);
       await AsyncStorage.setItem('saved_cards', JSON.stringify(cardsToSave));
@@ -181,28 +187,9 @@ export default function PaymentSettingScreen() {
       position: 'top',
       visibilityTime: 3000,
     });
+    
     setSelectedType(null);
     setFormData({ holderName: '', cardNumber: '', expiry: '', cvv: '', upiId: '', upiApp: 'googlepay' });
-    
-    // Refresh data
-    const cards = await AsyncStorage.getItem('saved_cards');
-    const upis = await AsyncStorage.getItem('saved_upis');
-    if (cards) {
-      const parsedCards = JSON.parse(cards);
-      setSavedCards([
-        { id: '1', title: t('payment.credit_card', 'Credit Card'), type: 'credit', isDefault: true },
-        { id: '2', title: t('payment.debit_card', 'Debit Card'), type: 'debit', isDefault: true },
-        ...parsedCards.filter(c => !c.isDefault)
-      ]);
-    }
-    if (upis) {
-      const parsedUpis = JSON.parse(upis);
-      setSavedUpi([
-        { id: 'u1', title: t('payment.google_pay', 'Google Pay UPI'), icon: require('../../assets/icons/googlepay.png') },
-        { id: 'u2', title: t('payment.phonepe', 'PhonePe UPI'), icon: require('../../assets/icons/paypal.png') },
-        ...parsedUpis.filter(u => u.id !== 'u1' && u.id !== 'u2')
-      ]);
-    }
   };
 
   const handleUpiPress = async (item) => {
@@ -217,37 +204,43 @@ export default function PaymentSettingScreen() {
       // Construct a basic UPI URL
       const baseUpiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&am=0`;
 
-      if (item.id === 'u1' || item.provider === 'googlepay') {
-        url = Platform.OS === 'ios' ? `gpay://upi/pay?pa=${upiId}` : baseUpiUrl;
-      } else if (item.id === 'u2' || item.provider === 'phonepe') {
-        url = Platform.OS === 'ios' ? `phonepe://pay?pa=${upiId}` : baseUpiUrl;
+      if (Platform.OS === 'ios') {
+        if (item.provider === 'googlepay' || item.id === 'u1') {
+          url = `gpay://upi/pay?pa=${upiId}`;
+        } else if (item.provider === 'phonepe' || item.id === 'u2') {
+          url = `phonepe://pay?pa=${upiId}`;
+        } else {
+          url = baseUpiUrl;
+        }
       } else {
+        // For Android, try specific package intents if available via Linking.openURL
+        // Or just use the generic UPI URL which usually opens a chooser
         url = baseUpiUrl;
       }
 
       try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
+        // Check if we can open the URL
+        const canOpen = await Linking.canOpenURL(url);
+        
+        if (canOpen) {
           await Linking.openURL(url);
-        } else {
-          // Fallback to generic upi:// if specific app fails
-          const genericSupported = await Linking.canOpenURL(baseUpiUrl);
-          if (genericSupported) {
+        } else if (url !== baseUpiUrl) {
+          // Fallback to generic UPI if specific app failed
+          const canOpenGeneric = await Linking.canOpenURL(baseUpiUrl);
+          if (canOpenGeneric) {
             await Linking.openURL(baseUpiUrl);
           } else {
-            Toast.show({
-              type: 'error',
-              text1: t('common.error', 'Error'),
-              text2: t('payment.app_not_found', 'Selected UPI app is not installed on this device'),
-            });
+            throw new Error('No UPI apps found');
           }
+        } else {
+          throw new Error('No UPI apps found');
         }
       } catch (err) {
-        console.error('An error occurred', err);
+        console.error('UPI Redirection Error:', err);
         Toast.show({
           type: 'error',
           text1: t('common.error', 'Error'),
-          text2: t('payment.upi_error', 'Failed to open UPI app'),
+          text2: t('payment.app_not_found', 'Selected UPI app is not installed on this device'),
         });
       } finally {
         setLoading(false);

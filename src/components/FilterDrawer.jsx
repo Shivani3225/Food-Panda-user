@@ -378,7 +378,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
             <Text style={styles.cardTitle}>{t('filter.food_preference', 'FOOD PREFERENCE')}</Text>
             <View style={styles.chipContainer}>
               {FOOD_OPTIONS.map(option => {
-                const isActive = foodPreference.includes(option.id);
+                const isActive = Array.isArray(foodPreference) && foodPreference.includes(option.id);
                 return (
                   <Pressable
                     key={option.id}
@@ -386,7 +386,8 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                       if (isActive) {
                         setFoodPreference(foodPreference.filter(p => p !== option.id));
                       } else {
-                        setFoodPreference([...foodPreference, option.id]);
+                        setFoodPreference([...(Array.isArray(foodPreference) ? foodPreference : []), option.id]);
+                        // If non-veg is selected, remove pure_veg from additional filters
                         if (option.id === 'non_veg') {
                           setAdditionalFilters(prev => prev.filter(f => f !== 'pure_veg'));
                         }
@@ -417,8 +418,11 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
                         setAdditionalFilters(additionalFilters.filter(f => f !== option.id));
                       } else {
                         setAdditionalFilters([...additionalFilters, option.id]);
-                        if (option.id === 'pure_veg' && foodPreference === 'non_veg') {
-                          setFoodPreference(null);
+                        // If pure_veg is selected, remove non_veg from food preferences
+                        if (option.id === 'pure_veg') {
+                          setFoodPreference(prev => 
+                            Array.isArray(prev) ? prev.filter(p => p !== 'non_veg') : []
+                          );
                         }
                       }
                     }}

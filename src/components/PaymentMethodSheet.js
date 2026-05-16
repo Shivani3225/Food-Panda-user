@@ -29,6 +29,11 @@ const getMethods = (t) => ({
     description: t('payment.pay_online', 'Pay securely with Stripe'),
     icon: ICONS.stripe 
   },
+  upi: {
+    id: 'upi',
+    label: t('payment.upi', 'UPI / GPay / PhonePe'),
+    description: t('payment.pay_via_upi', 'Pay using any UPI app on your phone'),
+  },
   cod: { 
     id: 'cod', 
     label: t('payment.cash_on_delivery', 'Cash on Delivery'),
@@ -101,7 +106,14 @@ export default function PaymentMethodSheet({
     if (!canApply) return;
     
     // Find the selected method object
-    const selectedMethod = localId === METHODS.stripe.id ? METHODS.stripe : METHODS.cod;
+    let selectedMethod;
+    if (localId === METHODS.stripe.id) {
+      selectedMethod = METHODS.stripe;
+    } else if (localId === METHODS.upi.id) {
+      selectedMethod = METHODS.upi;
+    } else {
+      selectedMethod = METHODS.cod;
+    }
     
     // Always just save the selected method and close the sheet.
     // Actual payment processing happens when the user presses "Place Order".
@@ -165,6 +177,29 @@ export default function PaymentMethodSheet({
                 </View>
                 <Text style={styles.optionDescription}>
                   {METHODS.stripe.description}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* UPI Option */}
+            <TouchableOpacity
+              style={styles.paymentOption}
+              onPress={() => !isProcessingStripe && setLocalId(METHODS.upi.id)}
+              activeOpacity={0.9}
+              disabled={isProcessingStripe}
+            >
+              <View
+                style={[
+                  styles.radioOuter,
+                  localId === METHODS.upi.id && styles.radioOuterActive,
+                ]}
+              >
+                {localId === METHODS.upi.id && <View style={styles.radioInner} />}
+              </View>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>{METHODS.upi.label}</Text>
+                <Text style={styles.optionDescription}>
+                  {METHODS.upi.description}
                 </Text>
               </View>
             </TouchableOpacity>

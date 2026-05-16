@@ -9,6 +9,9 @@ import {
   Switch,
   Text,
   View,
+  Modal,
+  Linking,
+  TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -498,8 +501,122 @@ export default function ReviewOrderScreen() {
     setIsProcessingStripe(false);
   }
 };
+  const [isProcessingUpi, setIsProcessingUpi] = useState(false);
+  const [upiTimer, setUpiTimer] = useState(60);
+
+  const handleUpiPayment = async () => {
+    setIsProcessingUpi(true);
+    setUpiTimer(60);
+
+    try {
+      const authToken = await AsyncStorage.getItem('auth_token');
+      if (!authToken) throw new Error('Authentication token not found.');
+
+      const addressSnapshot = latestAddressRef.current;
+      if (!addressSnapshot?.id) throw new Error('Please select a delivery address');
+
+      const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
+      if (!restaurantId) throw new Error('Restaurant information not found.');
+
+      // Create order first with pending_payment status
+      const orderPayload = {
+        restaurantId,
+        items: latestCartRef.current.map(item => ({
+          productId: item.productId || item._id,
+          quantity: item.quantity,
+          price: item.price,
+          name: item.name
+        })),
+        addressId: addressSnapshot.id,
+        paymentMethod: 'upi',
+        totalAmount: summary.grandTotal,
+        tipAmount,
+        discount: summary.discount,
+        couponId: navCoupon?.id,
+        orderStatus: 'pending_payment',
+        currency: currencyCode,
+        currencySymbol,
+      };
+
+      const orderResponse = await placeOrder(orderPayload);
+      const apiOrder = orderResponse?.order || orderResponse?.data?.order;
+      if (!apiOrder?._id) throw new Error('Invalid order response');
+
+      const newOrderId = apiOrder._id;
+      setOrderId(newOrderId);
+
+      // Open UPI App
+      const vpa = 'foodpanda@upi'; // Placeholder VPA
+      const payeeName = 'Food Panda';
+      const amount = summary.grandTotal.toFixed(2);
+      const upiUrl = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Order ' + newOrderId)}`;
+
+      const canOpen = await Linking.canOpenURL(upiUrl);
+      if (canOpen) {
+        await Linking.openURL(upiUrl);
+      } else {
+        // If no UPI app, we still show the timer but maybe alert the user
+        Alert.alert(t('payment.no_upi_app', 'No UPI App Found'), t('payment.install_upi', 'Please install a UPI app to complete payment.'));
+      }
+
+      // Start timer
+      const interval = setInterval(() => {
+        setUpiTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // In a real app, we would poll the backend here or wait for a socket
+      // For this demo, we'll provide a "Verify Payment" button in the modal
+      
+    } catch (error) {
+      console.error('UPI Payment Error:', error);
+      Alert.alert('Payment Failed', error?.message || 'Please try again');
+      setIsProcessingUpi(false);
+    }
+  };
+
+  const handleVerifyUpiPayment = async () => {
+    // Simulate verification
+    setIsPlacing(true);
+    try {
+      // In real app: const response = await apiClient.get(`/orders/${orderId}/verify-payment`);
+      // For now, simulate success
+      setTimeout(async () => {
+        const cartRestaurant = latestCartRef.current[0]?.restaurant;
+        const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
+
+        addOrder({
+          id: orderId,
+          restaurant: cartRestaurant,
+          restaurantName: cartRestaurantName,
+          totals: summary,
+          checkout: latestCheckoutRef.current,
+          address: latestAddressRef.current,
+          paymentMethod: { id: 'upi', label: 'UPI' },
+          leaveAtDoor,
+          paymentStatus: 'paid'
+        });
+
+        await fetchCart();
+        setOrderStatus('success');
+        setOrderErrorMessage('');
+        setIsProcessingUpi(false);
+        setIsPlacing(false);
+        setShowModal(true);
+      }, 1500);
+    } catch (error) {
+      setIsPlacing(false);
+      Alert.alert('Verification Failed', 'Payment not yet received. Please try again in a moment.');
+    }
+  };
+
   const handlePlaceOrderPress = () => {
-    if (isPlacing || isProcessingStripe || !latestCartRef.current?.length) return;
+    if (isPlacing || isProcessingStripe || isProcessingUpi || !latestCartRef.current?.length) return;
 
     const newErrors = {};
     let isValid = true;
@@ -525,6 +642,8 @@ export default function ReviewOrderScreen() {
 
     if (latestPaymentMethodRef.current?.id === 'stripe') {
       handleStripePayment();
+    } else if (latestPaymentMethodRef.current?.id === 'upi') {
+      handleUpiPayment();
     } else {
       handleFinalizeOrder(latestPaymentMethodRef.current);
     }
@@ -811,8 +930,43 @@ export default function ReviewOrderScreen() {
           setActiveSheet(null);
         }}
         onStripePayment={handleStripePayment}
-        isProcessingStripe={isProcessingStripe}
+        isProcessingStripe={isProcessingStripe || isProcessingUpi}
       />
+
+      {/* UPI Processing Modal */}
+      <Modal visible={isProcessingUpi} transparent animationType="fade">
+        <View style={styles.upiModalOverlay}>
+          <View style={styles.upiModalContent}>
+            <Text style={styles.upiModalTitle}>{t('payment.processing_upi', 'UPI Payment Processing')}</Text>
+            <View style={styles.upiTimerContainer}>
+              <Text style={styles.upiTimerText}>{upiTimer}s</Text>
+            </View>
+            <Text style={styles.upiModalMessage}>
+              {t('payment.upi_instruction', 'Please complete the payment in your UPI app. Do not close this screen.')}
+            </Text>
+            <ActivityIndicator size="large" color="#FF3D3D" style={{ marginVertical: 20 }} />
+            
+            <TouchableOpacity 
+              style={[styles.upiVerifyBtn, isPlacing && { opacity: 0.7 }]} 
+              onPress={handleVerifyUpiPayment}
+              disabled={isPlacing}
+            >
+              {isPlacing ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.upiVerifyBtnText}>{t('payment.verify_payment', 'I have Paid')}</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.upiCancelBtn} 
+              onPress={() => setIsProcessingUpi(false)}
+            >
+              <Text style={styles.upiCancelBtnText}>{t('common.cancel', 'Cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <OrderConfirmedModal
         visible={showModal}
@@ -900,6 +1054,73 @@ const styles = StyleSheet.create({
   billFinal: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: '#FFF' },
   termsText: { marginTop: SPACING.md, paddingHorizontal: SPACING.lg, fontSize: FONT_SIZES.xs, fontWeight: '500', color: '#666', lineHeight: scale(16) },
   termsLink: { color: '#FF3D3D', fontWeight: '700', textDecorationLine: 'underline' },
+  upiModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  upiModalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  upiModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111',
+    marginBottom: 16,
+  },
+  upiTimerContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#FF3D3D',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  upiTimerText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FF3D3D',
+  },
+  upiModalMessage: {
+    textAlign: 'center',
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  upiVerifyBtn: {
+    backgroundColor: '#FF3D3D',
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  upiVerifyBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  upiCancelBtn: {
+    padding: 12,
+  },
+  upiCancelBtnText: {
+    color: '#999',
+    fontWeight: '600',
+  },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.sm, flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EEE' },
   bottomLeft: {},
   bottomTotal: { fontSize: FONT_SIZES.md, fontWeight: '800', color: '#111' },
