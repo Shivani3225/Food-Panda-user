@@ -384,7 +384,9 @@ export default function HomeScreen() {
     const headerAddress = pickHeaderAddress(addresses);
     if (!headerAddress) return false;
 
-    setAddressLabel(headerAddress.label || t('home.home', 'Home'));
+    const label = headerAddress.label || t('home.home', 'Home');
+    const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+    setAddressLabel(capitalizedLabel);
     setAddressLine(getAddressLine(headerAddress));
     return true;
   }, [getAddressLine, pickHeaderAddress, t]);
@@ -409,15 +411,31 @@ export default function HomeScreen() {
         setAuthenticatedUser(null, { ...user, savedAddresses });
       }
 
-      // Priority 1: Use Global address from Context (could be GPS or locked)
-      const currentLine = getAddressLine(globalAddress);
-      if (currentLine) {
-        setAddressLabel(globalAddress?.label || t('home.current_location', 'Current Location'));
-        setAddressLine(currentLine);
+      // Priority 1: Use selected address parameter if just changed
+      if (selectedAddressParam) {
+        const label = selectedAddressParam.label || t('home.home', 'Home');
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        setAddressLabel(capitalizedLabel);
+        setAddressLine(getAddressLine(selectedAddressParam));
       }
-      // Priority 2: Fallback to saved addresses
-      else if (!isLocationLoading && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
-        applyHeaderAddress(savedAddresses);
+      // Priority 2: Use "locked" or chosen address from Context
+      else if (lockedAddress) {
+        const label = lockedAddress.label || t('home.home', 'Home');
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        setAddressLabel(capitalizedLabel);
+        setAddressLine(getAddressLine(lockedAddress));
+      }
+      // Priority 3: Use GPS address from Context
+      else if (globalAddress) {
+        const currentLine = getAddressLine(globalAddress);
+        if (currentLine) {
+          setAddressLabel(globalAddress?.label || t('home.current_location_label', 'Current Location'));
+          setAddressLine(currentLine);
+        }
+      }
+      // Priority 4: Fallback to saved addresses if nothing else is available
+      else if (!isLocationLoading && userData?.savedAddresses?.length > 0 && (addressLine === t('home.loading_address', 'loading address...') || !addressLine)) {
+        applyHeaderAddress(userData.savedAddresses);
       }
     } catch (error) {
       console.warn('Error fetching user data:', error);
@@ -511,19 +529,29 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const updateHeaderFromLocation = async () => {
-      // If user specifically selected an address or it's locked in context, 
-      // DO NOT overwrite the header with GPS location
-      if (selectedAddressParam || lockedAddress) {
-        if (lockedAddress) {
-          setAddressLabel(lockedAddress.label || t('home.home', 'Home'));
-          setAddressLine(getAddressLine(lockedAddress));
-        }
+      // 1. Priority: Explicitly selected address from navigation (immediate user intent)
+      if (selectedAddressParam) {
+        console.log('📍 [HomePage] Updating header with selectedAddressParam:', selectedAddressParam.label);
+        const label = selectedAddressParam.label || t('home.home', 'Home');
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        setAddressLabel(capitalizedLabel);
+        setAddressLine(getAddressLine(selectedAddressParam));
         return;
       }
 
-      // Priority 1: Use globally resolved address from LocationContext if available
+      // 2. Priority: Locked/Chosen address from LocationContext
+      if (lockedAddress) {
+        console.log('📍 [HomePage] Updating header with lockedAddress:', lockedAddress.label);
+        const label = lockedAddress.label || t('home.home', 'Home');
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        setAddressLabel(capitalizedLabel);
+        setAddressLine(getAddressLine(lockedAddress));
+        return;
+      }
+
+      // 3. Fallback: Use globally resolved GPS address from LocationContext
       if (globalAddress) {
-        console.log('📍 [HomePage] Using Global Address for header:', globalAddress.city);
+        console.log('📍 [HomePage] Using GPS address for header:', globalAddress.city);
         setAddressLabel(t('home.current_location_label', 'Current Location'));
         const locality = globalAddress.streetArea || globalAddress.area || globalAddress.neighborhood || globalAddress.sublocality || globalAddress.landmark;
         if (locality) {
@@ -534,21 +562,17 @@ export default function HomeScreen() {
         return;
       }
 
-      // Priority 2: Fallback to manual geocoding if location is available but address isn't
-      if (globalLocation) {
-        console.log('📍 [HomePage] Updating header with CURRENT location (manual geocode)...');
+      // 4. Manual Geocoding if GPS available but geocoding hasn't finished
+      if (globalLocation && !isLocationLoading) {
+        console.log('📍 [HomePage] Manually geocoding GPS location for header...');
         try {
           const data = await getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude);
-          setAddressLabel(t('home.current_location_label', 'Current Location')); // Set label to "Current Location"
-
-          // Priority: Extract Area/Locality name as per user request
+          setAddressLabel(t('home.current_location_label', 'Current Location'));
           const locality = data.streetArea || data.area || data.neighborhood || data.sublocality || data.landmark;
           if (locality) {
             setAddressLine(locality);
           } else if (data.city || data.country) {
             setAddressLine(`${data.city}${data.city && data.country ? ', ' : ''}${data.country}`);
-          } else {
-            setAddressLine(`${globalLocation.latitude.toFixed(4)}, ${globalLocation.longitude.toFixed(4)}`);
           }
         } catch (e) {
           console.error('Failed to geocode current location:', e);
@@ -556,7 +580,7 @@ export default function HomeScreen() {
       }
     };
     updateHeaderFromLocation();
-  }, [globalLocation, globalAddress, t, selectedAddressParam]);
+  }, [globalLocation, globalAddress, t, selectedAddressParam, lockedAddress, isLocationLoading]);
 
   // Distance check effect to show popup if > 2km
   useEffect(() => {
