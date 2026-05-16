@@ -149,7 +149,7 @@ export default function CartScreen() {
     try {
       const menuData = await getRestaurantMenu(item.restaurantId);
       const products = Array.isArray(menuData?.products) ? menuData.products : [];
-      const product = products.find(p => String(p._id || p.id) === String(item.productId));
+      const product = products.find(p => String(p._id || p.id) === String(item.productId || item.product?._id || item.product?.id));
       
       if (!product) {
         Toast.show({
@@ -470,7 +470,7 @@ export default function CartScreen() {
                   <View>
                     <Text style={styles.billLabel}>{t('cart.offer_applied', 'Offer Applied')}</Text>
                     <Text style={styles.billDiscountSub}>
-                      {appliedCoupon ? `${appliedCoupon.id}` : '10% Off'}
+                      {appliedCoupon ? (appliedCoupon.code || appliedCoupon.name || 'Applied') : '10% Off'}
                     </Text>
                   </View>
                   <Text style={styles.billDiscount}>-{currencySymbol}{discount.toFixed(2)}</Text>
