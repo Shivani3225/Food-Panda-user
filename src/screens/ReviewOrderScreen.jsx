@@ -45,7 +45,12 @@ import { SPACING } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = (ENV_BASE_URL.endsWith('/') ? ENV_BASE_URL.slice(0, -1) : ENV_BASE_URL) + (ENV_BASE_URL.includes('/api') ? '' : '/api');
+const API_BASE_URL = (() => {
+  let url = ENV_BASE_URL || '';
+  if (url.endsWith('/')) url = url.slice(0, -1);
+  if (!url.includes('/api')) url += '/api';
+  return url;
+})();
 
 
 export default function ReviewOrderScreen() {
