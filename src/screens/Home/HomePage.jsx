@@ -598,8 +598,24 @@ export default function HomeScreen() {
 
   const handleSetDefaultLocation = useCallback(() => {
     setIsLocationPopupVisible(false);
-    navigation.navigate('Profile', { screen: 'AddressesScreen' });
-  }, [navigation]);
+    if (defaultAddressInfo) {
+      console.log('📍 [HomePage] Switching to Default Address:', defaultAddressInfo.city);
+      setSelectedAddress(defaultAddressInfo);
+      if (setCartAddress) setCartAddress(defaultAddressInfo);
+      
+      // Update header immediately
+      const label = defaultAddressInfo.label || t('home.home', 'Home');
+      const capitalizedLabel = String(label).charAt(0).toUpperCase() + String(label).slice(1);
+      setAddressLabel(capitalizedLabel);
+      setAddressLine(getAddressLine(defaultAddressInfo));
+
+      Toast.show({
+        type: 'success',
+        text1: t('home.address_updated', 'Address Updated'),
+        text2: t('home.using_default_address', 'Now using your default delivery address'),
+      });
+    }
+  }, [defaultAddressInfo, setSelectedAddress, setCartAddress, getAddressLine, t]);
 
   // Fail-safe for loading state
   useEffect(() => {

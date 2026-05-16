@@ -14,8 +14,8 @@ const LocationPopup = ({ visible, onClose, currentCity, defaultCity, onStay, onS
     return name.replace(/\s(Division|District|Region|State|City)\b/gi, '').trim();
   };
 
-  const displayCurrentCity = cleanCity(currentCity) || 'Indore';
-  const displayDefaultCity = cleanCity(defaultCity) || 'Pune';
+  const displayCurrentCity = cleanCity(currentCity) || t('home.detecting', 'Detecting...');
+  const displayDefaultCity = cleanCity(defaultCity) || t('home.saved_address', 'Saved Address');
 
   return (
     <Modal
@@ -71,7 +71,7 @@ const LocationPopup = ({ visible, onClose, currentCity, defaultCity, onStay, onS
                 activeOpacity={0.8}
             >
               <Text style={styles.setText}>
-                {t('home.set_default_btn', 'Set Default')}
+                {t('home.use_default_btn', 'Use Default')}
               </Text>
             </TouchableOpacity>
           </View>
