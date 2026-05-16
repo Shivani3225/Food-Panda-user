@@ -124,12 +124,34 @@ export default function AddressesScreen() {
     );
   };
 
-  const handlePickAddressForDelivery = (address) => {
-    // Navigate back to the Home screen and pass the selected address
-    navigation.navigate('Home', {
-      screen: 'HomePage',
-      params: { selectedAddress: address }
-    });
+  const handlePickAddressForDelivery = async (address) => {
+    try {
+      setLoading(true);
+      // Set as default in backend
+      const endpoint = USER_ROUTES.addressById.replace(':id', address._id);
+      await apiClient.put(endpoint, { ...address, isDefault: true });
+      
+      // Update local state for immediate feedback
+      setAddresses(prev => prev.map(a => ({
+        ...a,
+        isDefault: a._id === address._id
+      })));
+
+      // Navigate back to the Home screen and pass the selected address
+      navigation.navigate('Home', {
+        screen: 'HomePage',
+        params: { selectedAddress: address }
+      });
+    } catch (err) {
+      console.error('Error setting default address:', err);
+      // Fallback: still navigate even if setting default fails
+      navigation.navigate('Home', {
+        screen: 'HomePage',
+        params: { selectedAddress: address }
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderAddressItem = ({ item }) => (
