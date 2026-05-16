@@ -100,7 +100,7 @@ export default function CreateAccountScreen() {
 
     const firstNameValue = firstName.trim();
     const lastNameValue = lastName.trim();
-    const emailValue = email.trim();
+    const emailValue = email.trim().toLowerCase();
     const mobileValue = mobile.trim();
     const passwordValue = password.trim();
     const confirmValue = confirmPassword.trim();

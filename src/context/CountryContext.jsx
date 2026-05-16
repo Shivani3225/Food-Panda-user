@@ -13,7 +13,18 @@ export const CountryProvider = ({ children }) => {
       try {
         const response = await apiClient.get("/api/settings/countries");
         if (Array.isArray(response.data) && response.data.length > 0) {
-          setCountries(response.data);
+          const mappedCountries = response.data.map(apiItem => {
+            // Find local audited data for this country
+            const localItem = COUNTRIES.find(c => c.code === apiItem.code);
+            return {
+              ...apiItem,
+              country: apiItem.country || apiItem.label || localItem?.country || "",
+              // Prioritize local audited lengths to prevent issues with stale API data
+              minLength: localItem?.minLength || apiItem.minLength,
+              maxLength: localItem?.maxLength || apiItem.maxLength,
+            };
+          });
+          setCountries(mappedCountries);
         }
       } catch (error) {
         if (error.response?.status !== 404) {

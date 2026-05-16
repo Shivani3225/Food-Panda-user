@@ -194,7 +194,7 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const loginIdentifier = isMobileLogin ? `${selectedCountry.fullCode}${email}` : email;
+      const loginIdentifier = isMobileLogin ? `${selectedCountry.fullCode}${email}` : email.toLowerCase();
       const result = await authLogin(loginIdentifier, password);
       console.log("Login result", result);
 

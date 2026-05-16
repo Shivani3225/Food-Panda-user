@@ -42,7 +42,7 @@ export default function ForgetPass() {
   };
 
   const handleSendOtp = async () => {
-    const emailValue = email.trim();
+    const emailValue = email.trim().toLowerCase();
     const error = validateEmail(emailValue);
     
     if (error) {

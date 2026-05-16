@@ -236,18 +236,19 @@ const ProfileScreen = () => {
       });
       return;
     }
-    if (!email.trim()) {
+    const emailValue = email.trim().toLowerCase();
+    if (!emailValue) {
       Toast.show({ type: 'error', text1: t('common.error', 'Error'), text2: t('profile.email_required', 'Please enter your email'), position: 'top' });
       return;
     }
 
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email.trim())) {
-      console.log(`❌ [ProfileEdit] Invalid email address: ${email}`);
+    if (!emailRegex.test(emailValue)) {
+      console.log(`❌ [ProfileEdit] Invalid email address: ${emailValue}`);
       Toast.show({
         type: 'error',
         text1: t('common.error', 'Error'),
-        text2: t('profile.invalid_email', `The email address "${email}" is invalid. Please enter a valid email format like name@example.com.`),
+        text2: t('profile.invalid_email', `The email address "${emailValue}" is invalid. Please enter a valid email format like name@example.com.`),
         position: 'top'
       });
       return;
@@ -265,10 +266,10 @@ const ProfileScreen = () => {
         formData.append('name', fullName);
       }
 
-      const emailChanged = email.trim() !== originalData.email;
+      const emailChanged = emailValue !== (originalData.email || '').toLowerCase();
       const mobileChanged = fullMobileNumber !== originalData.mobile;
 
-      if (emailChanged) formData.append('email', email.trim());
+      if (emailChanged) formData.append('email', emailValue);
 
       if (emailChanged || mobileChanged) {
         formData.append('mobile', fullMobileNumber);
