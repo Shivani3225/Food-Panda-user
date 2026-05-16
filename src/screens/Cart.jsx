@@ -338,11 +338,11 @@ export default function CartScreen() {
                   <View style={styles.divider} />
 
                   {/* Items */}
-                  {group.items.map(ci => {
-                    const itemId = ci?.id ?? ci?.menuItemId ?? ci?.productId ?? ci?.name;
+                  {group.items.map((ci, idx) => {
+                    const itemId = ci?.id || ci?._id || ci?.menuItemId || ci?.productId || idx;
                     return (
                       <CartItemRow
-                        key={String(itemId)}
+                        key={`cart-item-${String(itemId)}`}
                         item={ci}
                         onIncrement={handleIncrement}
                         onDecrement={handleDecrement}
@@ -370,12 +370,15 @@ export default function CartScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('cart.offers', 'Offers')}</Text>
 
-              {coupons.map(coupon => {
+              {coupons.map((coupon, index) => {
                 const isApplied = appliedCouponId === coupon.id;
+                const couponId = coupon.id || coupon._id || coupon.code || index;
                 return (
-                  <View key={coupon.id} style={styles.couponCard}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.couponLabel}>{coupon.label}</Text>
+                  <View key={`coupon-${String(couponId)}`} style={styles.couponCard}>
+                    <View style={{ flex: 1, paddingRight: scale(8) }}>
+                      <Text style={styles.couponLabel} numberOfLines={3} ellipsizeMode="tail">
+                        {coupon.label}
+                      </Text>
                       <View style={styles.couponCodeBox}>
                         <Text style={styles.couponCode}>{coupon.id}</Text>
                       </View>
