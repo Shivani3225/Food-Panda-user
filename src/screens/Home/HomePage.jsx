@@ -64,7 +64,7 @@ export default function HomeScreen() {
   const isInitialLoadDone = useRef(false);
   const [activeTab, setActiveTab] = useState(t('home.restaurants', 'Restaurants'));
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { location: globalLocation, address: globalAddress, permissionStatus } = useLocation();
+  const { location: globalLocation, address: globalAddress, permissionStatus, isLoading: isLocationLoading } = useLocation();
   const [userLocation, setUserLocation] = useState(null);
   const hasLocationPermission = permissionStatus === 'granted';
   const [pageNum, setPageNum] = useState(0);
@@ -402,10 +402,9 @@ export default function HomeScreen() {
         setAuthenticatedUser(null, { ...user, savedAddresses });
       }
 
-      // Fallback to saved addresses ONLY if GPS location is not yet resolved
-      // AND no specific address was passed via navigation params.
-      // This prevents saved addresses from overriding a pending GPS location or a just-selected address.
-      if (!globalLocation && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
+      // Fallback to saved addresses ONLY if GPS location is not yet resolved, 
+      // NOT currently loading, and no specific address was passed via navigation params.
+      if (!globalLocation && !isLocationLoading && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
         applyHeaderAddress(savedAddresses);
       }
     } catch (error) {
@@ -502,8 +501,22 @@ export default function HomeScreen() {
         return;
       }
 
+      // Priority 1: Use globally resolved address from LocationContext if available
+      if (globalAddress) {
+        console.log('📍 [HomePage] Using Global Address for header:', globalAddress.city);
+        setAddressLabel(t('home.current_location_label', 'Current Location'));
+        const locality = globalAddress.streetArea || globalAddress.area || globalAddress.neighborhood || globalAddress.sublocality || globalAddress.landmark;
+        if (locality) {
+          setAddressLine(locality);
+        } else if (globalAddress.city || globalAddress.country) {
+          setAddressLine(`${globalAddress.city}${globalAddress.city && globalAddress.country ? ', ' : ''}${globalAddress.country}`);
+        }
+        return;
+      }
+
+      // Priority 2: Fallback to manual geocoding if location is available but address isn't
       if (globalLocation) {
-        console.log('📍 [HomePage] Updating header with CURRENT location...');
+        console.log('📍 [HomePage] Updating header with CURRENT location (manual geocode)...');
         try {
           const data = await getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude);
           setAddressLabel(t('home.current_location_label', 'Current Location')); // Set label to "Current Location"
@@ -523,13 +536,14 @@ export default function HomeScreen() {
       }
     };
     updateHeaderFromLocation();
-  }, [globalLocation, t, authenticatedUser?.savedAddresses, applyHeaderAddress, selectedAddressParam]);
+  }, [globalLocation, globalAddress, t, selectedAddressParam]);
 
   // Distance check effect to show popup if > 2km
   useEffect(() => {
     const checkDistance = async () => {
-      // Only check if user is authenticated, we have GPS, and we have user data (for saved addresses)
-      if (!isAuthenticated || hasCheckedDistance.current || !globalLocation || !userData?.savedAddresses || userData.savedAddresses.length === 0) {
+      // Only check if user is authenticated, we have GPS, we have the geocoded address, 
+      // and we have user data (for saved addresses)
+      if (!isAuthenticated || hasCheckedDistance.current || !globalLocation || !globalAddress || !userData?.savedAddresses || userData.savedAddresses.length === 0) {
         return;
       }
 
@@ -541,24 +555,19 @@ export default function HomeScreen() {
         console.log(`📏 [Distance Check] GPS to Default Address distance: ${distance.toFixed(2)} km`);
 
         if (distance > 2) {
-          try {
-            const addrData = await getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude);
-            const currentCity = addrData.city || 'Indore';
-            const defaultCity = defaultAddr.city || '';
-            
-            setCurrentCityName(currentCity);
-            setDefaultAddressInfo(defaultAddr);
-            setIsLocationPopupVisible(true);
-          } catch (e) {
-            console.warn('Failed to get current city for location popup:', e);
-          }
+          const currentCity = globalAddress.city || 'Indore';
+          const defaultCity = defaultAddr.city || '';
+          
+          setCurrentCityName(currentCity);
+          setDefaultAddressInfo(defaultAddr);
+          setIsLocationPopupVisible(true);
         }
         // Mark as checked so we don't annoy the user multiple times in one session
         hasCheckedDistance.current = true;
       }
     };
     checkDistance();
-  }, [isAuthenticated, globalLocation, userData]);
+  }, [isAuthenticated, globalLocation, globalAddress, userData]);
 
   const handleStayAtCurrentLocation = useCallback(() => {
     setIsLocationPopupVisible(false);

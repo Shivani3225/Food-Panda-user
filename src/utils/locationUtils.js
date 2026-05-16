@@ -79,7 +79,9 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
 
       return {
         houseNo: houseNumber || '',
-        streetArea: sublocality || neighborhood || road || '', // Prioritize sublocality for 'Area' field
+        streetArea: (sublocality && neighborhood && sublocality !== neighborhood) 
+          ? `${sublocality}, ${neighborhood}` 
+          : (sublocality || neighborhood || road || ''), // Prioritize combined or sublocality for 'Area' field
         landmark: neighborhood || sublocality || road || '',
         addressLine: addressLine,
         city: city || '',

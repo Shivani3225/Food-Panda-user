@@ -66,51 +66,80 @@ export const LocationProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
 
-    return new Promise((resolve, reject) => {
-      console.log('📡 [Location] Starting getCurrentPosition fetch...');
+    const getPos = (highAccuracy) => new Promise((resolve, reject) => {
+      console.log(`📡 [Location] Fetching (HighAccuracy: ${highAccuracy})...`);
       Geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          console.log('📍 [LocationContext] GPS DATA RECEIVED:', JSON.stringify(coords));
-          setLocation(coords);
-          
-          // Fetch human-readable address globally
-          try {
-            const addrData = await getAddressFromCoordinates(coords.latitude, coords.longitude);
-            console.log('🌍 [LocationContext] Global Address Obtained:', addrData.city, addrData.country);
-            setAddress(addrData);
-          } catch (addrErr) {
-            console.warn('🌍 [LocationContext] Failed to geocode global address:', addrErr);
-          }
-
-          setIsLoading(false);
-          resolve(coords);
-        },
-        (err) => {
-          console.warn('📍 [LocationContext] Error obtaining location:', err.code, err.message);
-          
-          let msg = 'Unable to get location';
-          if (err.code === 2) msg = 'Location is turned off. Please turn on GPS.';
-          if (err.code === 3) msg = 'Location request timed out.';
-          
-          ToastAndroid.show(msg, ToastAndroid.SHORT);
-          setError(msg);
-          setIsLoading(false);
-          reject(err);
-        },
+        resolve,
+        reject,
         { 
-          enableHighAccuracy: false, 
-          timeout: 15000, 
-          maximumAge: 10000 
+          enableHighAccuracy: highAccuracy, 
+          timeout: highAccuracy ? 8000 : 4000, 
+          maximumAge: highAccuracy ? 0 : 60000 
         }
       );
     });
+
+    const updateContextData = async (position, sourceLabel) => {
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+      
+      console.log(`📍 [LocationContext] ${sourceLabel} DATA RECEIVED:`, JSON.stringify(coords));
+      setLocation(coords);
+      
+      try {
+        const addrData = await getAddressFromCoordinates(coords.latitude, coords.longitude);
+        console.log(`🌍 [LocationContext] ${sourceLabel} Address Obtained:`, addrData.city);
+        setAddress(addrData);
+      } catch (addrErr) {
+        console.warn(`🌍 [LocationContext] Failed to geocode ${sourceLabel} address:`, addrErr);
+      }
+      setIsLoading(false);
+      return coords;
+    };
+
+    try {
+      // 1. PHASE 1: Network First (Fast)
+      let networkPosition;
+      try {
+        networkPosition = await getPos(false);
+        await updateContextData(networkPosition, 'NETWORK');
+      } catch (networkErr) {
+        console.warn('📍 [LocationContext] Network fetch failed:', networkErr.message);
+      }
+
+      // 2. PHASE 2: GPS Upgrade (Accurate - Background)
+      // We don't 'await' this for UI speed, but we trigger it
+      const upgradeToGPS = async () => {
+        try {
+          const gpsPosition = await getPos(true);
+          await updateContextData(gpsPosition, 'GPS-UPGRADE');
+        } catch (gpsErr) {
+          console.log('📍 [LocationContext] GPS Upgrade failed or timed out.');
+        }
+      };
+
+      upgradeToGPS(); // Run in background
+
+      // Return the network coords (or null if it failed) so HomePage can proceed
+      return networkPosition ? {
+        latitude: networkPosition.coords.latitude,
+        longitude: networkPosition.coords.longitude,
+      } : null;
+
+    } catch (err) {
+      console.warn('📍 [LocationContext] All location phases failed:', err.message);
+      let msg = 'Unable to get location';
+      setError(msg);
+      setIsLoading(false);
+      throw err;
+    }
   }, []);
 
   useEffect(() => {
+    let watchId = null;
+
     const initLocation = async () => {
       console.log('🌍 [Location] Initializing global location tracking...');
       const hasPermission = await requestPermission();
@@ -118,6 +147,36 @@ export const LocationProvider = ({ children }) => {
       if (hasPermission) {
         try {
           await fetchLocation();
+          
+          // Start watching position for more accurate updates
+          watchId = Geolocation.watchPosition(
+            async (position) => {
+              const coords = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              };
+              console.log('📡 [LocationContext] WATCH UPDATE:', JSON.stringify(coords));
+              setLocation(coords);
+              
+              try {
+                const addrData = await getAddressFromCoordinates(coords.latitude, coords.longitude);
+                setAddress(addrData);
+              } catch (e) {
+                console.warn('Watch geocode failed');
+              }
+            },
+            (err) => {
+              console.log('Watch error:', err);
+              // If high accuracy watch fails, we don't necessarily want to kill it, 
+              // but we log it for debugging.
+            },
+            { 
+              enableHighAccuracy: true, 
+              distanceFilter: 10, // More frequent updates (every 10m)
+              interval: 5000, 
+              fastestInterval: 2000 
+            }
+          );
         } catch (e) {
           console.log('🌍 [Location] Initial fetch failed.');
         }
@@ -127,6 +186,12 @@ export const LocationProvider = ({ children }) => {
     };
 
     initLocation();
+
+    return () => {
+      if (watchId !== null) {
+        Geolocation.clearWatch(watchId);
+      }
+    };
   }, [requestPermission, fetchLocation]);
 
   return (
