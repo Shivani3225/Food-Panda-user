@@ -13,7 +13,7 @@
     "items_in_cart_one": "{{count}} عنصر في السلة",
     "items_in_cart_other": "{{count}} عناصر في السلة",
     "items_in_cart": "{{count}} عناصر في السلة",
-    "subtotal": "المجموع الفرعي: {{subtotal}}",
+    "subtotal": "المجموع الفرعي",
     "go_to_cart": "اذهب إلى السلة"
   },
   "ordering": {
@@ -202,7 +202,7 @@
   },
   "cart": {
     "items_in_cart": "العناصر في السلة: {{count}}",
-    "subtotal": "المجموع الفرعي {{currencySymbol}}{{subtotal}}",
+    "subtotal": "المجموع الفرعي",
     "go_to_cart": "اذهب إلى السلة",
     "cart": "السلة",
     "empty_cart": "سلة التسوق فارغة",

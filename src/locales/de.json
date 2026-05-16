@@ -13,7 +13,7 @@
     "items_in_cart_one": "{{count}} Artikel im Warenkorb",
     "items_in_cart_other": "{{count}} Artikel im Warenkorb",
     "items_in_cart": "{{count}} Artikel im Warenkorb",
-    "subtotal": "Zwischensumme: {{subtotal}}",
+    "subtotal": "Zwischensumme",
     "go_to_cart": "Zum Warenkorb"
   },
   "ordering": {
@@ -198,7 +198,7 @@
   },
   "cart": {
     "items_in_cart": "Artikel im Warenkorb: {{count}}",
-    "subtotal": "Zwischensumme {{currencySymbol}}{{subtotal}}",
+    "subtotal": "Zwischensumme",
     "go_to_cart": "Zum Warenkorb",
     "cart": "Warenkorb",
     "empty_cart": "Ihr Warenkorb ist leer",

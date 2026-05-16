@@ -45,7 +45,7 @@
     "items_in_cart": "Items in cart: {{count}}",
     "items_in_cart_one": "{{count}} item in cart",
     "items_in_cart_other": "{{count}} items in cart",
-    "subtotal": "Subtotal {{currencySymbol}}{{subtotal}}",
+    "subtotal": "Subtotal",
     "go_to_cart": "Go to Cart",
     "cart": "Cart",
     "title": "Cart",

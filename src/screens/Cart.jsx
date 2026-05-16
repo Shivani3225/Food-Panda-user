@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronRight, Minus, Plus, Heart } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Tag } from 'lucide-react-native';
+import { Tag, Ticket, Percent } from 'lucide-react-native';
 
 
 import { CartContext } from '../context/CartContext';
@@ -110,12 +110,14 @@ function CartItemRow({ item, onIncrement, onDecrement, onEdit, onDelete, isDelet
 
       {/* New Footer Row spanning full width below */}
       <View style={styles.itemFooterRow}>
-        <Text style={styles.itemCount}>
-          {t('cart.items_count', 'Items Count')} : {qty}
-        </Text>
-        <Text style={styles.itemTotal}>
-          {t('cart.total_price_label', 'Total Price')} : {currencySymbol} {totalPrice.toFixed(0)}
-        </Text>
+        <View style={styles.footerItem}>
+          <Text style={styles.footerLabel}>{t('cart.items_count', 'Items Count')} : </Text>
+          <Text style={styles.footerValue}>{qty}</Text>
+        </View>
+        <View style={styles.footerItem}>
+          <Text style={styles.footerLabel}>{t('cart.total_price_label', 'Total Price')} : </Text>
+          <Text style={styles.footerValue}>{currencySymbol}{totalPrice.toFixed(0)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -371,21 +373,26 @@ export default function CartScreen() {
               <Text style={styles.sectionTitle}>{t('cart.offers', 'Offers')}</Text>
 
               {coupons.map((coupon, index) => {
-                const isApplied = appliedCouponId === coupon.id;
+                const isApplied = appliedCouponId === coupon.id || appliedCouponId === coupon._id || appliedCouponId === coupon.code;
                 const couponId = coupon.id || coupon._id || coupon.code || index;
+                const couponCode = coupon.code || coupon.id?.toString().slice(-6).toUpperCase() || 'OFFER';
+                
                 return (
                   <View key={`coupon-${String(couponId)}`} style={styles.couponCard}>
-                    <View style={{ flex: 1, paddingRight: scale(8) }}>
-                      <Text style={styles.couponLabel} numberOfLines={3} ellipsizeMode="tail">
-                        {coupon.label}
+                    <View style={styles.couponIconContainer}>
+                      <Ticket size={20} color="#E53935" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.couponLabel} numberOfLines={1}>
+                        {coupon.label || coupon.name || t('cart.special_offer', 'Special Offer')}
                       </Text>
                       <View style={styles.couponCodeBox}>
-                        <Text style={styles.couponCode}>{coupon.id}</Text>
+                        <Text style={styles.couponCode}>{couponCode}</Text>
                       </View>
                     </View>
                     <TouchableOpacity
                       style={isApplied ? styles.couponAppliedBtn : styles.couponApplyBtn}
-                      onPress={() => setAppliedCouponId(prev => prev === coupon.id ? null : coupon.id)}
+                      onPress={() => setAppliedCouponId(prev => prev === couponId ? null : couponId)}
                       activeOpacity={0.85}
                     >
                       <Text style={isApplied ? styles.couponAppliedText : styles.couponApplyText}>
@@ -685,16 +692,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F2F2F2',
   },
-  itemCount: {
-    fontSize: scale(13),
-    color: '#111',
-    fontWeight: '700',
-    paddingLeft: scale(82), // Aligns with the info section (image 72 + gap 10)
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  itemTotal: {
+  footerLabel: {
+    fontSize: scale(13),
+    color: '#666',
+    fontWeight: '600',
+  },
+  footerValue: {
     fontSize: scale(13),
     color: '#111',
-    fontWeight: '700'
+    fontWeight: '800',
   },
   itemRight: { alignItems: 'flex-end', justifyContent: 'flex-start', gap: scale(4) },
   stepper: {
@@ -745,12 +755,26 @@ const styles = StyleSheet.create({
   couponCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#EFEFEF',
-    borderRadius: scale(10),
-    padding: SPACING.md,
+    borderColor: '#F0F0F0',
+    borderRadius: scale(12),
+    padding: scale(12),
     marginBottom: SPACING.sm,
-    gap: scale(10),
+    gap: scale(12),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  couponIconContainer: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
+    backgroundColor: '#FFF5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   couponLabel: { fontSize: FONT_SIZES.sm, color: '#111', fontWeight: '600' },
   couponCodeBox: {
