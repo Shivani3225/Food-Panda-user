@@ -402,9 +402,13 @@ export default function HomeScreen() {
         setAuthenticatedUser(null, { ...user, savedAddresses });
       }
 
-      // Fallback to saved addresses ONLY if GPS location is not yet resolved, 
-      // NOT currently loading, and no specific address was passed via navigation params.
-      if (!globalLocation && !isLocationLoading && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
+      // Priority 1: Use Global GPS Location if available (The real truth)
+      if (globalAddress && globalAddress.fullAddress) {
+        setAddressLabel(t('home.current_location', 'Current Location'));
+        setAddressLine(globalAddress.city || globalAddress.fullAddress.split(',')[0]);
+      }
+      // Priority 2: Fallback to saved addresses
+      else if (!isLocationLoading && !selectedAddressParam && (addressLine === t('home.loading_address', 'loading address...') || addressLine === t('home.loading_location', 'Loading Location...') || !addressLine)) {
         applyHeaderAddress(savedAddresses);
       }
     } catch (error) {

@@ -213,16 +213,33 @@ export default function CartScreen() {
     setSelectedRestaurant(null);
   }, []);
 
-  const coupons = useMemo(() => [
-    {
-      id: 'FLAT50',
-      label: t('cart.flat_50_offer', 'Get flat {{symbol}}50 off on your first order.', { symbol: currencySymbol }),
-    },
-    {
-      id: 'FLAT50-2',
-      label: t('cart.flat_50_offer', 'Get flat {{symbol}}50 off on your first order.', { symbol: currencySymbol }),
-    },
-  ], [t, currencySymbol]);
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadCoupons = async () => {
+      try {
+        setCouponsLoading(true);
+        const { getCoupons } = require('../services/couponService');
+        const data = await getCoupons();
+        const promoList = Array.isArray(data) ? data : data?.promocodes || [];
+        
+        // If there's a restaurant in cart, only show coupons for that restaurant or global ones
+        if (groups.length > 0) {
+          const currentRestaurantId = groups[0].restaurantId;
+          const filtered = promoList.filter(p => !p.restaurant || String(p.restaurant._id || p.restaurant) === String(currentRestaurantId));
+          setCoupons(filtered);
+        } else {
+          setCoupons(promoList);
+        }
+      } catch (err) {
+        console.warn('Failed to load coupons:', err);
+      } finally {
+        setCouponsLoading(false);
+      }
+    };
+    if (hasItems) loadCoupons();
+  }, [hasItems, groups]);
 
   const delivery = toNumber(totals?.delivery, 0);
   const tax = toNumber(totals?.tax, 0);
@@ -230,9 +247,22 @@ export default function CartScreen() {
   const platformFee = toNumber(totals?.platformFee, 0);
   const packaging = toNumber(totals?.packaging, 0);
   const smallCartFee = toNumber(totals?.smallCartFee, 0);
-  const appliedCoupon = coupons.find(c => c.id === appliedCouponId) || null;
-  const discount = appliedCoupon ? Math.min(50, subtotal) : 0;
-  const grandTotal = Math.max(0, subtotal + delivery + tax + platformFee + packaging + smallCartFee - discount);
+  const appliedCoupon = coupons.find(c => c.id === appliedCouponId || c._id === appliedCouponId || c.code === appliedCouponId) || null;
+  const discount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+    let d = 0;
+    if (appliedCoupon.offerType === 'percent') {
+      d = (subtotal * appliedCoupon.discountValue) / 100;
+      if (appliedCoupon.maxDiscountAmount > 0) d = Math.min(d, appliedCoupon.maxDiscountAmount);
+    } else if (appliedCoupon.offerType === 'amount' || appliedCoupon.offerType === 'flat') {
+      d = appliedCoupon.discountValue || 0;
+    }
+    return Math.min(d, subtotal);
+  }, [appliedCoupon, subtotal]);
+
+  const isFreeDelivery = appliedCoupon?.offerType === 'free_delivery';
+  const effectiveDelivery = isFreeDelivery ? 0 : delivery;
+  const grandTotal = Math.max(0, subtotal + effectiveDelivery + tax + platformFee + packaging + smallCartFee - discount);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -386,8 +416,8 @@ export default function CartScreen() {
 
               <View style={styles.billRow}>
                 <Text style={styles.billLabel}>{t('cart.delivery_fee', 'Standard Delivery')}</Text>
-                <Text style={delivery > 0 ? styles.billValue : styles.billFree}>
-                  {delivery > 0 ? `${currencySymbol}${delivery.toFixed(2)}` : t('cart.free', 'Free')}
+                <Text style={effectiveDelivery > 0 ? styles.billValue : styles.billFree}>
+                  {effectiveDelivery > 0 ? `${currencySymbol}${effectiveDelivery.toFixed(2)}` : t('cart.free', 'Free')}
                 </Text>
               </View>
 

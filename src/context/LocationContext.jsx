@@ -73,7 +73,7 @@ export const LocationProvider = ({ children }) => {
         reject,
         { 
           enableHighAccuracy: highAccuracy, 
-          timeout: highAccuracy ? 8000 : 4000, 
+          timeout: highAccuracy ? 15000 : 10000, 
           maximumAge: highAccuracy ? 0 : 60000 
         }
       );

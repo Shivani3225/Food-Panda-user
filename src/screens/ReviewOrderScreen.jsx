@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
+import { useLocation } from '../context/LocationContext';
 import { placeOrder } from '../services/orderService';
 import { toNumber } from '../services/cartPricing';
 import { CART_ROUTES } from '../config/routes';
@@ -85,6 +86,7 @@ export default function ReviewOrderScreen() {
   const [errors, setErrors] = useState({});
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
   const { user, currencySymbol, currencyCode } = useAuth();
+  const { address: globalAddress } = useLocation();
 
   const placeOrderTimerRef = useRef(null);
 
@@ -113,7 +115,7 @@ export default function ReviewOrderScreen() {
     const discount = navDiscount ?? toNumber(totals?.discount, 0);
     const totalBeforeTip = subtotal + deliveryFee + tax + platformFee + packaging + smallCartFee - discount;
     const grandTotal = Math.max(0, totalBeforeTip + tipAmount);
-    
+
     return {
       subtotal,
       delivery: deliveryFee,
@@ -163,9 +165,29 @@ export default function ReviewOrderScreen() {
 
   const applyAddressList = useCallback(
     data => {
-      const list = (data?.addresses || [])
+      let list = (data?.addresses || [])
         .map(normalizeAddress)
         .filter(Boolean);
+
+      // Inject Current GPS Location as a virtual address option if available
+      if (globalAddress && globalAddress.fullAddress) {
+        const currentLocationAddr = {
+          id: 'current_location',
+          label: t('review_order.current_location', 'Current Location'),
+          addressLine: globalAddress.fullAddress,
+          city: globalAddress.city,
+          zipCode: globalAddress.zipCode,
+          location: {
+            type: 'Point',
+            coordinates: [globalAddress.longitude || 0, globalAddress.latitude || 0]
+          },
+          isDefault: false,
+        };
+
+        // Add to the top of the list
+        list = [currentLocationAddr, ...list];
+      }
+
       setAddresses(list);
 
       if (!address?.id && list.length > 0) {
@@ -201,7 +223,7 @@ export default function ReviewOrderScreen() {
       const response = await apiClient.put(CART_ROUTES.updateMeta, {
         tip: newTipAmount,
       });
-      
+
       if (response?.data?.bill) {
         setTipAmount(response.data.bill.tip ?? newTipAmount);
       } else {
@@ -239,16 +261,16 @@ export default function ReviewOrderScreen() {
     const paymentSnapshot = finalPaymentMethod ?? latestPaymentMethodRef.current;
 
     const paymentCode = paymentSnapshot?.id || 'cod';
-    
+
     const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
-    
+
     const formattedItems = latestCartRef.current.map(item => ({
       productId: item.productId || item._id,
       quantity: item.quantity,
       price: item.price,
       name: item.name
     }));
-    
+
     const orderPayload = {
       restaurantId: restaurantId,
       items: formattedItems,
@@ -266,11 +288,11 @@ export default function ReviewOrderScreen() {
     try {
       const response = await placeOrder(orderPayload);
       const apiOrder = response?.order || response?.data?.order || null;
-      
+
       if (!apiOrder?._id) {
         throw new Error('Invalid order response from server');
       }
-      
+
       const newOrderId = apiOrder._id;
       const cartRestaurant = latestCartRef.current[0]?.restaurant;
       const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
@@ -286,7 +308,7 @@ export default function ReviewOrderScreen() {
         paymentMethod: paymentSnapshot,
         leaveAtDoor,
       });
-      
+
       await fetchCart();
       setOrderId(newOrderId);
       setOrderStatus('success');
@@ -306,7 +328,7 @@ export default function ReviewOrderScreen() {
       } else if (errMessage) {
         errorMsg = errMessage;
       }
-      
+
       Alert.alert(errorTitle, errorMsg);
       setOrderStatus('failed');
       setOrderErrorMessage(errorMsg);
@@ -317,191 +339,191 @@ export default function ReviewOrderScreen() {
     }
   };
 
- const handleStripePayment = async () => {
-  setIsProcessingStripe(true);
-  
-  try {
-    const authToken = await AsyncStorage.getItem('auth_token');
-    
-    if (!authToken) {
-      throw new Error('Authentication token not found.');
-    }
-    
-    const addressSnapshot = latestAddressRef.current;
-    
-    if (!addressSnapshot?.id) {
-      throw new Error('Please select a delivery address');
-    }
-    
-    const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
-    
-    if (!restaurantId) {
-      throw new Error('Restaurant information not found.');
-    }
-    
-    const formattedItems = latestCartRef.current.map(item => ({
-      productId: item.productId || item._id,
-      quantity: item.quantity,
-      price: item.price,
-      name: item.name
-    }));
-    
-    const orderPayload = {
-      restaurantId: restaurantId,
-      items: formattedItems,
-      addressId: addressSnapshot.id,
-      paymentMethod: 'online',
-      totalAmount: summary.grandTotal,
-      tipAmount: tipAmount,
-      discount: summary.discount,
-      couponId: navCoupon?.id,
-      orderStatus: 'pending_payment',
-      currency: currencyCode,
-      currencySymbol: currencySymbol,
-    };
-    
-    const orderResponse = await placeOrder(orderPayload);
-    const apiOrder = orderResponse?.order || orderResponse?.data?.order;
-    
-    if (!apiOrder?._id) {
-      throw new Error('Invalid order response');
-    }
-    
-    const newOrderId = apiOrder._id;
-    
-    // ✅ FIX: Use dynamic currency based on user location
-    const currency = currencyCode?.toLowerCase() || 'eur';
-    
-    const paymentResponse = await fetch(`${API_BASE_URL}/payment/create-payment-intent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        orderId: newOrderId,
-        amount: Math.round(summary.grandTotal * 100),
-        currency: currency, // ✅ Now sending 'eur'
-      })
-    });
+  const handleStripePayment = async () => {
+    setIsProcessingStripe(true);
 
-    const paymentData = await paymentResponse.json();
-
-    const secret = paymentData.clientSecret || paymentData.client_secret;
-    const pKey = paymentData.publishableKey;
-
-    console.log('[Stripe] Debugging Mismatch Error:', {
-      check_this_key_in_App_jsx: pKey,
-      secret_received: secret?.substring(0, 25) + '...',
-      stripeAccountId: paymentData.stripeAccountId || 'None (Platform)'
-    });
-
-    if (!paymentResponse.ok) {
-      console.error('[Stripe] Payment intent error:', paymentData);
-      await deleteOrder(newOrderId);
-      
-      // ✅ Better error message for API key issues
-      if (paymentData.error === 'Invalid API Key Provided') {
-        throw new Error('Stripe configuration error. Please contact support.');
-      }
-      throw new Error(paymentData.message || 'Payment initialization failed');
-    }
-
-    if (!paymentData.clientSecret) {
-      await deleteOrder(newOrderId);
-      throw new Error('Invalid response from server');
-    }
-
-    // Extract PaymentIntent ID from the secret (part before _secret_)
-    const extractedIntentId = secret.split('_secret_')[0];
-    console.log('[Stripe] Extracted Intent ID:', extractedIntentId);
-
-    const { error: initError } = await initPaymentSheet({
-      paymentIntentClientSecret: secret,
-      merchantDisplayName: 'Food Delivery',
-      merchantCountryCode: (user?.countryCode || 'DE').toUpperCase(),
-      stripeAccountId: paymentData.stripeAccountId || undefined,
-      defaultBillingDetails: {
-        name: user?.name || 'Customer',
-        email: user?.email || '',
-      },
-    });
-
-    if (initError) {
-      await deleteOrder(newOrderId);
-      throw new Error(initError.message || 'Failed to initialize payment');
-    }
-
-    const { error: presentError } = await presentPaymentSheet();
-
-    if (presentError) {
-      await deleteOrder(newOrderId);
-      if (presentError.code === 'Canceled') {
-        return;
-      }
-      throw new Error(presentError.message || 'Payment failed');
-    }
-
-    const updatePayload = {
-      orderId: newOrderId,
-      paymentIntentId: paymentData.paymentIntentId || paymentData.paymentIntent || extractedIntentId,
-      paymentStatus: 'paid',
-      orderStatus: 'confirmed'
-    };
-    
     try {
-      await fetch(`${API_BASE_URL}/orders/update-payment`, {
-        method: 'PUT',
+      const authToken = await AsyncStorage.getItem('auth_token');
+
+      if (!authToken) {
+        throw new Error('Authentication token not found.');
+      }
+
+      const addressSnapshot = latestAddressRef.current;
+
+      if (!addressSnapshot?.id) {
+        throw new Error('Please select a delivery address');
+      }
+
+      const restaurantId = latestCartRef.current[0]?.restaurantId || latestCartRef.current[0]?.restaurant?._id;
+
+      if (!restaurantId) {
+        throw new Error('Restaurant information not found.');
+      }
+
+      const formattedItems = latestCartRef.current.map(item => ({
+        productId: item.productId || item._id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name
+      }));
+
+      const orderPayload = {
+        restaurantId: restaurantId,
+        items: formattedItems,
+        addressId: addressSnapshot.id,
+        paymentMethod: 'online',
+        totalAmount: summary.grandTotal,
+        tipAmount: tipAmount,
+        discount: summary.discount,
+        couponId: navCoupon?.id,
+        orderStatus: 'pending_payment',
+        currency: currencyCode,
+        currencySymbol: currencySymbol,
+      };
+
+      const orderResponse = await placeOrder(orderPayload);
+      const apiOrder = orderResponse?.order || orderResponse?.data?.order;
+
+      if (!apiOrder?._id) {
+        throw new Error('Invalid order response');
+      }
+
+      const newOrderId = apiOrder._id;
+
+      // ✅ FIX: Use dynamic currency based on user location
+      const currency = currencyCode?.toLowerCase() || 'eur';
+
+      const paymentResponse = await fetch(`${API_BASE_URL}/payment/create-payment-intent`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify(updatePayload)
+        body: JSON.stringify({
+          orderId: newOrderId,
+          amount: Math.round(summary.grandTotal * 100),
+          currency: currency, // ✅ Now sending 'eur'
+        })
       });
-    } catch (updateError) {
-      console.warn('Order update error:', updateError);
-    }
-    
-    const cartRestaurant = latestCartRef.current[0]?.restaurant;
-    const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
 
-    addOrder({
-      ...apiOrder,
-      id: apiOrder._id,
-      restaurant: apiOrder.restaurant || cartRestaurant,
-      restaurantName: apiOrder.restaurantName || cartRestaurantName,
-      totals: summary,
-      checkout: latestCheckoutRef.current,
-      address: addressSnapshot,
-      paymentMethod: { id: 'stripe', label: 'Credit/Debit Card' },
-      leaveAtDoor,
-      paymentStatus: 'paid'
-    });
-    
-    await fetchCart();
-    setOrderId(newOrderId);
-    setOrderStatus('success');
-    setOrderErrorMessage('');
-    setShowModal(true);
-    
-  } catch (error) {
-    console.error('[Stripe] Payment error:', error);
-    
-    const errType = error?.response?.data?.type || error?.responseData?.type;
-    const errReason = error?.response?.data?.reason || error?.responseData?.reason;
+      const paymentData = await paymentResponse.json();
 
-    if (errType === 'restaurant_unavailable') {
-      Alert.alert(
-        'Restaurant Unavailable',
-        errReason || 'Restaurant is currently closed.',
-      );
-    } else {
-      Alert.alert('Payment Failed', error?.message || 'Please try again');
+      const secret = paymentData.clientSecret || paymentData.client_secret;
+      const pKey = paymentData.publishableKey;
+
+      console.log('[Stripe] Debugging Mismatch Error:', {
+        check_this_key_in_App_jsx: pKey,
+        secret_received: secret?.substring(0, 25) + '...',
+        stripeAccountId: paymentData.stripeAccountId || 'None (Platform)'
+      });
+
+      if (!paymentResponse.ok) {
+        console.error('[Stripe] Payment intent error:', paymentData);
+        await deleteOrder(newOrderId);
+
+        // ✅ Better error message for API key issues
+        if (paymentData.error === 'Invalid API Key Provided') {
+          throw new Error('Stripe configuration error. Please contact support.');
+        }
+        throw new Error(paymentData.message || 'Payment initialization failed');
+      }
+
+      if (!paymentData.clientSecret) {
+        await deleteOrder(newOrderId);
+        throw new Error('Invalid response from server');
+      }
+
+      // Extract PaymentIntent ID from the secret (part before _secret_)
+      const extractedIntentId = secret.split('_secret_')[0];
+      console.log('[Stripe] Extracted Intent ID:', extractedIntentId);
+
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: secret,
+        merchantDisplayName: 'Food Delivery',
+        merchantCountryCode: (user?.countryCode || 'DE').toUpperCase(),
+        stripeAccountId: paymentData.stripeAccountId || undefined,
+        defaultBillingDetails: {
+          name: user?.name || 'Customer',
+          email: user?.email || '',
+        },
+      });
+
+      if (initError) {
+        await deleteOrder(newOrderId);
+        throw new Error(initError.message || 'Failed to initialize payment');
+      }
+
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        await deleteOrder(newOrderId);
+        if (presentError.code === 'Canceled') {
+          return;
+        }
+        throw new Error(presentError.message || 'Payment failed');
+      }
+
+      const updatePayload = {
+        orderId: newOrderId,
+        paymentIntentId: paymentData.paymentIntentId || paymentData.paymentIntent || extractedIntentId,
+        paymentStatus: 'paid',
+        orderStatus: 'confirmed'
+      };
+
+      try {
+        await fetch(`${API_BASE_URL}/orders/update-payment`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(updatePayload)
+        });
+      } catch (updateError) {
+        console.warn('Order update error:', updateError);
+      }
+
+      const cartRestaurant = latestCartRef.current[0]?.restaurant;
+      const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
+
+      addOrder({
+        ...apiOrder,
+        id: apiOrder._id,
+        restaurant: apiOrder.restaurant || cartRestaurant,
+        restaurantName: apiOrder.restaurantName || cartRestaurantName,
+        totals: summary,
+        checkout: latestCheckoutRef.current,
+        address: addressSnapshot,
+        paymentMethod: { id: 'stripe', label: 'Credit/Debit Card' },
+        leaveAtDoor,
+        paymentStatus: 'paid'
+      });
+
+      await fetchCart();
+      setOrderId(newOrderId);
+      setOrderStatus('success');
+      setOrderErrorMessage('');
+      setShowModal(true);
+
+    } catch (error) {
+      console.error('[Stripe] Payment error:', error);
+
+      const errType = error?.response?.data?.type || error?.responseData?.type;
+      const errReason = error?.response?.data?.reason || error?.responseData?.reason;
+
+      if (errType === 'restaurant_unavailable') {
+        Alert.alert(
+          'Restaurant Unavailable',
+          errReason || 'Restaurant is currently closed.',
+        );
+      } else {
+        Alert.alert('Payment Failed', error?.message || 'Please try again');
+      }
+    } finally {
+      setIsProcessingStripe(false);
     }
-  } finally {
-    setIsProcessingStripe(false);
-  }
-};
+  };
   const [isProcessingUpi, setIsProcessingUpi] = useState(false);
   const [upiTimer, setUpiTimer] = useState(60);
 
@@ -552,7 +574,7 @@ export default function ReviewOrderScreen() {
       const amount = summary.grandTotal.toFixed(2);
       const upiUrl = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Order ' + newOrderId)}`;
       console.log('Attempting to open UPI URL:', upiUrl);
-      
+
       let opened = false;
       try {
         const canOpen = await Linking.canOpenURL(upiUrl).catch(() => false);
@@ -570,12 +592,12 @@ export default function ReviewOrderScreen() {
             }
           }
         }
-        
+
         if (!opened) {
           // Final fallback: Try forcing the generic URL
           await Linking.openURL(upiUrl).catch(e => {
-             console.log('Final fallback failed:', e);
-             throw e;
+            console.log('Final fallback failed:', e);
+            throw e;
           });
           opened = true;
         }
@@ -600,7 +622,7 @@ export default function ReviewOrderScreen() {
 
       // In a real app, we would poll the backend here or wait for a socket
       // For this demo, we'll provide a "Verify Payment" button in the modal
-      
+
     } catch (error) {
       console.error('UPI Payment Error:', error);
       Alert.alert('Payment Failed', error?.message || 'Please try again');
@@ -615,7 +637,7 @@ export default function ReviewOrderScreen() {
       // Fetch the latest order status from backend
       const response = await apiClient.get(`/api/orders/${orderId}`);
       const apiOrder = response.data?.order;
-      
+
       // Simulation logic: In a real environment, we'd wait for paymentStatus === 'paid'
       // For this task, we proceed to show the success state but reflect the real status
       setTimeout(async () => {
@@ -949,7 +971,7 @@ export default function ReviewOrderScreen() {
         }}
         onClose={() => setActiveSheet(sheetBackTarget.address ? sheetBackTarget.address : null)}
       />
-   
+
       <PaymentMethodSheet
         visible={activeSheet === 'payment'}
         selectedId={paymentMethod?.id || null}
@@ -978,9 +1000,9 @@ export default function ReviewOrderScreen() {
               {t('payment.upi_instruction', 'Please complete the payment in your UPI app. Do not close this screen.')}
             </Text>
             <ActivityIndicator size="large" color="#FF3D3D" style={{ marginVertical: 20 }} />
-            
-            <TouchableOpacity 
-              style={[styles.upiVerifyBtn, isPlacing && { opacity: 0.7 }]} 
+
+            <TouchableOpacity
+              style={[styles.upiVerifyBtn, isPlacing && { opacity: 0.7 }]}
               onPress={handleVerifyUpiPayment}
               disabled={isPlacing}
             >
@@ -991,8 +1013,8 @@ export default function ReviewOrderScreen() {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.upiCancelBtn} 
+            <TouchableOpacity
+              style={styles.upiCancelBtn}
               onPress={() => setIsProcessingUpi(false)}
             >
               <Text style={styles.upiCancelBtnText}>{t('common.cancel', 'Cancel')}</Text>
@@ -1072,10 +1094,10 @@ const styles = StyleSheet.create({
   offerMainLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#111' },
   offerRedLabel: { marginTop: scale(2), fontSize: scale(11), fontWeight: '700', color: '#FF3D3D' },
   offerValueText: { fontSize: FONT_SIZES.xs, fontWeight: '800', color: '#111' },
-  dashedLine: { 
-    marginTop: SPACING.md, 
-    borderTopWidth: 1, 
-    borderStyle: 'dashed', 
+  dashedLine: {
+    marginTop: SPACING.md,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
     borderColor: '#CCC',
   },
   billRowStrong: { marginTop: SPACING.md },
