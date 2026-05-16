@@ -67,6 +67,8 @@ export default function HomeScreen() {
   const { 
     location: globalLocation, 
     address: globalAddress, 
+    gpsLocation,
+    gpsAddress,
     permissionStatus, 
     isLoading: isLocationLoading,
     selectedAddress: lockedAddress,
@@ -553,21 +555,20 @@ export default function HomeScreen() {
   // Distance check effect to show popup if > 2km
   useEffect(() => {
     const checkDistance = async () => {
-      // Only check if user is authenticated, we have GPS, we have the geocoded address, 
-      // and we have user data (for saved addresses)
-      if (!isAuthenticated || hasCheckedDistance.current || !globalLocation || !globalAddress || !userData?.savedAddresses || userData.savedAddresses.length === 0) {
+      // Use GPS-only location for the distance check against default address
+      if (!isAuthenticated || hasCheckedDistance.current || !gpsLocation || !gpsAddress || !userData?.savedAddresses || userData.savedAddresses.length === 0) {
         return;
       }
 
       const defaultAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
       if (defaultAddr && defaultAddr.location?.coordinates) {
         const [defLng, defLat] = defaultAddr.location.coordinates;
-        const distance = calculateDistance(globalLocation.latitude, globalLocation.longitude, defLat, defLng);
+        const distance = calculateDistance(gpsLocation.latitude, gpsLocation.longitude, defLat, defLng);
 
-        console.log(`📏 [Distance Check] GPS to Default Address distance: ${distance.toFixed(2)} km`);
+        console.log(`📏 [Distance Check] GPS (${gpsLocation.latitude}, ${gpsLocation.longitude}) to Default Address (${defLat}, ${defLng}) distance: ${distance.toFixed(2)} km`);
 
         if (distance > 2) {
-          const currentCity = globalAddress.city || 'Indore';
+          const currentCity = gpsAddress.city || 'Indore';
           const defaultCity = defaultAddr.city || '';
           
           setCurrentCityName(currentCity);
@@ -579,7 +580,7 @@ export default function HomeScreen() {
       }
     };
     checkDistance();
-  }, [isAuthenticated, globalLocation, globalAddress, userData]);
+  }, [isAuthenticated, gpsLocation, gpsAddress, userData]);
 
   const handleStayAtCurrentLocation = useCallback(() => {
     setIsLocationPopupVisible(false);
@@ -588,12 +589,12 @@ export default function HomeScreen() {
     if (setCartAddress) setCartAddress(null);
     
     // Force header refresh for immediate feedback
-    if (globalAddress) {
+    if (gpsAddress) {
       setAddressLabel(t('home.current_location_label', 'Current Location'));
-      const locality = globalAddress.streetArea || globalAddress.area || globalAddress.neighborhood || globalAddress.sublocality || globalAddress.landmark;
-      setAddressLine(locality || globalAddress.city || '');
+      const locality = gpsAddress.streetArea || gpsAddress.area || gpsAddress.neighborhood || gpsAddress.sublocality || gpsAddress.landmark;
+      setAddressLine(locality || gpsAddress.city || '');
     }
-  }, [setSelectedAddress, setCartAddress, globalAddress, t]);
+  }, [setSelectedAddress, setCartAddress, gpsAddress, t]);
 
   const handleSetDefaultLocation = useCallback(() => {
     setIsLocationPopupVisible(false);

@@ -27,6 +27,7 @@ import { wp, hp } from '../../utils/responsive';
 import { scale, fontScale } from '../../utils/scale';
 import { FONT_SIZES } from '../../theme/typography';
 import { SPACING } from '../../theme/spacing';
+import { useLocation } from '../../context/LocationContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FALLBACK_IMAGE = require('../../assets/images/Noodle.png');
@@ -43,6 +44,7 @@ export default function SearchScreen() {
   const searchTimeoutRef = useRef(null);
   const skipDebounceRef = useRef(false);
   const abortControllerRef = useRef(null);
+  const { location, address } = useLocation();
   const currentRequestIdRef = useRef(0);
   
   const [query, setQuery] = useState('');
@@ -164,12 +166,18 @@ export default function SearchScreen() {
       console.log('🔍 Instant search for:', trimmedQuery, '(Request #' + currentRequestId + ')');
       
       try {
-        console.log('💡 Fetching suggestions...');
-        const suggestionPromise = getSearchSuggestions(trimmedQuery);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error(t('search.suggestions_timeout', 'Suggestions timeout'))), 3000)
-        );
-        const sug = await Promise.race([suggestionPromise, timeoutPromise]);
+      console.log('💡 Fetching suggestions...');
+      const locationParams = {
+        lat: location?.latitude,
+        lng: location?.longitude,
+        city: address?.city
+      };
+      
+      const suggestionPromise = getSearchSuggestions(trimmedQuery, locationParams);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(t('search.suggestions_timeout', 'Suggestions timeout'))), 3000)
+      );
+      const sug = await Promise.race([suggestionPromise, timeoutPromise]);
         
         if (currentRequestId === currentRequestIdRef.current && !abortControllerRef.current.signal.aborted) {
           console.log('✅ Suggestions fetched:', sug?.length || 0);
@@ -187,7 +195,7 @@ export default function SearchScreen() {
       
       try {
         console.log('🍽️ Fetching search results...');
-        const resultsPromise = searchRestaurantsAndProducts(trimmedQuery);
+        const resultsPromise = searchRestaurantsAndProducts(trimmedQuery, {}, locationParams);
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error(t('search.search_timeout', 'Search timeout'))), 5000)
         );
@@ -251,7 +259,13 @@ export default function SearchScreen() {
           
           try {
             console.log('💡 Fetching suggestions...');
-            const suggestionPromise = getSearchSuggestions(trimmedQuery);
+            const locationParams = {
+              lat: location?.latitude,
+              lng: location?.longitude,
+              city: address?.city
+            };
+            
+            const suggestionPromise = getSearchSuggestions(trimmedQuery, locationParams);
             const timeoutPromise = new Promise((_, reject) => 
               setTimeout(() => reject(new Error(t('search.suggestions_timeout', 'Suggestions timeout'))), 3000)
             );
@@ -270,7 +284,11 @@ export default function SearchScreen() {
           
           try {
             console.log('🍽️ Fetching search results...');
-            const resultsPromise = searchRestaurantsAndProducts(trimmedQuery);
+            const resultsPromise = searchRestaurantsAndProducts(trimmedQuery, {}, {
+              lat: location?.latitude,
+              lng: location?.longitude,
+              city: address?.city
+            });
             const timeoutPromise = new Promise((_, reject) => 
               setTimeout(() => reject(new Error(t('search.search_timeout', 'Search timeout'))), 5000)
             );

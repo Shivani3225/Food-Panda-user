@@ -7,9 +7,16 @@ import { SEARCH_ROUTES } from '../config/routes';
  * @param {object} filters - Filter options (isVeg, minPrice, maxPrice, etc.)
  * @returns {Promise} Search results with restaurants and products
  */
-export const searchRestaurantsAndProducts = async (query, filters = {}) => {
+export const searchRestaurantsAndProducts = async (query, filters = {}, location = {}) => {
   try {
-    const queryParams = new URLSearchParams({ q: query, ...filters });
+    const { lat, lng, city } = location;
+    const queryParams = new URLSearchParams({ 
+      q: query, 
+      ...filters,
+      ...(lat && { lat }),
+      ...(lng && { lng }),
+      ...(city && { city })
+    });
     const url = `${SEARCH_ROUTES.search}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     return response.data;
@@ -22,11 +29,18 @@ export const searchRestaurantsAndProducts = async (query, filters = {}) => {
 /**
  * Get search suggestions based on query
  * @param {string} query - Search query
+ * @param {object} location - User location { lat, lng, city }
  * @returns {Promise} Array of suggestions (restaurants or dishes)
  */
-export const getSearchSuggestions = async (query) => {
+export const getSearchSuggestions = async (query, location = {}) => {
   try {
-    const queryParams = new URLSearchParams({ q: query });
+    const { lat, lng, city } = location;
+    const queryParams = new URLSearchParams({ 
+      q: query,
+      ...(lat && { lat }),
+      ...(lng && { lng }),
+      ...(city && { city })
+    });
     const url = `${SEARCH_ROUTES.suggestions}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     // Return array directly or from data property

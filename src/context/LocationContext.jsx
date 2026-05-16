@@ -234,8 +234,8 @@ export const LocationProvider = ({ children }) => {
   return (
     <LocationContext.Provider
       value={{
-        location,
-        address, // New: Globally available address
+        gpsLocation: location,
+        gpsAddress: address,
         error,
         isLoading,
         permissionStatus,
@@ -243,11 +243,11 @@ export const LocationProvider = ({ children }) => {
         requestPermission,
         selectedAddress,
         setSelectedAddress: handleSetSelectedAddress,
-        address: selectedAddress || address, // Selected takes priority
+        address: selectedAddress || address, // Selected takes priority for UI
         location: selectedAddress ? {
           latitude: selectedAddress.location?.coordinates[1],
           longitude: selectedAddress.location?.coordinates[0]
-        } : location
+        } : location // Selected takes priority for fetching
       }}
     >
       {children}

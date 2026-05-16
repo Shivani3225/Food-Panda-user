@@ -91,7 +91,7 @@ export default function ReviewOrderScreen() {
   const [errors, setErrors] = useState({});
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
   const { user, currencySymbol, currencyCode } = useAuth();
-  const { address: globalAddress, selectedAddress } = useLocation();
+  const { address: globalAddress, selectedAddress, gpsAddress, gpsLocation } = useLocation();
 
   const placeOrderTimerRef = useRef(null);
 
@@ -175,16 +175,16 @@ export default function ReviewOrderScreen() {
         .filter(Boolean);
 
       // Inject Current GPS Location as a virtual address option if available
-      if (globalAddress && globalAddress.fullAddress) {
+      if (gpsAddress && gpsAddress.fullAddress) {
         const currentLocationAddr = {
           id: 'current_location',
           label: t('review_order.current_location', 'Current Location'),
-          addressLine: globalAddress.fullAddress,
-          city: globalAddress.city,
-          zipCode: globalAddress.zipCode,
+          addressLine: gpsAddress.fullAddress,
+          city: gpsAddress.city,
+          zipCode: gpsAddress.zipCode,
           location: {
             type: 'Point',
-            coordinates: [globalAddress.longitude || 0, globalAddress.latitude || 0]
+            coordinates: [gpsLocation?.longitude || 0, gpsLocation?.latitude || 0]
           },
           isDefault: false,
         };
