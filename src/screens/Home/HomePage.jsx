@@ -36,12 +36,13 @@ import { wp, hp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES as FONT } from '../../theme/typography';
 import { getRatingAverage, getRatingCount } from '../../utils/ratingUtils';
-import { getAddressFromCoordinates } from '../../utils/locationUtils';
+import { getAddressFromCoordinates, calculateDistance } from '../../utils/locationUtils';
 import { HomeHeader } from '../../components/Home/HomeHeader';
 import { FoodCategoryList } from '../../components/Home/FoodCategoryList';
 import { PromoCardList } from '../../components/Home/PromoCardList';
 import { RestaurantListCard, RestaurantRecommendCard } from '../../components/Home/RestaurantCard';
 import { SkeletonCard, SkeletonRecommendCard } from '../../components/Home/SkeletonLoaders';
+import LocationPopup from '../../components/Home/LocationPopup';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -81,6 +82,12 @@ export default function HomeScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const hasAppliedSelectedAddressParam = useRef(false); // New ref to track param application
   const selectedAddressParam = route?.params?.selectedAddress;
+
+  // Location Popup states
+  const [isLocationPopupVisible, setIsLocationPopupVisible] = useState(false);
+  const [currentCityName, setCurrentCityName] = useState('');
+  const [defaultAddressInfo, setDefaultAddressInfo] = useState(null);
+  const hasCheckedDistance = useRef(false);
 
   // Robust Image URL handling with Fallback - Moved to component level
   const getImageUrl = useCallback((img, type = 'Image') => {
@@ -518,6 +525,50 @@ export default function HomeScreen() {
     updateHeaderFromLocation();
   }, [globalLocation, t, authenticatedUser?.savedAddresses, applyHeaderAddress, selectedAddressParam]);
 
+  // Distance check effect to show popup if > 2km
+  useEffect(() => {
+    const checkDistance = async () => {
+      // Only check if user is authenticated, we have GPS, and we have user data (for saved addresses)
+      if (!isAuthenticated || hasCheckedDistance.current || !globalLocation || !userData?.savedAddresses || userData.savedAddresses.length === 0) {
+        return;
+      }
+
+      const defaultAddr = userData.savedAddresses.find(a => a.isDefault) || userData.savedAddresses[0];
+      if (defaultAddr && defaultAddr.location?.coordinates) {
+        const [defLng, defLat] = defaultAddr.location.coordinates;
+        const distance = calculateDistance(globalLocation.latitude, globalLocation.longitude, defLat, defLng);
+
+        console.log(`📏 [Distance Check] GPS to Default Address distance: ${distance.toFixed(2)} km`);
+
+        if (distance > 2) {
+          try {
+            const addrData = await getAddressFromCoordinates(globalLocation.latitude, globalLocation.longitude);
+            const currentCity = addrData.city || 'Indore';
+            const defaultCity = defaultAddr.city || '';
+            
+            setCurrentCityName(currentCity);
+            setDefaultAddressInfo(defaultAddr);
+            setIsLocationPopupVisible(true);
+          } catch (e) {
+            console.warn('Failed to get current city for location popup:', e);
+          }
+        }
+        // Mark as checked so we don't annoy the user multiple times in one session
+        hasCheckedDistance.current = true;
+      }
+    };
+    checkDistance();
+  }, [isAuthenticated, globalLocation, userData]);
+
+  const handleStayAtCurrentLocation = useCallback(() => {
+    setIsLocationPopupVisible(false);
+  }, []);
+
+  const handleSetDefaultLocation = useCallback(() => {
+    setIsLocationPopupVisible(false);
+    navigation.navigate('Profile', { screen: 'AddressesScreen' });
+  }, [navigation]);
+
   // Fail-safe for loading state
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -879,6 +930,15 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
       <FilterDrawer visible={isFilterOpen} onClose={() => setIsFilterOpen(false)} onReset={handleResetFilters} onApply={handleApplyFilters} />
+      
+      <LocationPopup
+        visible={isLocationPopupVisible}
+        onClose={() => setIsLocationPopupVisible(false)}
+        currentCity={currentCityName}
+        defaultCity={defaultAddressInfo?.city || ''}
+        onStay={handleStayAtCurrentLocation}
+        onSetDefault={handleSetDefaultLocation}
+      />
     </SafeAreaView>
   );
 }

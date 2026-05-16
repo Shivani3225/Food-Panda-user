@@ -171,12 +171,12 @@ export default function AddressesScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.actionBtn, styles.deleteBtn]}
+          style={styles.actionBtn}
           onPress={() => handleDeleteAddress(item._id)} // Use _id for API
           activeOpacity={0.7}
         >
-          <Trash2 size={16} color="#FF4D4F" />
-          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>{t('common.delete', 'Delete')}</Text>
+          <Trash2 size={16} color="#E41C26" />
+          <Text style={styles.actionBtnText}>{t('common.delete', 'Delete')}</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -381,12 +381,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#E41C26',
-  },
-  deleteBtn: {
-    borderColor: '#FF4D4F',
-  },
-  deleteBtnText: {
-    color: '#FF4D4F',
   },
   buttonContainer: {
     paddingHorizontal: width * 0.04,

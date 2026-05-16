@@ -45,66 +45,74 @@ export const MenuItemCard = memo(({
         style={styles.itemRow}
         android_ripple={{ color: '#F5F5F5', borderless: false }}
       >
-        {/* Left: Image with heart */}
-        <View style={styles.itemImgWrap}>
-          <Image source={imageSource} style={styles.itemImg} />
-          <Pressable
-            style={styles.itemFavBtn}
-            hitSlop={10}
-            onPress={onFavoritePress}
-          >
-            <Heart
-              size={14}
-              color={isFavorite ? '#FF3D3D' : '#111'}
-              fill={isFavorite ? '#FF3D3D' : 'transparent'}
-            />
-          </Pressable>
-        </View>
-
-        {/* Middle: Info */}
+        {/* Left: Info */}
         <View style={styles.itemContent}>
-          <Text style={styles.itemPrice}>
-            {currencySymbol}{typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: scale(2) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: scale(4) }}>
             {foodTypeColor && (
               <View style={[styles.foodTypeIcon, { borderColor: foodTypeColor }]}>
                 <View style={[styles.foodTypeDot, { backgroundColor: foodTypeColor }]} />
               </View>
             )}
-            <Text style={styles.itemName} numberOfLines={2}>
-              {item.nameKey ? t(item.nameKey, item.name) : item.name}
-            </Text>
+            {bestSellerText && (
+              <View style={styles.bestSellerPill}>
+                <Text style={styles.bestSellerText}>⭐ {bestSellerText}</Text>
+              </View>
+            )}
           </View>
+          
+          <Text style={styles.itemName} numberOfLines={2}>
+            {item.nameKey ? t(item.nameKey, item.name) : item.name}
+          </Text>
+
+          <Text style={styles.itemPrice}>
+            {currencySymbol}{typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+          </Text>
+
           {!!itemDesc && (
             <Text style={styles.desc} numberOfLines={2}>
               {item.descriptionKey ? t(item.descriptionKey, itemDesc) : itemDesc}
             </Text>
           )}
-          {bestSellerText && (
-            <View style={styles.bestSellerPill}>
-              <Text style={styles.bestSellerText}>{bestSellerText}</Text>
-            </View>
-          )}
         </View>
 
-        {/* Right: Add / Stepper */}
-        <View style={styles.actionWrap}>
-          {quantity > 0 ? (
-            <View style={styles.stepper}>
-              <Pressable style={styles.stepBtn} hitSlop={10} onPress={onDecrement}>
-                <Minus size={12} color="#111" />
-              </Pressable>
-              <Text style={styles.stepQty}>{quantity}</Text>
-              <Pressable style={styles.stepBtn} hitSlop={10} onPress={onIncrement}>
-                <Plus size={12} color="#111" />
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable style={styles.addPlusBtn} hitSlop={10} onPress={onQuickAdd}>
-              <Plus size={16} color="#111" />
+        {/* Right: Image and Add Button */}
+        <View style={styles.rightSection}>
+          <View style={styles.itemImgWrap}>
+            <Image source={imageSource} style={styles.itemImg} />
+            <Pressable
+              style={styles.itemFavBtn}
+              hitSlop={10}
+              onPress={onFavoritePress}
+            >
+              <Heart
+                size={14}
+                color={isFavorite ? '#E41C26' : '#666'}
+                fill={isFavorite ? '#E41C26' : 'transparent'}
+              />
             </Pressable>
-          )}
+          </View>
+
+          {/* ADD / Stepper Button */}
+          <View style={styles.actionContainer}>
+            {quantity > 0 ? (
+              <View style={styles.stepper}>
+                <Pressable style={styles.stepBtn} hitSlop={10} onPress={onDecrement}>
+                  <Minus size={14} color="#E41C26" strokeWidth={3} />
+                </Pressable>
+                <Text style={styles.stepQty}>{quantity}</Text>
+                <Pressable style={styles.stepBtn} hitSlop={10} onPress={onIncrement}>
+                  <Plus size={14} color="#E41C26" strokeWidth={3} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={styles.addBtn} onPress={onQuickAdd}>
+                <Text style={styles.addBtnText}>{t('menu.add', 'ADD')}</Text>
+                <View style={styles.addIconWrap}>
+                   <Plus size={12} color="#E41C26" strokeWidth={4} />
+                </View>
+              </Pressable>
+            )}
+          </View>
         </View>
       </Pressable>
 
@@ -117,135 +125,143 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-    gap: scale(12),
+    paddingVertical: SPACING.lg,
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
   },
   itemDivider: {
     height: 1,
-    backgroundColor: '#EDEDED',
+    backgroundColor: '#F3F3F3',
     marginHorizontal: SPACING.md,
-  },
-
-  // Image
-  itemImgWrap: {
-    position: 'relative',
-  },
-  itemImg: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(14),
-    backgroundColor: '#F5F5F5',
-  },
-  itemFavBtn: {
-    position: 'absolute',
-    top: scale(6),
-    left: scale(6),
-    width: scale(28),
-    height: scale(28),
-    borderRadius: scale(14),
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: scale(4),
-    shadowOffset: { width: 0, height: 1 },
   },
 
   // Content
   itemContent: {
     flex: 1,
-  },
-  itemPrice: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '800',
-    color: '#111',
-    marginBottom: scale(2),
+    paddingRight: scale(16),
   },
   itemName: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: scale(16),
     fontWeight: '700',
-    color: '#111',
-    lineHeight: scale(20),
-    flex: 1,
+    color: '#111111',
+    lineHeight: scale(22),
+    marginBottom: scale(4),
+  },
+  itemPrice: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: '#222222',
+    marginBottom: scale(6),
+  },
+  desc: {
+    fontSize: scale(12),
+    color: '#666666',
+    lineHeight: scale(18),
   },
   foodTypeIcon: {
-    width: scale(14),
-    height: scale(14),
+    width: scale(12),
+    height: scale(12),
     borderWidth: 1,
     borderRadius: scale(2),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: scale(6),
-    marginTop: scale(3),
+    marginRight: scale(8),
   },
   foodTypeDot: {
     width: scale(6),
     height: scale(6),
     borderRadius: scale(3),
   },
-  desc: {
-    fontSize: FONT_SIZES.xs,
-    color: '#777',
-    marginTop: scale(4),
-    lineHeight: scale(16),
-  },
   bestSellerPill: {
-    marginTop: scale(6),
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFE8E8',
-    borderRadius: scale(10),
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(3),
+    backgroundColor: '#FFF5F5',
+    borderRadius: scale(4),
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(2),
   },
   bestSellerText: {
-    color: '#D84C4C',
-    fontSize: FONT_SIZES.xs,
+    color: '#E41C26',
+    fontSize: scale(10),
     fontWeight: '700',
-    fontStyle: 'italic',
   },
 
-  // Action
-  actionWrap: {
+  // Right Section
+  rightSection: {
+    alignItems: 'center',
+  },
+  itemImgWrap: {
+    position: 'relative',
+    marginBottom: scale(-18), // Overlap for button
+  },
+  itemImg: {
+    width: scale(120),
+    height: scale(120),
+    borderRadius: scale(16),
+    backgroundColor: '#F9F9F9',
+  },
+  itemFavBtn: {
+    position: 'absolute',
+    top: scale(8),
+    right: scale(8),
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(14),
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 2,
   },
-  addPlusBtn: {
-    width: scale(36),
+
+  // Action Buttons
+  actionContainer: {
+    width: scale(90),
     height: scale(36),
-    borderRadius: scale(10),
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+    borderRadius: scale(8),
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
     justifyContent: 'center',
+    zIndex: 10,
+  },
+  addBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 1,
+    justifyContent: 'center',
+    height: '100%',
+  },
+  addBtnText: {
+    color: '#E41C26',
+    fontSize: scale(14),
+    fontWeight: '800',
+    marginRight: scale(4),
+  },
+  addIconWrap: {
+    position: 'absolute',
+    top: scale(2),
+    right: scale(6),
   },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: scale(12),
-    paddingHorizontal: SPACING.xs,
-    height: scale(32),
-    backgroundColor: '#FFF',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(8),
+    height: '100%',
   },
   stepBtn: {
-    width: scale(24),
-    height: scale(24),
-    borderRadius: scale(12),
+    width: scale(28),
+    height: scale(28),
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepQty: {
-    minWidth: scale(18),
+    fontSize: scale(14),
+    fontWeight: '800',
+    color: '#E41C26',
+    minWidth: scale(20),
     textAlign: 'center',
-    fontWeight: '900',
-    color: '#111',
-    fontSize: FONT_SIZES.xs,
-    marginHorizontal: scale(2),
   },
 });

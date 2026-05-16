@@ -231,7 +231,7 @@ export default function AddressFormScreen() {
         city: formData.city.trim(),
         state: formData.state.trim(),
         zipCode: formData.zipCode.trim(),
-        label: selectedLabel === 'other' ? (customLabel.trim() || 'Other') : normalizeLabelForApi(selectedLabel),
+        label: selectedLabel === 'other' ? 'Other' : normalizeLabelForApi(selectedLabel),
         isDefault,
         ...(address?.coordinates && {
           location: {
@@ -318,7 +318,7 @@ export default function AddressFormScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         {/* Header */}

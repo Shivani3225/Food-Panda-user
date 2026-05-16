@@ -51,23 +51,25 @@ const AddToCart = () => {
 
           <View style={styles.optionBox}>
             <View style={styles.optionRow}>
-              <View style={styles.radioActive} />
+              <View style={[styles.checkbox, styles.checkboxActive]}>
+                <View style={styles.checkboxInner} />
+              </View>
               <Text style={styles.optionText}>{t('add_to_cart.regular_fries', 'Regular Fries')}</Text>
               <View style={styles.qtyBox}>
-                <Minus size={14} />
+                <TouchableOpacity><Text style={styles.qtyBtnText}>−</Text></TouchableOpacity>
                 <Text style={styles.qty}>1</Text>
-                <Plus size={14} />
+                <TouchableOpacity><Text style={styles.qtyBtnText}>+</Text></TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.optionRow}>
-              <View style={styles.radio} />
+              <View style={styles.checkbox} />
               <Text style={styles.optionText}>{t('add_to_cart.curly_fries', 'Curly Fries')}</Text>
               <Text style={styles.extra}>{currencySymbol}10</Text>
             </View>
 
             <View style={styles.optionRow}>
-              <View style={styles.radio} />
+              <View style={styles.checkbox} />
               <Text style={styles.optionText}>{t('add_to_cart.potato_wedges', 'Potato Wedges')}</Text>
               <Text style={styles.extra}>{currencySymbol}15</Text>
             </View>
@@ -184,21 +186,25 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
 
-  radioActive: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  checkboxActive: {
+    borderColor: '#E41E26',
     backgroundColor: '#E41E26',
-    marginRight: 10,
   },
-
-  radio: {
+  checkboxInner: {
+    width: 8,
+    height: 8,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+  },
+  checkbox: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#999',
     marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   optionText: {
@@ -209,9 +215,16 @@ const styles = StyleSheet.create({
   qtyBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F1F1',
+    backgroundColor: '#fff',
     borderRadius: 20,
     paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#E41E26',
+  },
+  qtyBtnText: {
+    color: '#E41E26',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 
   qty: {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,85 +6,56 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Search } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { getCoupons } from '../../services/couponService';
 
 // Coupon data with translation keys
-const COUPONS = [
-  {
-    id: 'PICHAPIE',
-    titleKey: 'offers.shakeys_pizza_offer',
-    title: "500 off in Shakey's Pizza",
-    amount: 500,
-    minSpend: 1000,
-    expiresKey: 'offers.expires_jan_2026',
-    expires: '31 Jan 2026',
-    termsKey: 'offers.terms_new_users',
-    terms: 'Terms valid for new users only. One-time use.',
-  },
-  {
-    id: 'PICHAPIE-2',
-    titleKey: 'offers.shakeys_pizza_offer',
-    title: "500 off in Shakey's Pizza",
-    amount: 500,
-    minSpend: 1000,
-    expiresKey: 'offers.expires_jan_2026',
-    expires: '31 Jan 2026',
-    termsKey: 'offers.terms_new_users',
-    terms: 'Terms valid for new users only. One-time use.',
-  },
-  {
-    id: 'PICHAPIE-3',
-    titleKey: 'offers.shakeys_pizza_offer',
-    title: "500 off in Shakey's Pizza",
-    amount: 500,
-    minSpend: 1000,
-    expiresKey: 'offers.expires_jan_2026',
-    expires: '31 Jan 2026',
-    termsKey: 'offers.terms_new_users',
-    terms: 'Terms valid for new users only. One-time use.',
-  },
-  {
-    id: 'PICHAPIE-4',
-    titleKey: 'offers.shakeys_pizza_offer',
-    title: "500 off in Shakey's Pizza",
-    amount: 500,
-    minSpend: 1000,
-    expiresKey: 'offers.expires_jan_2026',
-    expires: '31 Jan 2026',
-    termsKey: 'offers.terms_new_users',
-    terms: 'Terms valid for new users only. One-time use.',
-  },
-  {
-    id: 'PICHAPIE-5',
-    titleKey: 'offers.shakeys_pizza_offer',
-    title: "500 off in Shakey's Pizza",
-    amount: 500,
-    minSpend: 1000,
-    expiresKey: 'offers.expires_jan_2026',
-    expires: '31 Jan 2026',
-    termsKey: 'offers.terms_new_users',
-    terms: 'Terms valid for new users only. One-time use.',
-  },
-];
 
 export default function Offers() {
   const { t } = useTranslation();
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
 
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
+  const fetchCoupons = async () => {
+    try {
+      setLoading(true);
+      const data = await getCoupons();
+      // Assuming data is an array or { promocodes: [] }
+      const promoList = Array.isArray(data) ? data : data?.promocodes || [];
+      setCoupons(promoList);
+      setError(null);
+    } catch (err) {
+      console.error('Error in Offers screen:', err);
+      setError('Failed to load offers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const list = useMemo(() => {
-    if (!query.trim()) return COUPONS;
+    if (!query.trim()) return coupons;
     const q = query.toLowerCase();
-    return COUPONS.filter(c =>
-      [c.id, c.title, c.terms].some(v => v.toLowerCase().includes(q)),
-    );
-  }, [query]);
+    return coupons.filter(c => {
+      const code = (c.code || c.id || '').toLowerCase();
+      const title = (c.title || '').toLowerCase();
+      const description = (c.description || c.terms || '').toLowerCase();
+      return code.includes(q) || title.includes(q) || description.includes(q);
+    });
+  }, [query, coupons]);
 
   const handleUseNow = (coupon) => {
     // Navigate to restaurant listing or apply coupon
@@ -122,7 +93,18 @@ export default function Offers() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        {list.length === 0 ? (
+        {loading ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color="#E53935" />
+          </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={fetchCoupons}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : list.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
               {t('offers.no_offers_found', 'No offers found')}
@@ -130,28 +112,34 @@ export default function Offers() {
           </View>
         ) : (
           list.map(item => (
-            <View key={item.id} style={styles.card}>
+            <View key={item._id || item.id} style={styles.card}>
               <View style={styles.cardContent}>
                 <View style={styles.cardLeft}>
                   <Text style={styles.cardTitle}>
-                    {t(item.titleKey, item.title)}
+                    {item.title || item.code}
                   </Text>
                   <Text style={styles.amountText}>
-                    {item.amount.toFixed(2)} {currencySymbol}
+                    {item.discountType === 'percentage' 
+                      ? `${item.discountValue}% OFF` 
+                      : `${currencySymbol}${item.discountValue || item.amount}`}
                   </Text>
 
                   <View style={styles.metaRow}>
                     <Text style={styles.metaText}>
-                      {t('offers.min_spend', 'Min spend')} {item.minSpend.toFixed(2)} {currencySymbol}
+                      {t('offers.min_spend', 'Min spend')} {currencySymbol}{item.minOrderValue || item.minSpend || 0}
                     </Text>
-                    <Text style={styles.metaDot}>•</Text>
-                    <Text style={styles.metaText}>
-                      {t('offers.use_by', 'Use by')} {t(item.expiresKey, item.expires)}
-                    </Text>
+                    {item.expirationDate && (
+                      <>
+                        <Text style={styles.metaDot}>•</Text>
+                        <Text style={styles.metaText}>
+                          {t('offers.use_by', 'Use by')} {new Date(item.expirationDate).toLocaleDateString()}
+                        </Text>
+                      </>
+                    )}
                   </View>
 
                   <View style={styles.codeRow}>
-                    <Text style={styles.codeText}>{item.id}</Text>
+                    <Text style={styles.codeText}>{item.code || item.id}</Text>
                     <TouchableOpacity 
                       activeOpacity={0.9} 
                       style={styles.useBtn}
@@ -172,7 +160,7 @@ export default function Offers() {
               {/* Light Blue Terms Banner */}
               <View style={styles.termsBanner}>
                 <Text style={styles.termsText}>
-                  {t('offers.terms_header', 'Terms:')} {t(item.termsKey, item.terms)}
+                  {t('offers.terms_header', 'Terms:')} {item.description || item.terms || 'T&C apply'}
                 </Text>
               </View>
             </View>
@@ -310,5 +298,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  centerBox: {
+    paddingVertical: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: '#E53935',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFF',
+    fontWeight: '700',
   },
 });

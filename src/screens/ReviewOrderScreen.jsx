@@ -268,9 +268,14 @@ export default function ReviewOrderScreen() {
       }
       
       const newOrderId = apiOrder._id;
+      const cartRestaurant = latestCartRef.current[0]?.restaurant;
+      const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
+
       addOrder({
         ...apiOrder,
         id: apiOrder._id,
+        restaurant: apiOrder.restaurant || cartRestaurant,
+        restaurantName: apiOrder.restaurantName || cartRestaurantName,
         totals: summary,
         checkout: checkoutSnapshot,
         address: addressSnapshot,
@@ -453,9 +458,14 @@ export default function ReviewOrderScreen() {
       console.warn('Order update error:', updateError);
     }
     
+    const cartRestaurant = latestCartRef.current[0]?.restaurant;
+    const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
+
     addOrder({
       ...apiOrder,
       id: apiOrder._id,
+      restaurant: apiOrder.restaurant || cartRestaurant,
+      restaurantName: apiOrder.restaurantName || cartRestaurantName,
       totals: summary,
       checkout: latestCheckoutRef.current,
       address: addressSnapshot,

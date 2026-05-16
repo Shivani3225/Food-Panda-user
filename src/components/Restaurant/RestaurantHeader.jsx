@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Image, TouchableOpacity, Pressable, Text, StyleSheet } from 'react-native';
 import { ArrowLeft, Heart, Star, MoreVertical } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 import { hp, wp } from '../../utils/responsive';
 import { scale } from '../../utils/scale';
 import { FONT_SIZES } from '../../theme/typography';
@@ -40,10 +41,15 @@ export const RestaurantHeader = memo(({
         style={styles.headerImage} 
         onError={() => setImgSrc(fallbackImage)}
       />
+      
+      <LinearGradient
+        colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.6)']}
+        style={StyleSheet.absoluteFillObject}
+      />
 
       {/* Back button */}
       <TouchableOpacity style={styles.headerIconLeft} onPress={onBackPress}>
-        <ArrowLeft size={18} color="#000" />
+        <ArrowLeft size={20} color="#FFF" />
       </TouchableOpacity>
 
       {/* Right icons */}
@@ -51,13 +57,13 @@ export const RestaurantHeader = memo(({
         <Pressable style={styles.headerIcon} onPress={onFavoritePress}>
           <Heart
             size={18}
-            color={isFavorite ? '#FF3D3D' : '#000'}
+            color={isFavorite ? '#FF3D3D' : '#FFF'}
             fill={isFavorite ? '#FF3D3D' : 'transparent'}
           />
         </Pressable>
 
         <TouchableOpacity style={styles.headerIcon} onPress={onMenuPress}>
-          <MoreVertical size={18} color="#000" />
+          <MoreVertical size={18} color="#FFF" />
         </TouchableOpacity>
       </View>
 
@@ -98,10 +104,9 @@ const styles = StyleSheet.create({
     width: scale(40),
     height: scale(40),
     borderRadius: scale(20),
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5,
   },
   headerIconRightGroup: {
     position: 'absolute',
@@ -114,33 +119,32 @@ const styles = StyleSheet.create({
     width: scale(40),
     height: scale(40),
     borderRadius: scale(20),
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5,
   },
   ratingBadge: {
     position: 'absolute',
-    bottom: scale(35),
+    bottom: scale(30),
     right: SPACING.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: '#0F8A5F',
     paddingHorizontal: SPACING.md,
-    paddingVertical: scale(7),
-    borderRadius: scale(18),
+    paddingVertical: scale(6),
+    borderRadius: scale(10),
     elevation: 4,
   },
   ratingText: {
-    marginLeft: SPACING.sm,
+    marginLeft: SPACING.xs,
     fontWeight: '800',
     fontSize: FONT_SIZES.sm,
-    color: '#000',
+    color: '#FFF',
   },
   ratingSubText: {
     marginLeft: SPACING.xs,
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '700',
-    color: '#666',
+    fontSize: FONT_SIZES.xs - 1,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
   },
 });

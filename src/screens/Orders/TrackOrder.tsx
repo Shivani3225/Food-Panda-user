@@ -11,7 +11,8 @@ import {
   TextInput,
   Alert,
   SafeAreaView,
-  Dimensions
+  Dimensions,
+  Linking
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +41,29 @@ const OrderTracking = () => {
 
   const isRTL = i18n.language === 'ar';
   const textAlign = isRTL ? 'right' : 'left';
+
+  const handleCall = async () => {
+    const order = orders[0];
+    if (!order) return;
+
+    const phoneNumber =
+      order.rider?.phone ||
+      order.rider?.user?.mobile ||
+      order.restaurant?.phone ||
+      order.restaurant?.contactNumber ||
+      order.restaurant?.mobile;
+
+    if (!phoneNumber) {
+      Alert.alert(t('common.error', 'Error'), t('orders.no_phone', 'No contact number available'));
+      return;
+    }
+
+    try {
+      await Linking.openURL(`tel:${phoneNumber}`);
+    } catch (error) {
+      Alert.alert(t('common.error', 'Error'), t('orders.call_failed', 'Failed to open dialer'));
+    }
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -149,7 +173,8 @@ const OrderTracking = () => {
       status: o.status.charAt(0).toUpperCase() + o.status.slice(1),
       statusColor: o.status === 'delivered' ? 'green' : (o.status === 'cancelled' ? 'red' : 'orange'),
       total: `${(o.totalAmount || 0).toFixed(2)} ${currencySymbol}`,
-      rawStatus: o.status
+      rawStatus: o.status,
+      rider: o.rider
     }));
   };
 
@@ -462,29 +487,50 @@ const OrderTracking = () => {
                 </Text>
               </View>
               <View style={styles.timeBox}>
-                <Text style={styles.timeText}>15</Text>
-                <Text style={styles.timeLabel}>mins</Text>
+                <Text style={styles.countdownText}>15</Text>
+                <Text style={styles.countdownLabel}>mins</Text>
               </View>
             </View>
 
             <View style={styles.cardDivider} />
 
             <View style={styles.cardActionsRow}>
-              <TouchableOpacity style={styles.actionIconBtn}>
-                <Phone size={20} color="#666" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionIconBtn}
-                onPress={() => {
-                  navigation.navigate('ChatScreen', {
-                    orderId: latestOrder.id,
-                    receiverId: latestOrder.rider?.user?._id || latestOrder.restaurantData?._id,
-                    receiverName: latestOrder.rider?.user?.name || getLangText(latestOrder.restaurant),
-                  });
-                }}
-              >
-                <MessageSquare size={20} color="#666" />
-              </TouchableOpacity>
+              <View style={styles.pillActions}>
+                <TouchableOpacity style={styles.pillActionBtn} onPress={handleCall}>
+                  <Phone size={18} color="#666" />
+                </TouchableOpacity>
+
+                <View style={styles.verticalDivider} />
+
+                <TouchableOpacity
+                  style={styles.pillActionBtn}
+                  onPress={() => {
+                    navigation.navigate('ChatScreen', {
+                      orderId: latestOrder.id,
+                      receiverId: latestOrder.rider?.user?._id || latestOrder.restaurantData?._id,
+                      receiverName: latestOrder.rider?.user?.name || getLangText(latestOrder.restaurant),
+                    });
+                  }}
+                >
+                  <MessageSquare size={18} color="#666" />
+                </TouchableOpacity>
+
+                <View style={styles.verticalDivider} />
+
+                <View style={styles.pillActionBtn}>
+                  {latestOrder.rider?.image ? (
+                    <Image
+                      source={{ uri: latestOrder.rider.image }}
+                      style={styles.smallRiderAvatar}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../../assets/icons/rider_avatar.jpg')}
+                      style={styles.smallRiderAvatar}
+                    />
+                  )}
+                </View>
+              </View>
             </View>
           </View>
         ) : (
@@ -545,21 +591,25 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     backgroundColor: '#0F8A5F',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 16,
+    minWidth: 65,
   },
-  timeText: {
-    color: '#fff',
-    fontSize: 18,
+  countdownText: {
+    color: '#FFFFFF',
+    fontSize: 22,
     fontWeight: '800',
+    lineHeight: 26,
   },
-  timeLabel: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
+  countdownLabel: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: -2,
   },
   cardDivider: {
     height: 1,
@@ -569,15 +619,32 @@ const styles = StyleSheet.create({
   cardActionsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: 12,
   },
-  actionIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  pillActions: {
+    flexDirection: 'row',
     backgroundColor: '#F6F6F6',
+    borderRadius: 25,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  pillActionBtn: {
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  verticalDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E0E0E0',
+  },
+  smallRiderAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E0E0E0',
   },
   mapContainer: {
     height: 300,
@@ -615,7 +682,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
-    marginTop: 20,
+    marginTop: 10,
   },
   backButton: {
     padding: 4,
