@@ -22,6 +22,7 @@ import Favourite from '../screens/Favourite';
 import RestaurantDetail from '../screens/Orders/RestaurantDetail';
 import RatePastOrders from '../screens/Orders/RatePastOrders';
 import OrderDetailsScreen from '../screens/Orders/OrderDetailsScreen';
+import RequestRefundScreen from '../screens/Orders/RequestRefundScreen';
 import RealtimeDebugScreen from '../screens/Debug/RealtimeDebugScreen';
 import TokenDebugScreen from '../screens/Debug/TokenDebugScreen';
 import FoodPreference from '../screens/Onboarding/FoodPreference';
@@ -68,6 +69,7 @@ export default function ProfileStack() {
       <Stack.Screen name="FoodPreference" component={FoodPreference} />
       <Stack.Screen name="RatePastOrders" component={RatePastOrders} />
       <Stack.Screen name="OrderDetailsScreen" component={OrderDetailsScreen} />
+      <Stack.Screen name="RequestRefundScreen" component={RequestRefundScreen} />
       <Stack.Screen name="RealtimeDebug" component={RealtimeDebugScreen} />
       <Stack.Screen name="TokenDebug" component={TokenDebugScreen} />
     </Stack.Navigator>

@@ -643,6 +643,42 @@ export default function OrderDetailsScreen() {
               </View>
             </View>
 
+            {order?.refund && order.refund.status && order.refund.status !== 'none' ? (
+              <View style={styles.refundStatusCard}>
+                <Text style={styles.refundStatusTitle}>🛡️ {t('order_details.refund_details', 'Refund Details')}</Text>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.refundStatusLabel}>{t('order_details.refund_status', 'Refund Status')}</Text>
+                  <Text style={[
+                    styles.refundStatusValue,
+                    order.refund.status === 'completed' || order.refund.status === 'processed' ? styles.refundSuccess : styles.refundPending
+                  ]}>
+                    {order.refund.status === 'completed' || order.refund.status === 'processed' 
+                      ? t('order_details.refund_completed', 'Processed (Credited to Wallet)') 
+                      : t('order_details.refund_pending', 'Refund Under Review')}
+                  </Text>
+                </View>
+                <View style={[styles.rowBetween, { marginTop: scale(6) }]}>
+                  <Text style={styles.refundStatusLabel}>{t('order_details.refund_amount', 'Amount')}</Text>
+                  <Text style={styles.refundStatusAmount}>{order.refund.amount?.toFixed(2)} {currencySymbol}</Text>
+                </View>
+                {order.refund.note && (
+                  <Text style={styles.refundNote}>* {order.refund.note}</Text>
+                )}
+              </View>
+            ) : (
+              order?.status === 'delivered' && (
+                <View style={{ marginHorizontal: SPACING.lg, marginBottom: SPACING.md }}>
+                  <TouchableOpacity
+                    style={styles.requestRefundButton}
+                    onPress={() => navigation.navigate('RequestRefundScreen', { orderId: order?._id || order?.id, orderData: order })}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.requestRefundButtonText}>🛡️ {t('order_details.request_refund', 'Request Item/Order Refund')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            )}
+
             {order?.status === 'delivered' && (
               <OrderRatingModule
                 order={order}
@@ -1068,5 +1104,73 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: scale(12),
     color: '#555555',
+  },
+
+  requestRefundButton: {
+    backgroundColor: '#ed1c24',
+    height: scale(46),
+    borderRadius: scale(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ed1c24',
+  },
+
+  requestRefundButtonText: {
+    color: '#FFFFFF',
+    fontSize: scale(13.5),
+    fontWeight: '700',
+  },
+
+  refundStatusCard: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    backgroundColor: '#FFF9F9',
+    borderWidth: 1.5,
+    borderColor: '#FFCDD2',
+    borderRadius: scale(14),
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(12),
+  },
+
+  refundStatusTitle: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: '#D32F2F',
+    marginBottom: scale(8),
+  },
+
+  refundStatusLabel: {
+    fontSize: scale(12),
+    color: '#555555',
+  },
+
+  refundStatusValue: {
+    fontSize: scale(12),
+    fontWeight: '700',
+  },
+
+  refundStatusAmount: {
+    fontSize: scale(13),
+    fontWeight: '800',
+    color: '#111111',
+  },
+
+  refundSuccess: {
+    color: '#2E7D32',
+  },
+
+  refundPending: {
+    color: '#EF6C00',
+  },
+
+  refundNote: {
+    fontSize: scale(11),
+    fontStyle: 'italic',
+    color: '#666666',
+    marginTop: scale(8),
+    borderTopWidth: 0.5,
+    borderTopColor: '#FFCDD2',
+    paddingTop: scale(4),
   },
 });

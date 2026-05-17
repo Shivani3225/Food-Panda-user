@@ -6,6 +6,7 @@ import RestaurantDetail from '../screens/Orders/RestaurantDetail';
 import TrackOrder from '../screens/Orders/TrackOrder';
 import RatePastOrders from '../screens/Orders/RatePastOrders';
 import ChatScreen from '../screens/Orders/ChatScreen';
+import RequestRefundScreen from '../screens/Orders/RequestRefundScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function OrdersStack() {
       <Stack.Screen name="TrackOrder" component={TrackOrder} />
       <Stack.Screen name="RatePastOrders" component={RatePastOrders} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="RequestRefundScreen" component={RequestRefundScreen} />
     </Stack.Navigator>
   );
 }
