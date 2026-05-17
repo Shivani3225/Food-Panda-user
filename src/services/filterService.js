@@ -142,8 +142,12 @@ export const convertDrawerFiltersToAPI = (drawerFilters) => {
   // Handle Food Preference
   if (drawerFilters.foodPreference && drawerFilters.foodPreference.length > 0) {
     apiFilters.foodType = drawerFilters.foodPreference.join(',');
-    if (drawerFilters.foodPreference.includes('veg')) {
+    const hasVeg = drawerFilters.foodPreference.includes('veg') || drawerFilters.foodPreference.includes('vegan');
+    const hasNonVeg = drawerFilters.foodPreference.includes('non_veg');
+    if (hasVeg && !hasNonVeg) {
       apiFilters.isVeg = true;
+    } else if (!hasVeg && hasNonVeg) {
+      apiFilters.isVeg = false;
     }
   }
 
