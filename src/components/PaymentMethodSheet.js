@@ -17,25 +17,24 @@ import { useTranslation } from 'react-i18next';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Create this icon file or use any image
 const ICONS = {
-  stripe: require('../assets/icons/stripe.png'), // Make sure this file exists
+  stripe: require('../assets/icons/stripe.png'),
 };
 
 const getMethods = (t) => ({
-  stripe: { 
-    id: 'stripe', 
+  stripe: {
+    id: 'stripe',
     label: t('payment.card_payment', 'Credit / Debit Card'),
     description: t('payment.pay_online', 'Pay securely with Stripe'),
-    icon: ICONS.stripe 
+    icon: ICONS.stripe
   },
   upi: {
     id: 'upi',
     label: t('payment.upi', 'UPI / GPay / PhonePe'),
     description: t('payment.pay_via_upi', 'Pay using any UPI app on your phone'),
   },
-  cod: { 
-    id: 'cod', 
+  cod: {
+    id: 'cod',
     label: t('payment.cash_on_delivery', 'Cash on Delivery'),
     description: t('payment.pay_at_delivery', 'Pay when you receive your order')
   },
@@ -52,59 +51,49 @@ export default function PaymentMethodSheet({
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const [shouldRender, setShouldRender] = useState(false);
   const [localId, setLocalId] = useState(selectedId ?? null);
 
   const METHODS = useMemo(() => getMethods(t), [t]);
 
-  // Reset localId when modal opens or selectedId changes
+  // Reset localId and trigger animation when modal opens
   useEffect(() => {
     if (visible) {
       setLocalId(selectedId ?? null);
+
+      overlayOpacity.setValue(0);
+      translateY.setValue(SCREEN_HEIGHT);
+
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          stiffness: 220,
+          damping: 28,
+          mass: 0.9,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [selectedId, visible]);
 
   useEffect(() => {
-    if (!visible) {
-      setShouldRender(false);
-      return;
-    }
-    
-    overlayOpacity.setValue(0);
-    translateY.setValue(SCREEN_HEIGHT);
-    
-    requestAnimationFrame(() => {
-      setShouldRender(true);
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(overlayOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.spring(translateY, {
-            toValue: 0,
-            stiffness: 220,
-            damping: 28,
-            mass: 0.9,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-
+    if (!visible) return;
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => true,
     );
     return () => backHandler.remove();
-  }, [overlayOpacity, translateY, visible]);
+  }, [visible]);
 
   const canApply = !!localId;
 
   const handleApply = () => {
     if (!canApply) return;
-    
+
     // Find the selected method object
     let selectedMethod;
     if (localId === METHODS.stripe.id) {
@@ -114,13 +103,11 @@ export default function PaymentMethodSheet({
     } else {
       selectedMethod = METHODS.cod;
     }
-    
-    // Always just save the selected method and close the sheet.
-    // Actual payment processing happens when the user presses "Place Order".
+
     onApply?.(selectedMethod);
   };
 
-  if (!shouldRender) return null;
+  if (!visible) return null;
 
   return (
     <Modal

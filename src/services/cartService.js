@@ -167,3 +167,21 @@ export const updateItemQuantity = async (itemId, payload) => {
     throw error;
   }
 };
+
+/**
+ * Apply or clear coupon code on backend cart
+ * @param {string|null} couponCode - The coupon code to apply, or null/empty to clear
+ */
+export const applyCouponToCart = async (couponCode) => {
+  try {
+    console.log('📤 cartService: Applying coupon code:', couponCode);
+    const response = await apiClient.post(CART_ROUTES.validateCoupon, {
+      couponCode: couponCode || "",
+    });
+    console.log('✅ cartService: Coupon response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ cartService: Coupon application failed:', error?.response?.data || error?.message);
+    throw error;
+  }
+};

@@ -27,7 +27,7 @@ export const ORDER_ROUTES = {
   rateOrder: '/api/orders/:id/rate',
   rateRestaurant: '/api/restaurants/:id/rate',
   rateRider: '/api/riders/:id/rate',
-  reportIssue: '/api/orders/:id/report-issue',
+  reportIssue: '/api/orders/:id/report',
   uploadOrderPhotos: '/api/orders/:id/upload-photos',
 };
 
@@ -50,6 +50,7 @@ export const CART_ROUTES = {
   removeItem: '/api/cart/item/:itemId',
   updateQuantity: '/api/cart/item/:itemId/quantity',
   updateMeta: '/api/cart/meta',
+  validateCoupon: '/api/cart/validate-coupon',
 };
 
 export const USER_ROUTES = {

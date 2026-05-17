@@ -29,6 +29,7 @@ import { SPACING } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useTranslatedText } from '../hooks/useTranslatedData';
 import { getRestaurantMenu } from '../services/restaurantService';
+import { applyCouponToCart } from '../services/cartService';
 import Toast from 'react-native-toast-message';
 
 function groupByRestaurant(cart) {
@@ -128,7 +129,7 @@ export default function CartScreen() {
   const { t } = useTranslation();
   const { currencySymbol } = useAuth();
   const navigation = useNavigation();
-  const { cart, totals, incrementItem, decrementItem, removeFromCart, addToCart, address } = useContext(CartContext);
+  const { cart, totals, incrementItem, decrementItem, removeFromCart, addToCart, address, backendCart, fetchCart } = useContext(CartContext);
   const { address: globalAddress } = useLocation();
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -138,6 +139,35 @@ export default function CartScreen() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [appliedCouponId, setAppliedCouponId] = useState(null);
+
+  useEffect(() => {
+    if (backendCart?.couponCode) {
+      setAppliedCouponId(backendCart.couponCode);
+    } else {
+      setAppliedCouponId(null);
+    }
+  }, [backendCart?.couponCode]);
+
+  const handleToggleCoupon = async (couponCode) => {
+    try {
+      const isCurrentlyApplied = appliedCouponId === couponCode;
+      const codeToApply = isCurrentlyApplied ? null : couponCode;
+      await applyCouponToCart(codeToApply);
+      await fetchCart();
+      Toast.show({
+        type: 'success',
+        text1: isCurrentlyApplied ? t('cart.coupon_removed', 'Coupon Removed') : t('cart.coupon_applied', 'Coupon Applied'),
+        text2: isCurrentlyApplied ? t('cart.coupon_removed_desc', 'The promocode was removed from your cart.') : t('cart.coupon_applied_desc', `The promocode ${couponCode} was successfully applied!`),
+      });
+    } catch (err) {
+      console.error('Failed to toggle coupon:', err);
+      Toast.show({
+        type: 'error',
+        text1: t('common.error', 'Error'),
+        text2: err?.response?.data?.message || 'Failed to apply coupon. Please try again.',
+      });
+    }
+  };
 
   const groups = useMemo(() => groupByRestaurant(cart), [cart]);
   const hasItems = Array.isArray(cart) && cart.length > 0;
@@ -150,7 +180,7 @@ export default function CartScreen() {
       const menuData = await getRestaurantMenu(item.restaurantId);
       const products = Array.isArray(menuData?.products) ? menuData.products : [];
       const product = products.find(p => String(p._id || p.id) === String(item.productId || item.product?._id || item.product?.id));
-      
+
       if (!product) {
         Toast.show({
           type: 'error',
@@ -227,7 +257,7 @@ export default function CartScreen() {
         const { getCoupons } = require('../services/couponService');
         const data = await getCoupons();
         const promoList = Array.isArray(data) ? data : data?.promocodes || [];
-        
+
         // If there's a restaurant in cart, only show coupons for that restaurant or global ones
         if (groups.length > 0) {
           const currentRestaurantId = groups[0].restaurantId;
@@ -376,7 +406,7 @@ export default function CartScreen() {
                 const isApplied = appliedCouponId === coupon.id || appliedCouponId === coupon._id || appliedCouponId === coupon.code;
                 const couponId = coupon.id || coupon._id || coupon.code || index;
                 const couponCode = coupon.code || coupon.id?.toString().slice(-6).toUpperCase() || 'OFFER';
-                
+
                 return (
                   <View key={`coupon-${String(couponId)}`} style={styles.couponCard}>
                     <View style={styles.couponIconContainer}>
@@ -392,7 +422,7 @@ export default function CartScreen() {
                     </View>
                     <TouchableOpacity
                       style={isApplied ? styles.couponAppliedBtn : styles.couponApplyBtn}
-                      onPress={() => setAppliedCouponId(prev => prev === couponId ? null : couponId)}
+                      onPress={() => handleToggleCoupon(couponCode)}
                       activeOpacity={0.85}
                     >
                       <Text style={isApplied ? styles.couponAppliedText : styles.couponApplyText}>
@@ -937,15 +967,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
-  bottomTotal: { 
-    fontSize: scale(22), 
-    fontWeight: '900', 
+  bottomTotal: {
+    fontSize: scale(22),
+    fontWeight: '900',
     color: '#000',
     lineHeight: scale(28),
   },
-  bottomSub: { 
-    fontSize: scale(12), 
-    color: '#555', 
+  bottomSub: {
+    fontSize: scale(12),
+    color: '#555',
     fontWeight: '600',
     marginTop: -2,
   },
@@ -958,9 +988,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reviewBtnText: { 
-    color: '#FFF', 
-    fontWeight: '800', 
+  reviewBtnText: {
+    color: '#FFF',
+    fontWeight: '800',
     fontSize: scale(16),
   },
 });

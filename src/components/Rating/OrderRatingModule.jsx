@@ -697,6 +697,7 @@ const OrderRatingModule = ({ order, onSuccess }) => {
     try {
       console.log('📤 [OrderRatingModule] Preparing to report issue for order:', orderId, 'Issue Type:', selectedIssue, 'Description length:', issueDescription.trim().length);
       await reportOrderIssue(orderId, {
+        issue: `[${selectedIssue}] ${issueDescription.trim()}`.trim(),
         issueType: selectedIssue,
         description: issueDescription.trim(),
       });

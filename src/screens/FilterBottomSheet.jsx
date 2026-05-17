@@ -11,10 +11,10 @@ import {
   Dimensions,
   BackHandler,
 } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { Image, Platform } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -155,15 +155,16 @@ export default function FilterBottomSheet({
         <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
           <SafeAreaView style={{flex:1}} edges={['top','bottom']}>
             <View style={styles.header}>
+              <TouchableOpacity onPress={onClose} style={styles.headerBack} hitSlop={10}>
+                <Image 
+                  source={require('../assets/icons/Backarrow.png')} 
+                  style={styles.backIconImage} 
+                />
+              </TouchableOpacity>
               <Text style={styles.title}>{t('filter.title', 'Filters')}</Text>
-              <View style={styles.headerActions}>
-                <TouchableOpacity onPress={clearAll}>
-                  <Text style={styles.clearAll}>{t('filter.reset', 'Reset')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onClose}>
-                  <Text style={styles.close}>✕</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={clearAll} hitSlop={15} style={styles.clearAllPressable}>
+                <Text style={styles.clearAll}>{t('filter.reset', 'Reset')}</Text>
+              </TouchableOpacity>
             </View>
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
               <Text style={styles.sectionTitle}>{t('filter.rating', 'Rating')}</Text>
@@ -224,37 +225,6 @@ export default function FilterBottomSheet({
                 ))}
               </View>
 
-              <Text style={styles.sectionTitle}>
-                {t('filter.price_range', 'Price Range')} ({currencySymbol}{price.min} - {currencySymbol}{price.max})
-              </Text>
-              <View style={styles.sliderRow}>
-                <Text style={styles.sliderLabel}>{currencySymbol}{PRICE_MIN}</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={PRICE_MIN}
-                  maximumValue={PRICE_MAX}
-                  value={price.min}
-                  onValueChange={val =>
-                    setPrice(p => ({ ...p, min: Math.round(val) }))
-                  }
-                  minimumTrackTintColor="#E23744"
-                  maximumTrackTintColor="#ddd"
-                  thumbTintColor="#E23744"
-                />
-                <Slider
-                  style={styles.slider}
-                  minimumValue={PRICE_MIN}
-                  maximumValue={PRICE_MAX}
-                  value={price.max}
-                  onValueChange={val =>
-                    setPrice(p => ({ ...p, max: Math.round(val) }))
-                  }
-                  minimumTrackTintColor="#E23744"
-                  maximumTrackTintColor="#ddd"
-                  thumbTintColor="#E23744"
-                />
-                <Text style={styles.sliderLabel}>{currencySymbol}{PRICE_MAX}</Text>
-              </View>
             </ScrollView>
             <View style={styles.bottomBar}>
               <TouchableOpacity style={styles.showBtn} onPress={handleApply}>
@@ -293,28 +263,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 8 : 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  headerBack: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2F2F2',
+  },
+  backIconImage: {
+    width: 18,
+    height: 18,
+    resizeMode: 'contain',
+    tintColor: '#111111',
+  },
   title: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#222',
+    textAlign: 'center',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  clearAllPressable: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   clearAll: {
-    color: '#E23744',
+    color: '#ed1c24',
     fontWeight: 'bold',
-    marginRight: 18,
     fontSize: 16,
-  },
-  close: {
-    fontSize: 22,
-    color: '#888',
   },
   content: {
     paddingHorizontal: 20,

@@ -24,8 +24,18 @@ import { wp, hp } from '../../utils/responsive';
 import { FONT_SIZES } from '../../theme/typography';
 import { SPACING } from '../../theme/spacing';
 
+function getLocalizedText(value, fallback = '', lang = 'en') {
+  if (!value) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value[lang] || value['en'] || Object.values(value)[0] || fallback;
+  }
+  return fallback;
+}
+
 export default function RequestRefundScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n?.language || 'en';
   const navigation = useNavigation();
   const route = useRoute();
   const { currencySymbol } = useAuth() || {};
@@ -321,7 +331,7 @@ export default function RequestRefundScreen() {
                   {isSelected && <Check size={14} color="#FFF" />}
                 </View>
                 <View style={styles.itemMeta}>
-                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemName}>{getLocalizedText(item?.name, 'Item', currentLang)}</Text>
                   <Text style={styles.itemQty}>Qty: {item.quantity || item.qty || 1}</Text>
                 </View>
                 <Text style={styles.itemPrice}>

@@ -42,7 +42,6 @@ export default function AddressSheet({
   const { location: globalLocation } = useLocation();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const [shouldRender, setShouldRender] = React.useState(false);
 
   const list = useMemo(
     () => (Array.isArray(addresses) ? addresses : []),
@@ -122,34 +121,29 @@ export default function AddressSheet({
   }, [list, selectedAddressId, visible]);
 
   useEffect(() => {
-    if (!visible) {
-      setShouldRender(false);
-      return undefined;
+    if (visible) {
+      overlayOpacity.setValue(0);
+      translateY.setValue(SCREEN_HEIGHT);
+      
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          stiffness: 220,
+          damping: 28,
+          mass: 0.9,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
+  }, [visible]);
 
-    overlayOpacity.setValue(0);
-    translateY.setValue(SCREEN_HEIGHT);
-    
-    requestAnimationFrame(() => {
-      setShouldRender(true);
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(overlayOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.spring(translateY, {
-            toValue: 0,
-            stiffness: 220,
-            damping: 28,
-            mass: 0.9,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-
+  useEffect(() => {
+    if (!visible) return;
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => true,
@@ -162,13 +156,7 @@ export default function AddressSheet({
         watchIdRef.current = null;
       }
     };
-  }, [overlayOpacity, translateY, visible]);
-
-  useEffect(() => {
-    if (visible) return;
-    overlayOpacity.setValue(0);
-    translateY.setValue(SCREEN_HEIGHT);
-  }, [overlayOpacity, translateY, visible]);
+  }, [visible]);
 
   const canApply = !!localSelectedId;
   const canSave = newLine.trim().length > 0 && newCity.trim().length > 0;
@@ -679,7 +667,7 @@ export default function AddressSheet({
     }
   };
 
-  if (!shouldRender) return null;
+  if (!visible) return null;
 
   return (
     <Modal

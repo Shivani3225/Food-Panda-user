@@ -61,7 +61,6 @@ export default function DeliveryPickupSheet({
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const [shouldRender, setShouldRender] = React.useState(false);
 
   const dateOptions = useMemo(() => buildDateOptions(t), [t]);
   const TIME_OPTIONS = useMemo(() => getTimeOptions(t), [t]);
@@ -87,46 +86,35 @@ export default function DeliveryPickupSheet({
   }, [visible, initialDate, initialTime, initialType]);
 
   useEffect(() => {
-    if (!visible) {
-      setShouldRender(false);
-      return undefined;
+    if (visible) {
+      overlayOpacity.setValue(0);
+      translateY.setValue(SCREEN_HEIGHT);
+      
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          stiffness: 220,
+          damping: 28,
+          mass: 0.9,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
+  }, [visible]);
 
-    overlayOpacity.setValue(0);
-    translateY.setValue(SCREEN_HEIGHT);
-    
-    requestAnimationFrame(() => {
-      setShouldRender(true);
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(overlayOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.spring(translateY, {
-            toValue: 0,
-            stiffness: 220,
-            damping: 28,
-            mass: 0.9,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-
+  useEffect(() => {
+    if (!visible) return;
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => true,
     );
     return () => backHandler.remove();
-  }, [overlayOpacity, translateY, visible]);
-
-  useEffect(() => {
-    if (visible) return;
-    overlayOpacity.setValue(0);
-    translateY.setValue(SCREEN_HEIGHT);
-  }, [overlayOpacity, translateY, visible]);
+  }, [visible]);
 
   const canAdd = !!type && !!date && !!time;
 
@@ -150,7 +138,7 @@ export default function DeliveryPickupSheet({
     setShowTimeDropdown(!showTimeDropdown);
   };
 
-  if (!shouldRender) return null;
+  if (!visible) return null;
 
   return (
     <Modal

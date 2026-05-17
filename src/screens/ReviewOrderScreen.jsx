@@ -955,7 +955,7 @@ export default function ReviewOrderScreen() {
             <View style={styles.billRow}>
               <View>
                 <Text style={styles.offerMainLabel}>{t('review_order.offer_applied', 'Offer Applied')}</Text>
-                <Text style={styles.offerRedLabel}>{navCoupon?.id || 'Discount Applied'}</Text>
+                <Text style={styles.offerRedLabel}>{navCoupon?.code || navCoupon?.id || backendCart?.couponCode || 'Discount Applied'}</Text>
               </View>
               <Text style={styles.offerValueText}>-{currencySymbol}{summary.discount.toFixed(2)}</Text>
             </View>

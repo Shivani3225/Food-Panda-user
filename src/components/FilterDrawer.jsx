@@ -18,6 +18,7 @@ import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { wp, hp } from '../utils/responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { scale } from '../utils/scale';
 import { Star, ArrowLeft } from 'lucide-react-native';
 
@@ -237,15 +238,19 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
           },
         ]}
       >
-        <View style={styles.headerRow}>
-          <Pressable onPress={onClose} style={styles.headerBack}>
-            <ArrowLeft size={24} color="#111111" strokeWidth={3} />
-          </Pressable>
-          <Text style={styles.headerTitle}>{t('filter.filter', 'Filter')}</Text>
-          <Pressable onPress={handleReset} hitSlop={10}>
-            <Text style={styles.headerReset}>{t('filter.reset', 'Reset')}</Text>
-          </Pressable>
-        </View>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <View style={styles.headerRow}>
+            <Pressable onPress={onClose} style={styles.headerBack} hitSlop={10}>
+              <Image 
+                source={require('../assets/icons/Backarrow.png')} 
+                style={styles.backIconImage} 
+              />
+            </Pressable>
+            <Text style={styles.headerTitle}>{t('filter.filter', 'Filter')}</Text>
+            <Pressable onPress={handleReset} hitSlop={15} style={styles.headerResetPressable}>
+              <Text style={styles.headerReset}>{t('filter.reset', 'Reset')}</Text>
+            </Pressable>
+          </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -506,6 +511,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
             <Text style={styles.applyBtnText}>{t('filter.apply', 'Apply Filters')}</Text>
           </TouchableOpacity>
         </ScrollView>
+        </SafeAreaView>
       </Animated.View>
     </Modal>
   );
@@ -528,26 +534,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 18,
     borderBottomLeftRadius: 18,
-    paddingTop: Platform.OS === 'ios' ? 56 : 28,
     shadowColor: '#000',
     shadowOpacity: 0.16,
     shadowRadius: 16,
     elevation: 8,
+  },
+  safeArea: {
+    flex: 1,
+    width: '100%',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingTop: Platform.OS === 'ios' ? 0 : 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
   },
   headerBack: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F2F2F2',
+  },
+  backIconImage: {
+    width: scale(18),
+    height: scale(18),
+    resizeMode: 'contain',
+    tintColor: '#111111',
   },
   backIcon: {
     width: 20,
@@ -556,12 +574,16 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#111111',
   },
+  headerResetPressable: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   headerReset: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#ed1c24',
   },
   searchContainer: {
