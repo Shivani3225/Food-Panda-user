@@ -962,6 +962,8 @@ export default function AddressSheet({
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.addrLabel}>
+                          {String(addr.label || '').toLowerCase() === 'home' ? '🏠 ' :
+                           String(addr.label || '').toLowerCase() === 'work' || String(addr.label || '').toLowerCase() === 'office' ? '💼 ' : '📍 '}
                           {addr.label || t('address.address', 'Address')}
                         </Text>
                         <Text numberOfLines={2} style={styles.addrLine}>

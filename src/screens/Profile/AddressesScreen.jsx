@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, MapPin, Edit2, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Edit2, Trash2, Home, Briefcase, Compass } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import useHideTabBar from '../../utils/hooks/useHideTabBar';
@@ -37,6 +37,19 @@ export default function AddressesScreen() {
   useHideTabBar(navigation);
 
   const ADDRESS_LABELS = getAddressLabels(t);
+
+  const renderLabelIcon = (label) => {
+    const cleanLabel = String(label).toLowerCase();
+    switch (cleanLabel) {
+      case 'home':
+        return <Home size={14} color="#E41C26" style={{ marginRight: 4 }} />;
+      case 'work':
+      case 'office':
+        return <Briefcase size={14} color="#E41C26" style={{ marginRight: 4 }} />;
+      default:
+        return <Compass size={14} color="#E41C26" style={{ marginRight: 4 }} />;
+    }
+  };
 
   // Fetch addresses from API
   const fetchAddresses = async () => {
@@ -162,6 +175,7 @@ export default function AddressesScreen() {
     >
       <View style={styles.badgeRow}>
         <View style={styles.labelBadge}>
+          {renderLabelIcon(item.label)}
           <Text style={styles.labelBadgeText}>
             {ADDRESS_LABELS[item.label?.toLowerCase()] || item.label}
           </Text>
@@ -342,6 +356,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   labelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 14,
     paddingVertical: 6,

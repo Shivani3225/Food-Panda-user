@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, Home, Briefcase, Compass } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
 import { useLocation } from '../context/LocationContext';
@@ -818,9 +818,18 @@ export default function ReviewOrderScreen() {
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.addressLabel}>
-                {address?.label || t('review_order.select_address', 'Select address')}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                {(() => {
+                  const label = String(address?.label || '').toLowerCase();
+                  if (label === 'home') return <Home size={14} color="#111" />;
+                  if (label === 'work' || label === 'office') return <Briefcase size={14} color="#111" />;
+                  if (label === 'other') return <Compass size={14} color="#111" />;
+                  return null;
+                })()}
+                <Text style={styles.addressLabel}>
+                  {address?.label || t('review_order.select_address', 'Select address')}
+                </Text>
+              </View>
               <Text style={styles.addressLine} numberOfLines={2}>
                 {address?.addressLine || t('review_order.no_address', 'No address selected')}
               </Text>

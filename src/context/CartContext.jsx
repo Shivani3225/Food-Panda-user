@@ -73,7 +73,7 @@ function normalizeLegacyItemToCartLine(raw) {
 }
 
 export const CartProvider = ({ children }) => {
-  const { isAuthenticated, isInitialized, realtimeReady } = useAuth();
+  const { isAuthenticated, isInitialized, realtimeReady, currencyCode } = useAuth();
   const [cart, setCart] = useState([]);
   const [backendCart, setBackendCart] = useState(null);
   const [bill, setBill] = useState(null);
@@ -103,12 +103,16 @@ export const CartProvider = ({ children }) => {
 
   const handleSetAddress = useCallback(async (addr) => {
     setAddress(addr);
+    const addrId = addr?._id || addr?.id || null;
+    const lng = addr?.location?.coordinates?.[0] || null;
+    const lat = addr?.location?.coordinates?.[1] || null;
     if (addr) {
       await AsyncStorage.setItem('chosen_address', JSON.stringify(addr));
     } else {
       await AsyncStorage.removeItem('chosen_address');
     }
-  }, []);
+    await fetchCart(addrId, lng, lat);
+  }, [fetchCart]);
 
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -131,11 +135,32 @@ export const CartProvider = ({ children }) => {
   }, [cart]);
 
 
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (overrideAddressId = null, overrideLng = null, overrideLat = null) => {
     try {
       setLoading(true);
       console.log('CartContext: Fetching cart...');
-      const data = await getCart();
+      
+      let addrId = overrideAddressId;
+      let lng = overrideLng;
+      let lat = overrideLat;
+      
+      if (!addrId || (!lng && !lat)) {
+        try {
+          const stored = await AsyncStorage.getItem('chosen_address');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!addrId) {
+              addrId = parsed._id || parsed.id;
+            }
+            if (!lng && !lat && parsed.location?.coordinates) {
+              lng = parsed.location.coordinates[0];
+              lat = parsed.location.coordinates[1];
+            }
+          }
+        } catch (e) {}
+      }
+
+      const data = await getCart(addrId, currencyCode, lng, lat);
       console.log('CartContext: Cart data received:', data);
       
       if (data?.cart) {
@@ -233,7 +258,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currencyCode]);
 
   const handleConflict = useCallback((conflictData, payload, onSuccess) => {
     const { currentRestaurant, newRestaurant } = conflictData;
@@ -823,7 +848,8 @@ export const CartProvider = ({ children }) => {
       const delivery = toNumber(bill.deliveryFee, 0);
       const packaging = toNumber(bill.packaging, 0);
       const platformFee = toNumber(bill.platformFee, 0);
-      const grandTotal = subtotal + delivery + tax + packaging + platformFee - discount;
+      const smallCartFee = toNumber(bill.smallCartFee, 0);
+      const grandTotal = subtotal + delivery + tax + packaging + platformFee + smallCartFee - discount;
 
       console.log('💵 CartContext Bill Details:', {
         subtotal,
@@ -832,6 +858,7 @@ export const CartProvider = ({ children }) => {
         delivery,
         packaging,
         platformFee,
+        smallCartFee,
         grandTotal,
         itemsCount: cart.length,
       });
@@ -843,6 +870,7 @@ export const CartProvider = ({ children }) => {
         delivery,
         packaging,
         platformFee,
+        smallCartFee,
         grandTotal,
       };
     }
@@ -862,6 +890,7 @@ export const CartProvider = ({ children }) => {
         delivery: totals.delivery,
         packaging: totals.packaging,
         platformFee: totals.platformFee,
+        smallCartFee: totals.smallCartFee || 0,
         grandTotal: totals.grandTotal,
       },
       bill,

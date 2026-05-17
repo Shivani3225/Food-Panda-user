@@ -4,10 +4,19 @@ import { CART_ROUTES } from '../config/routes';
 /**
  * Get current cart from backend
  */
-export const getCart = async () => {
+export const getCart = async (addressId = null, currency = null, lng = null, lat = null) => {
   try {
-    console.log('Fetching cart from:', CART_ROUTES.getCart);
-    const response = await apiClient.get(CART_ROUTES.getCart);
+    let url = CART_ROUTES.getCart;
+    const params = [];
+    if (addressId) params.push(`addressId=${addressId}`);
+    if (currency) params.push(`currency=${currency}`);
+    if (lng !== null && lng !== undefined) params.push(`lng=${lng}`);
+    if (lat !== null && lat !== undefined) params.push(`lat=${lat}`);
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    console.log('Fetching cart from:', url);
+    const response = await apiClient.get(url);
     console.log('Cart fetched successfully:', response.data);
     return response.data;
   } catch (error) {
