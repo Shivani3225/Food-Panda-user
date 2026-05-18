@@ -727,7 +727,7 @@ export default function HomeScreen() {
 
   // Navigation handlers
   const handleProfilePress = useCallback(() => {
-    navigation.navigate('Profile');
+    navigation.navigate('Profile', { screen: 'ProfileHome' });
   }, [navigation]);
 
   const handleCartPress = useCallback(() => navigation.navigate('Cart'), [navigation]);

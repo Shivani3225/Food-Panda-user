@@ -49,6 +49,11 @@ const ProfileScreen = () => {
   const [language, setLanguage] = useState('en');
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [profileImage]);
 
   // Country code states
   const [selectedCountry, setSelectedCountry] = useState(countries[0] || {});
@@ -406,7 +411,11 @@ const ProfileScreen = () => {
             <>
               <View style={styles.profileImageContainer}>
                 <View style={styles.imageWrapper}>
-                  <Image source={profileImage ? { uri: profileImage } : require('../../assets/icons/user.png')} style={styles.profileImage} />
+                  <Image 
+                    source={profileImage && !imageError ? { uri: profileImage } : require('../../assets/icons/user.png')} 
+                    style={styles.profileImage} 
+                    onError={() => setImageError(true)}
+                  />
                   <TouchableOpacity style={styles.cameraButton} onPress={showImagePickerOptions} activeOpacity={0.8}>
                     <Camera size={18} color="#FFF" />
                   </TouchableOpacity>

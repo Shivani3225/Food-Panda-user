@@ -33,6 +33,11 @@ export const HomeHeader = memo(({
   onAddressPress,
 }) => {
   const { t } = useTranslation();
+  const [avatarError, setAvatarError] = React.useState(false);
+
+  React.useEffect(() => {
+    setAvatarError(false);
+  }, [userData?.profilePic]);
 
   return (
     <ImageBackground
@@ -74,11 +79,12 @@ export const HomeHeader = memo(({
             >
               <Image
                 source={
-                  userData?.profilePic
+                  userData?.profilePic && !avatarError
                     ? { uri: userData.profilePic }
                     : require('../../assets/icons/user.png')
                 }
                 style={styles.avatarImg}
+                onError={() => setAvatarError(true)}
               />
             </TouchableOpacity>
 

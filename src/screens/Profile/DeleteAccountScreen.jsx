@@ -69,6 +69,11 @@ export default function DeleteAccountScreen() {
   const [selectedReason, setSelectedReason] = useState(null);
   const [customReason, setCustomReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [user?.profilePic]);
 
   const checklist = useMemo(() => getChecklist(t), [t]);
   const reasons = useMemo(() => getReasons(t), [t]);
@@ -136,8 +141,9 @@ export default function DeleteAccountScreen() {
       >
         {/* Avatar */}
         <Image
-          source={user?.profilePic ? { uri: user.profilePic } : require('../../assets/icons/user.png')}
+          source={user?.profilePic && !imageError ? { uri: user.profilePic } : require('../../assets/icons/user.png')}
           style={styles.avatar}
+          onError={() => setImageError(true)}
         />
 
         <Text style={styles.name}>{user?.name || t('profile.user', 'User')}</Text>

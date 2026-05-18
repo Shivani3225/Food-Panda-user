@@ -165,15 +165,15 @@ export default function SearchScreen() {
       const trimmedQuery = searchQuery.trim();
       console.log('🔍 Instant search for:', trimmedQuery, '(Request #' + currentRequestId + ')');
       
-      try {
-      console.log('💡 Fetching suggestions...');
       const locationParams = {
         lat: location?.latitude,
         lng: location?.longitude,
         city: address?.city
       };
-      
-      const suggestionPromise = getSearchSuggestions(trimmedQuery, locationParams);
+
+      try {
+        console.log('💡 Fetching suggestions...');
+        const suggestionPromise = getSearchSuggestions(trimmedQuery, locationParams);
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error(t('search.suggestions_timeout', 'Suggestions timeout'))), 3000)
       );

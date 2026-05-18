@@ -46,8 +46,19 @@ function CustomTabBar({ state, descriptors, navigation }) {
             target: route.key,
             canPreventDefault: true,
           });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+
+          if (!event.defaultPrevented) {
+            let targetScreen = undefined;
+            if (route.name === 'Home') targetScreen = 'HomePage';
+            else if (route.name === 'Orders') targetScreen = 'OrdersHome';
+            else if (route.name === 'Search') targetScreen = 'SearchHome';
+            else if (route.name === 'Profile') targetScreen = 'ProfileHome';
+
+            if (targetScreen) {
+              navigation.navigate(route.name, { screen: targetScreen });
+            } else {
+              navigation.navigate(route.name);
+            }
           }
         };
 

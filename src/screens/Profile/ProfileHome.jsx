@@ -121,6 +121,12 @@ function ProfileHome() {
     }
   }, [fetchUserProfile]);
 
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [userData?.profilePic]);
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <LoadingModal visible={isLoggingOut} message={t('profile.logging_out', 'Logging out...')} />
@@ -145,11 +151,12 @@ function ProfileHome() {
           <View style={styles.avatarWrapper}>
             <Image
               source={
-                userData?.profilePic
+                userData?.profilePic && !avatarError
                   ? { uri: userData.profilePic }
                   : require('../../assets/icons/user.png')
               }
               style={styles.avatar}
+              onError={() => setAvatarError(true)}
             />
           </View>
           {isLoadingProfile ? (
