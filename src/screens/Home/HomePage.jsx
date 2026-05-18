@@ -853,7 +853,9 @@ export default function HomeScreen() {
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={['#ed1c24']} tintColor="#ed1c24" />
           }
           onScroll={({ nativeEvent }) => {
+            if (!nativeEvent) return;
             const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            if (!layoutMeasurement || !contentOffset || !contentSize) return;
             const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
             if (isCloseToBottom && restaurants.length > 0) {
               loadMoreRestaurants();

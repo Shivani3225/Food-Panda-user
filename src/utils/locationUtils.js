@@ -5,16 +5,16 @@
 
 import { GOOGLE_MAPS_API_KEY } from '@env';
 
+// Helper for fetch with timeout
+const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Request Timeout')), timeout))
+  ]);
+};
+
 export const getAddressFromCoordinates = async (latitude, longitude) => {
   console.log('🔍 [LocationUtils] Reverse geocoding:', latitude, longitude);
-
-  // Helper for fetch with timeout
-  const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
-    return Promise.race([
-      fetch(url, options),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request Timeout')), timeout))
-    ]);
-  };
 
   // 1. Try Google Maps Geocoding API (Preferred for production/reliability)
   try {

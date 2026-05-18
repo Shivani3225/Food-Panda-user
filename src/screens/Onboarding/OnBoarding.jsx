@@ -38,19 +38,31 @@ export default function EasyOrderingScreen() {
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
 
+  const getItemLayout = React.useCallback((data, index) => ({
+    length: width,
+    offset: width * index,
+    index,
+  }), []);
+
   // Auto-slide logic
   useEffect(() => {
     const timer = setInterval(() => {
-      if (currentIndex < ONBOARDING_DATA.length - 1) {
-        flatListRef.current?.scrollToIndex({
-          index: currentIndex + 1,
-          animated: true,
-        });
-      } else {
-        flatListRef.current?.scrollToIndex({
-          index: 0,
-          animated: true,
-        });
+      try {
+        if (flatListRef.current) {
+          if (currentIndex < ONBOARDING_DATA.length - 1) {
+            flatListRef.current.scrollToIndex({
+              index: currentIndex + 1,
+              animated: true,
+            });
+          } else {
+            flatListRef.current.scrollToIndex({
+              index: 0,
+              animated: true,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Onboarding scrollToIndex failed:', err);
       }
     }, 3000); // 3 seconds interval
 
@@ -74,6 +86,7 @@ export default function EasyOrderingScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        getItemLayout={getItemLayout}
         onMomentumScrollEnd={(event) => {
           const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
           setCurrentIndex(newIndex);

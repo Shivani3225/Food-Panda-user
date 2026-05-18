@@ -46,29 +46,41 @@ const PromoCardItem = memo(({ item, onPress }) => {
 });
 
 export const PromoCardList = memo(({ promoCards, onPromoPress }) => {
-  if (!promoCards || promoCards.length === 0) {
-    return null;
-  }
-
   const flatListRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const getItemLayout = React.useCallback((data, index) => ({
+    length: Math.round(PROMO_CARD_WIDTH) + PROMO_CARD_GAP,
+    offset: (Math.round(PROMO_CARD_WIDTH) + PROMO_CARD_GAP) * index,
+    index,
+  }), []);
+
   useEffect(() => {
-    if (promoCards.length <= 1) return;
+    if (!promoCards || promoCards.length <= 1) return;
 
     const interval = setInterval(() => {
       setActiveIndex(prevIndex => {
         const nextIndex = (prevIndex + 1) % promoCards.length;
-        flatListRef.current?.scrollToIndex({
-          index: nextIndex,
-          animated: true,
-        });
+        try {
+          if (flatListRef.current) {
+            flatListRef.current.scrollToIndex({
+              index: nextIndex,
+              animated: true,
+            });
+          }
+        } catch (error) {
+          console.warn('PromoCardList scrollToIndex failed:', error);
+        }
         return nextIndex;
       });
     }, AUTO_SCROLL_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [promoCards.length]);
+  }, [promoCards]);
+
+  if (!promoCards || promoCards.length === 0) {
+    return null;
+  }
 
   return (
     <FlatList
@@ -81,6 +93,7 @@ export const PromoCardList = memo(({ promoCards, onPromoPress }) => {
       contentContainerStyle={styles.promoList}
       snapToInterval={Math.round(PROMO_CARD_WIDTH) + PROMO_CARD_GAP}
       decelerationRate="fast"
+      getItemLayout={getItemLayout}
       renderItem={({ item }) => (
         <PromoCardItem
           item={item}

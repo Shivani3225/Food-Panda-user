@@ -145,12 +145,13 @@ export const FavouritesProvider = ({ children }) => {
       const key = String(id ?? '');
       if (!key) return false;
       return favourites.some(f => {
+        if (!f) return false;
         if (type === 'restaurant') {
-          const favIsRestaurant = f?.type === 'restaurant' || !f?.menuItemId;
+          const favIsRestaurant = f.type === 'restaurant' || !f.menuItemId;
           return favIsRestaurant && String(f.restaurantId || f.id) === key;
         }
         if (type === 'product') {
-          const favIsRestaurant = f?.type === 'restaurant' || !f?.menuItemId;
+          const favIsRestaurant = f.type === 'restaurant' || !f.menuItemId;
           return !favIsRestaurant && String(f.menuItemId || f.id) === key;
         }
         return f.id === key || f.restaurantId === key || f.menuItemId === key;
