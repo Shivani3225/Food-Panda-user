@@ -276,6 +276,7 @@ export default function FilteredResultsScreen() {
           const minRating = parseFloat(drawerFilters.rating);
           console.log(`⭐ [Filter] Applying Min Rating: ${minRating}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const rating = parseFloat(rest.rating?.average || rest.ratingAverage || 0);
             const match = rating >= minRating;
             const restName = rest.name?.en || rest.name || 'Unknown';
@@ -290,6 +291,7 @@ export default function FilteredResultsScreen() {
           const max = drawerFilters.maxPrice || 5000;
           console.log(`💰 [Filter] Applying Price Range: ${min}-${max}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const cost = parseFloat(rest.averageCost || rest.costForTwo || rest.price || 0);
             const match = cost >= min && cost <= max;
             const restName = rest.name?.en || rest.name || 'Unknown';
@@ -310,6 +312,7 @@ export default function FilteredResultsScreen() {
           
           console.log(`💰 [Filter] Applying Cost For Two: ${min}-${max}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const rawCost = rest.averageCost || rest.costForTwo || rest.price || 0;
             const cost = parseFloat(String(rawCost).replace(/[^0-9.]/g, '')) || 0;
             const match = cost >= min && cost <= max;
@@ -323,6 +326,7 @@ export default function FilteredResultsScreen() {
         if (drawerFilters?.timeFilter === 'fast_delivery') {
           console.log('⏱️ [Filter] Applying Fast Delivery (<30m)');
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const rawTime = rest.deliveryTime;
             let match = false;
             if (rawTime) {
@@ -345,6 +349,7 @@ export default function FilteredResultsScreen() {
         if (drawerFilters?.offers?.includes('free_delivery')) {
           console.log('🚚 [Filter] Applying Free Delivery');
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const fee = parseFloat(rest.deliveryFee ?? rest.delivery_fee ?? NaN);
             const isFree = fee === 0 || rest.freeDelivery === true || rest.hasFreeDelivery === true;
             const restName = rest.name?.en || rest.name || 'Unknown';
@@ -358,6 +363,7 @@ export default function FilteredResultsScreen() {
           const maxRadius = drawerFilters.radius || 5;
           console.log(`📍 [Filter] Applying Radius: ${maxRadius}km`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const dist = parseFloat(rest.distanceKm || rest.distance || rest.dist || 0);
             const match = dist <= maxRadius;
             const restName = rest.name?.en || rest.name || 'Unknown';
@@ -367,10 +373,11 @@ export default function FilteredResultsScreen() {
         }
 
         // 6. Food Preference (Veg/Non-Veg/Vegan)
-        if (drawerFilters?.foodPreference && drawerFilters.foodPreference.length > 0) {
+        if (Array.isArray(drawerFilters?.foodPreference) && drawerFilters.foodPreference.length > 0) {
           const selectedPrefs = drawerFilters.foodPreference;
           console.log(`🥬 [Filter] Applying Preferences: ${selectedPrefs.join(', ')}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
+            if (!rest) return false;
             const resPref = String(rest.foodPreference || rest.foodType || rest.type || '').toLowerCase();
             const isVeg = rest.isVeg;
             
@@ -388,11 +395,14 @@ export default function FilteredResultsScreen() {
         }
 
         // 7. Cuisines Filter
-        if (drawerFilters?.cuisines && drawerFilters.cuisines.length > 0) {
+        if (Array.isArray(drawerFilters?.cuisines) && drawerFilters.cuisines.length > 0) {
           const selected = drawerFilters.cuisines.map(c => c.toLowerCase());
           console.log(`🍜 [Filter] Applying Cuisines: ${selected.join(', ')}`);
           restaurantsToMap = restaurantsToMap.filter(rest => {
-            const resCuisines = (rest.cuisines || rest.cuisine || []).map(c => String(c).toLowerCase());
+            if (!rest) return false;
+            const rawCuisines = rest.cuisines || rest.cuisine || [];
+            const cuisinesArray = Array.isArray(rawCuisines) ? rawCuisines : [rawCuisines];
+            const resCuisines = cuisinesArray.map(c => String(c).toLowerCase());
             const match = selected.some(s => resCuisines.includes(s));
             const restName = rest.name?.en || rest.name || 'Unknown';
             if (!match) console.log(`   ❌ [Cuisines] ${restName}: ${resCuisines.join(', ')} not in ${selected.join(', ')}`);
@@ -400,7 +410,7 @@ export default function FilteredResultsScreen() {
           });
         }
 
-        console.log(`✅ [Filter Results] ${restaurantsToMap.length} restaurants match all selected criteria.`);
+        console.log(`      [Filter Results] ${restaurantsToMap.length} restaurants match all selected criteria.`);
         restaurantsToMap.forEach(r => console.log(`   🏠 [Final List Item] ${r.name?.en || r.name}`));
 
         const mappedRestaurants = restaurantsToMap.map(rest => {
@@ -486,7 +496,6 @@ export default function FilteredResultsScreen() {
   }, [
     searchQuery,
     drawerFilters,
-    navigation,
     applySorting,
     parseNumeric,
     propsApiFilters,

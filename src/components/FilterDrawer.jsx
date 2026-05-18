@@ -13,6 +13,7 @@ import {
   Platform,
   Alert,
   Switch,
+  TouchableOpacity,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,6 @@ import { useAuth } from '../context/AuthContext';
 import { wp, hp } from '../utils/responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scale } from '../utils/scale';
-import { Star, ArrowLeft } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -99,7 +99,9 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
   const [rating, setRating] = useState(null);
   const [offers, setOffers] = useState([]);
   const [costForTwo, setCostForTwo] = useState(null);
-  const [foodPreference, setFoodPreference] = useState(user?.foodPreferences || []);
+  const [foodPreference, setFoodPreference] = useState(
+    Array.isArray(user?.foodPreferences) ? user.foodPreferences : []
+  );
   const [additionalFilters, setAdditionalFilters] = useState([]);
   const [radius, setRadius] = useState(null);
   const [isNearby, setIsNearby] = useState(false);
@@ -123,8 +125,10 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       overlayOpacity.setValue(0);
       
       // Sync food preferences from user profile if not already set
-      if (foodPreference.length === 0 && user?.foodPreferences?.length > 0) {
-        setFoodPreference(user.foodPreferences);
+      const currentPrefs = Array.isArray(foodPreference) ? foodPreference : [];
+      const userPrefs = Array.isArray(user?.foodPreferences) ? user.foodPreferences : [];
+      if (currentPrefs.length === 0 && userPrefs.length > 0) {
+        setFoodPreference(userPrefs);
       }
 
       requestAnimationFrame(() => {
@@ -155,7 +159,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
         }),
       ]).start();
     }
-  }, [visible, drawerWidth, translateX, overlayOpacity, user]);
+  }, [visible, drawerWidth, translateX, overlayOpacity, user, foodPreference]);
 
   const handleReset = () => {
     setMinPrice(MIN_PRICE_RANGE);
@@ -207,7 +211,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       rating,
       offers,
       costForTwo,
-      foodPreference,
+      foodPreference: Array.isArray(foodPreference) ? foodPreference : [],
       additionalFilters,
       radius,
       isNearby,
@@ -221,8 +225,6 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
       onClose();
     }
   };
-
-  if (!visible) return null;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
