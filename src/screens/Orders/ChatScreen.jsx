@@ -95,7 +95,8 @@ export default function ChatScreen() {
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {messages.map((msg, index) => {
-            const isMine = msg.sender !== receiverId;
+            const msgSenderId = typeof msg.sender === 'object' ? msg.sender?._id : msg.sender;
+            const isMine = msgSenderId !== receiverId;
 
             return (
               <View
