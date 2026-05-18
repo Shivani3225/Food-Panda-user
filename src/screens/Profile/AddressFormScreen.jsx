@@ -32,7 +32,7 @@ const normalizeLabelForApi = (label) => {
   if (key === 'work') return 'Work';
   if (key === 'office') return 'Office';
   if (key === 'other') return 'Other';
-  return 'Other';
+  return label;
 };
 
 const POSTCODE_RULES = {
@@ -60,7 +60,10 @@ export default function AddressFormScreen() {
   const address = route?.params?.address;
   const isEditing = !!address;
 
-  const [customLabel, setCustomLabel] = useState(address?.label && !['home', 'work', 'office'].includes(address.label.toLowerCase()) ? address.label : '');
+  const initialLabel = address?.label?.toLowerCase() || 'home';
+  const isCustomLabel = initialLabel && !['home', 'work', 'office'].includes(initialLabel);
+
+  const [customLabel, setCustomLabel] = useState(isCustomLabel ? address.label : '');
 
   const ADDRESS_TYPES = getAddressTypes(t);
 
@@ -74,7 +77,7 @@ export default function AddressFormScreen() {
     label: address?.label || 'home',
   });
   const [selectedLabel, setSelectedLabel] = useState(
-    address?.label?.toLowerCase() || 'home'
+    isCustomLabel ? 'other' : initialLabel
   );
   const [isDefault, setIsDefault] = useState(address?.isDefault || false);
   const [errors, setErrors] = useState({});
@@ -231,7 +234,7 @@ export default function AddressFormScreen() {
         city: formData.city.trim(),
         state: formData.state.trim(),
         zipCode: formData.zipCode.trim(),
-        label: selectedLabel === 'other' ? 'Other' : normalizeLabelForApi(selectedLabel),
+        label: selectedLabel === 'other' ? (customLabel.trim() || 'Other') : normalizeLabelForApi(selectedLabel),
         isDefault,
         ...(address?.coordinates && {
           location: {

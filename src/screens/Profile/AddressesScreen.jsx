@@ -64,7 +64,7 @@ export default function AddressesScreen() {
         ? addressData.map((addr) => ({
             id: addr._id || Math.random().toString(),
             _id: addr._id,
-            label: addr.label?.toLowerCase() || 'other',
+            label: addr.label || 'Other',
             addressLine: addr.addressLine || '',
             city: addr.city || '',
             zipCode: addr.zipCode || '',
