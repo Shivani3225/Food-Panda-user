@@ -25,11 +25,11 @@ import apiClient from '../../config/apiClient';
 const { width } = Dimensions.get('window');
 
 const OrderTracking = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { t, i18n } = useTranslation();
-  const { currencySymbol } = useAuth();
-  const [orders, setOrders] = useState([]);
+  const { currencySymbol } = useAuth() as any;
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ratingModal, setRatingModal] = useState({
@@ -75,7 +75,7 @@ const OrderTracking = () => {
       const response = await apiClient.get('/api/orders/my-orders');
       console.log('✅ [TrackOrder] Orders fetched successfully:', response.data.orders?.length || 0, 'orders found');
       setOrders(response.data.orders || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ [TrackOrder] Error fetching orders:", error?.response?.data || error.message);
       Alert.alert(t('common.error', 'Error'), t('orders.fetch_failed', 'Failed to load orders'));
     } finally {
@@ -83,7 +83,7 @@ const OrderTracking = () => {
     }
   };
 
-  const handleRateOrder = (orderId) => {
+  const handleRateOrder = (orderId: any) => {
     setRatingModal({
       visible: true,
       orderId,
@@ -106,14 +106,14 @@ const OrderTracking = () => {
       });
       Alert.alert(t('common.success', 'Success'), t('orders.thank_you_rating', 'Thank you for your rating!'));
       setRatingModal({ ...ratingModal, visible: false });
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert(t('common.error', 'Error'), error.response?.data?.message || t('orders.rating_failed', 'Failed to submit rating'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRefundRequest = async (orderId, total) => {
+  const handleRefundRequest = async (orderId: any, total: any) => {
     Alert.prompt(
       t('orders.refund_request', 'Refund Request'),
       t('orders.refund_reason', 'Reason for refund:'),
@@ -121,7 +121,7 @@ const OrderTracking = () => {
         { text: t('common.cancel', 'Cancel'), style: 'cancel' },
         {
           text: t('common.submit', 'Submit'),
-          onPress: async (reason) => {
+          onPress: async (reason: any) => {
             if (!reason) return;
             try {
               setIsSubmitting(true);
@@ -130,7 +130,7 @@ const OrderTracking = () => {
                 reason
               });
               Alert.alert(t('common.success', 'Success'), response.data.message);
-            } catch (error) {
+            } catch (error: any) {
               Alert.alert(t('common.error', 'Error'), error.response?.data?.message || t('orders.refund_failed', 'Refund request failed'));
             } finally {
               setIsSubmitting(false);
@@ -142,7 +142,7 @@ const OrderTracking = () => {
     );
   };
 
-  const getActiveStep = (status) => {
+  const getActiveStep = (status: any) => {
     const s = status?.toLowerCase();
     if (['placed'].includes(s)) return 0;
     if (['accepted'].includes(s)) return 1;
@@ -151,7 +151,7 @@ const OrderTracking = () => {
     return 0;
   };
 
-  const getLangText = (data) => {
+  const getLangText = (data: any) => {
     if (!data) return '';
     if (typeof data === 'string') return data;
     if (typeof data === 'object') {
@@ -161,12 +161,21 @@ const OrderTracking = () => {
   };
 
   const formatOrders = () => {
-    return orders.map(o => ({
+    let sortedOrders = [...orders];
+    const orderIdParam = route?.params?.orderId;
+    if (orderIdParam) {
+      const targetIndex = sortedOrders.findIndex(o => o._id === orderIdParam);
+      if (targetIndex > -1) {
+        const [targetOrder] = sortedOrders.splice(targetIndex, 1);
+        sortedOrders.unshift(targetOrder);
+      }
+    }
+    return sortedOrders.map((o: any) => ({
       id: o._id,
       restaurant: o.restaurant?.name || t('orders.restaurant', 'Restaurant'),
       restaurantData: o.restaurant,
       category: Array.isArray(o.restaurant?.cuisine) ? o.restaurant.cuisine.join(', ') : t('orders.food', 'Food'),
-      items: o.items?.map(i => i.name) || [],
+      items: o.items?.map((i: any) => i.name) || [],
       moreItems: Math.max(0, (o.items?.length || 0) - 2),
       date: new Date(o.createdAt).toLocaleDateString(i18n.language, { day: '2-digit', month: 'short' }),
       time: new Date(o.createdAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }),
@@ -174,14 +183,15 @@ const OrderTracking = () => {
       statusColor: o.status === 'delivered' ? 'green' : (o.status === 'cancelled' ? 'red' : 'orange'),
       total: `${(o.totalAmount || 0).toFixed(2)} ${currencySymbol}`,
       rawStatus: o.status,
-      rider: o.rider
+      rider: o.rider,
+      deliveryAddress: o.deliveryAddress
     }));
   };
 
   const formattedOrders = formatOrders();
   const latestOrder = formattedOrders[0];
   const activeStep = latestOrder ? getActiveStep(latestOrder.rawStatus) : 0;
-  const showMap = latestOrder && ['accepted', 'preparing', 'ready', 'picked_up', 'out_for_delivery'].includes(latestOrder.rawStatus.toLowerCase());
+  const showMap = latestOrder && ['accepted', 'preparing', 'ready', 'picked_up', 'out_for_delivery', 'delivered'].includes(latestOrder.rawStatus.toLowerCase());
 
   const STEPS = [
     { emoji: '🧾', label: 'orders.order_step' },
@@ -190,7 +200,7 @@ const OrderTracking = () => {
     { emoji: '📦', label: 'orders.delivered_step' },
   ];
 
-  const ProgressStepper = ({ activeStep }) => (
+  const ProgressStepper = ({ activeStep }: any) => (
     <View style={styles.stepperContainer}>
       <View style={styles.emojiRow}>
         {STEPS.map((step, index) => (
@@ -225,8 +235,8 @@ const OrderTracking = () => {
     </View>
   );
 
-  const OrderCard = ({ order, onRate, onRefund }) => {
-    const statusColors = {
+  const OrderCard = ({ order, onRate, onRefund }: any) => {
+    const statusColors: any = {
       preparing: '#f5a623',
       ongoing: '#e62e2e',
       delivered: '#2cb87e'
@@ -236,7 +246,7 @@ const OrderTracking = () => {
 
     // Get translated status
     const getTranslatedStatus = () => {
-      const statusMap = {
+      const statusMap: any = {
         'placed': t('orders.status_placed', 'Placed'),
         'accepted': t('orders.status_accepted', 'Accepted'),
         'preparing': t('orders.status_preparing', 'Preparing food & searching for rider'),
@@ -283,7 +293,7 @@ const OrderTracking = () => {
 
           {/* Items row */}
           <View style={styles.itemsRow}>
-            {order.items.slice(0, 2).map((item, index) => (
+            {order.items.slice(0, 2).map((item: any, index: any) => (
               <View key={index} style={styles.itemContainer}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName} numberOfLines={1}>
@@ -444,13 +454,14 @@ const OrderTracking = () => {
           <MapView
             style={styles.fullMap}
             initialRegion={{
-              latitude: latestOrder.rider?.currentLocation?.coordinates?.[1] || latestOrder.restaurantData?.location?.coordinates?.[1] || 52.5200,
-              longitude: latestOrder.rider?.currentLocation?.coordinates?.[0] || latestOrder.restaurantData?.location?.coordinates?.[0] || 13.4050,
+              latitude: latestOrder.deliveryAddress?.coordinates?.[1] || latestOrder.rider?.currentLocation?.coordinates?.[1] || latestOrder.restaurantData?.location?.coordinates?.[1] || 52.5200,
+              longitude: latestOrder.deliveryAddress?.coordinates?.[0] || latestOrder.rider?.currentLocation?.coordinates?.[0] || latestOrder.restaurantData?.location?.coordinates?.[0] || 13.4050,
               latitudeDelta: 0.05,
               longitudeDelta: 0.05,
             }}
           >
-            {latestOrder.rider?.currentLocation?.coordinates && (
+            {latestOrder.rider?.currentLocation?.coordinates && 
+             !(latestOrder.rider.currentLocation.coordinates[0] === 0 && latestOrder.rider.currentLocation.coordinates[1] === 0) && (
               <Marker
                 coordinate={{
                   latitude: latestOrder.rider.currentLocation.coordinates[1],
@@ -460,7 +471,8 @@ const OrderTracking = () => {
                 description={t('orders.rider_desc', 'Your delivery partner')}
               />
             )}
-            {latestOrder.restaurantData?.location?.coordinates && (
+            {latestOrder.restaurantData?.location?.coordinates && 
+             !(latestOrder.restaurantData.location.coordinates[0] === 0 && latestOrder.restaurantData.location.coordinates[1] === 0) && (
               <Marker
                 coordinate={{
                   latitude: latestOrder.restaurantData.location.coordinates[1],
@@ -469,6 +481,18 @@ const OrderTracking = () => {
                 title={getLangText(latestOrder.restaurant)}
                 description={t('orders.restaurant_desc', 'Restaurant location')}
                 pinColor="green"
+              />
+            )}
+            {latestOrder.deliveryAddress?.coordinates && 
+             !(latestOrder.deliveryAddress.coordinates[0] === 0 && latestOrder.deliveryAddress.coordinates[1] === 0) && (
+              <Marker
+                coordinate={{
+                  latitude: latestOrder.deliveryAddress.coordinates[1],
+                  longitude: latestOrder.deliveryAddress.coordinates[0],
+                }}
+                title={t('orders.delivery_location', 'Delivery Location')}
+                description={latestOrder.deliveryAddress.addressLine || t('orders.your_address', 'Your Address')}
+                pinColor="blue"
               />
             )}
           </MapView>
