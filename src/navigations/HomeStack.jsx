@@ -12,6 +12,7 @@ import NotificationSettings from '../screens/Profile/NotificationSettings';
 import HomeNotifications from '../screens/Home/HomeNotifications';
 import RecommendedRestaurants from '../screens/Home/RecommendedRestaurants';
 import RequestRefundScreen from '../screens/Orders/RequestRefundScreen';
+import MenuItemDetail from '../screens/MenuItemDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,6 +33,7 @@ export default function HomeStack() {
       <Stack.Screen name="RecommendedRestaurants" component={RecommendedRestaurants} />
       <Stack.Screen name="NotificationSettings" component={NotificationSettings} />
       <Stack.Screen name="RequestRefundScreen" component={RequestRefundScreen} />
+      <Stack.Screen name="MenuItemDetail" component={MenuItemDetail} />
     </Stack.Navigator>
   );
 }

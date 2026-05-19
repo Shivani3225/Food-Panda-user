@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Search from '../screens/Search/Search';
 import RestaurantDetail from '../screens/Orders/RestaurantDetail';
 import Favourite from '../screens/Favourite';
+import MenuItemDetail from '../screens/MenuItemDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -12,6 +13,8 @@ export default function SearchStack() {
       <Stack.Screen name="SearchHome" component={Search} />
       <Stack.Screen name="RestaurantDetail" component={RestaurantDetail} />
       <Stack.Screen name="Favourite" component={Favourite} />
+      <Stack.Screen name="MenuItemDetail" component={MenuItemDetail} />
     </Stack.Navigator>
   );
 }
+

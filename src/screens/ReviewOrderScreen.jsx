@@ -250,12 +250,42 @@ export default function ReviewOrderScreen() {
     }, [applyAddressList]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const syncCartOnFocus = async () => {
+        const addr = latestAddressRef.current;
+        const addrId = addr?._id || addr?.id || null;
+        const lng = addr?.location?.coordinates?.[0] || null;
+        const lat = addr?.location?.coordinates?.[1] || null;
+        console.log('[ReviewOrder] Syncing cart calculations on focus, address:', addrId);
+        try {
+          if (active) {
+            await fetchCart(addrId, lng, lat);
+          }
+        } catch (err) {
+          console.warn('[ReviewOrder] Focus cart sync failed:', err.message);
+        }
+      };
+      syncCartOnFocus();
+      return () => {
+        active = false;
+      };
+    }, [fetchCart]),
+  );
+
   const handleUpdateTip = useCallback(async (newTipAmount) => {
     setTipLoading(true);
     try {
       const response = await apiClient.put(CART_ROUTES.updateMeta, {
         tip: newTipAmount,
       });
+
+      const addr = latestAddressRef.current;
+      const addrId = addr?._id || addr?.id || null;
+      const lng = addr?.location?.coordinates?.[0] || null;
+      const lat = addr?.location?.coordinates?.[1] || null;
+      await fetchCart(addrId, lng, lat);
 
       if (response?.data?.bill) {
         setTipAmount(response.data.bill.tip ?? newTipAmount);
@@ -268,7 +298,7 @@ export default function ReviewOrderScreen() {
     } finally {
       setTipLoading(false);
     }
-  }, []);
+  }, [fetchCart]);
 
   const deleteOrder = async (orderId) => {
     try {

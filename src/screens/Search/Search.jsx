@@ -526,18 +526,10 @@ export default function SearchScreen() {
         
         console.log('✅ Restaurant details fetched:', restaurantData?.name?.en || restaurantData?.name);
         
-        navigation.getParent?.()
-          ? navigation.getParent().navigate('Home', {
-              screen: 'RestaurantDetail',
-              params: { 
-                restaurant: restaurantData,
-                initialProductId: item.product?._id || item.product?.id || item.id
-              },
-            })
-          : navigation.navigate('RestaurantDetail', {
-              restaurant: restaurantData,
-              initialProductId: item.product?._id || item.product?.id || item.id
-            });
+        navigation.navigate('MenuItemDetail', {
+          menuItem: item.product,
+          restaurant: restaurantData,
+        });
       } catch (error) {
         console.error('❌ Error fetching restaurant details:', error?.message);
         Toast.show({
