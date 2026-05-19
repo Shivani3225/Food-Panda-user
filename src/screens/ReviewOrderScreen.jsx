@@ -62,6 +62,7 @@ export default function ReviewOrderScreen() {
   const {
     cart,
     totals,
+    bill,
     addOrder,
     checkout,
     setCheckout,
@@ -70,6 +71,7 @@ export default function ReviewOrderScreen() {
     paymentMethod,
     setPaymentMethod,
     fetchCart,
+    backendCart,
   } = useContext(CartContext);
 
   const [activeSheet, setActiveSheet] = useState(null);
@@ -133,9 +135,13 @@ export default function ReviewOrderScreen() {
     const platformFee = toNumber(totals?.platformFee, 0);
     const packaging = toNumber(totals?.packaging, 0);
     const smallCartFee = toNumber(totals?.smallCartFee, 0);
+    const surgeFee = toNumber(bill?.surgeFee, 0);
     const discount = navDiscount ?? toNumber(totals?.discount, 0);
-    const totalBeforeTip = subtotal + deliveryFee + tax + platformFee + packaging + smallCartFee - discount;
-    const grandTotal = Math.max(0, totalBeforeTip + tipAmount);
+    const totalBeforeTip = subtotal + deliveryFee + tax + platformFee + packaging + smallCartFee + surgeFee - discount;
+
+    // Use the backend's authoritative toPay to ensure consistency with Stripe charges
+    const backendToPay = toNumber(bill?.toPay, 0);
+    const grandTotal = backendToPay > 0 ? backendToPay : Math.max(0, totalBeforeTip + tipAmount);
 
     return {
       subtotal,
@@ -144,12 +150,13 @@ export default function ReviewOrderScreen() {
       serviceFee: platformFee,
       packaging,
       smallCartFee,
+      surgeFee,
       discount,
       tip: tipAmount,
       totalBeforeTip,
       grandTotal,
     };
-  }, [totals, tipAmount]);
+  }, [totals, tipAmount, bill, navDiscount]);
 
   useEffect(() => {
     return () => {
@@ -160,14 +167,16 @@ export default function ReviewOrderScreen() {
     };
   }, []);
 
+  const isAnySheetVisible = activeSheet !== null;
+
   useFocusEffect(
     React.useCallback(() => {
       const unsubscribe = navigation.addListener('beforeRemove', e => {
-        if (!showModal && !isAnySheetVisible && !isPlacing && !isProcessingStripe) return;
+        if (!showModal && !isAnySheetVisible && !isPlacing && !isProcessingStripe && !isProcessingUpi) return;
         e.preventDefault();
       });
       return unsubscribe;
-    }, [navigation, showModal, isAnySheetVisible, isPlacing, isProcessingStripe]),
+    }, [navigation, showModal, isAnySheetVisible, isPlacing, isProcessingStripe, isProcessingUpi]),
   );
 
   const normalizeAddress = useCallback(addr => {

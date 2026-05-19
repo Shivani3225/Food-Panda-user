@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { login, checkVerificationStatus, socialLogin } from '../../services/authService';
 import LogoIcon from '../../assets/icons/LogoIcon.svg';

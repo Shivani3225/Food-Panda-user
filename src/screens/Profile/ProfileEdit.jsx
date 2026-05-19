@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera, ChevronDown } from 'lucide-react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
