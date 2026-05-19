@@ -30,7 +30,7 @@ export const applyFilters = async (query, filters = {}) => {
     // Add minimum rating filter if specified (backend expects minRating)
     const minRatingSource = filters.minRating ?? filters.rating;
     if (minRatingSource !== undefined && minRatingSource !== null && minRatingSource !== 'all') {
-      const normalizedMinRating = parseInt(minRatingSource, 10);
+      const normalizedMinRating = parseFloat(minRatingSource);
       if (!isNaN(normalizedMinRating) && normalizedMinRating >= 1 && normalizedMinRating <= 5) {
         params.minRating = normalizedMinRating;
       }
@@ -127,11 +127,17 @@ export const convertDrawerFiltersToAPI = (drawerFilters) => {
   // Handle Time Filter
   if (drawerFilters.timeFilter) {
     apiFilters.timeFilter = drawerFilters.timeFilter;
+    if (drawerFilters.timeFilter === 'fast_delivery') {
+      apiFilters.maxDeliveryTime = 30;
+    }
   }
 
   // Handle Offers
   if (drawerFilters.offers && drawerFilters.offers.length > 0) {
     apiFilters.offers = drawerFilters.offers.join(',');
+    if (drawerFilters.offers.includes('free_delivery')) {
+      apiFilters.isFreeDelivery = 'true';
+    }
   }
 
   // Handle Cost for Two

@@ -351,7 +351,7 @@ export default function FilteredResultsScreen() {
           restaurantsToMap = restaurantsToMap.filter(rest => {
             if (!rest) return false;
             const fee = parseFloat(rest.deliveryFee ?? rest.delivery_fee ?? NaN);
-            const isFree = fee === 0 || rest.freeDelivery === true || rest.hasFreeDelivery === true;
+            const isFree = fee === 0 || rest.freeDelivery === true || rest.hasFreeDelivery === true || rest.isFreeDelivery === true;
             const restName = rest.name?.en || rest.name || 'Unknown';
             if (!isFree) console.log(`   ❌ [Fee] ${restName}: fee=${fee}`);
             return isFree;
@@ -370,6 +370,32 @@ export default function FilteredResultsScreen() {
             if (!match) console.log(`   ❌ [Distance] ${restName}: ${dist}km > ${maxRadius}km`);
             return match;
           });
+        }
+
+        // 5.5 Additional Filters (pure_veg, open_now, outdoor_seating, new_on_platform)
+        if (Array.isArray(drawerFilters?.additionalFilters) && drawerFilters.additionalFilters.length > 0) {
+          console.log(`➕ [Filter] Applying Additional Filters: ${drawerFilters.additionalFilters.join(', ')}`);
+          if (drawerFilters.additionalFilters.includes('pure_veg')) {
+            restaurantsToMap = restaurantsToMap.filter(rest => {
+              if (!rest) return false;
+              return rest.isVeg === true;
+            });
+          }
+          if (drawerFilters.additionalFilters.includes('open_now')) {
+            restaurantsToMap = restaurantsToMap.filter(rest => {
+              if (!rest) return false;
+              return rest.isOpen === true || (rest.isActive !== false && rest.isTemporarilyClosed !== true);
+            });
+          }
+          if (drawerFilters.additionalFilters.includes('new_on_platform')) {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            restaurantsToMap = restaurantsToMap.filter(rest => {
+              if (!rest) return false;
+              const created = new Date(rest.createdAt || rest.updatedAt || new Date());
+              return created >= thirtyDaysAgo;
+            });
+          }
         }
 
         // 6. Food Preference (Veg/Non-Veg/Vegan)
