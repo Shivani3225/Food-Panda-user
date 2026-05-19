@@ -555,6 +555,7 @@ export default function FilteredResultsScreen() {
     if (restaurantData) {
       navigation.navigate('RestaurantDetail', {
         restaurant: restaurantData,
+        initialProductId: item.isRestaurant ? null : (item._id || item.id)
       });
     } else {
       console.warn('⚠️ [FilteredResultsScreen] Could not find restaurant data for navigation');

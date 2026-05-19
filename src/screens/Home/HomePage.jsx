@@ -742,14 +742,11 @@ export default function HomeScreen() {
       navigation.navigate('SearchHome', params);
     }
   }, [navigation]);
-  // Update handleCategoryPress (around line 350)
   const handleCategoryPress = useCallback((item) => {
-    const tabNav = navigation.getParent?.();
     const isAllCategory = item.id === 'all' || item.name === 'All';
 
-    // If "All" is selected, don't pass any category filter
     if (isAllCategory) {
-      // Navigate to search with empty query or show all restaurants
+      const tabNav = navigation.getParent?.();
       const params = { autoFocus: false };
       if (tabNav?.navigate) {
         tabNav.navigate('Search', { screen: 'SearchHome', params });
@@ -757,19 +754,18 @@ export default function HomeScreen() {
         navigation.navigate('SearchHome', params);
       }
     } else {
-      // Regular category behavior
-      const params = {
-        autoFocus: true,
-        category: item.name,
-        initialQuery: item.name
-      };
-      if (tabNav?.navigate) {
-        tabNav.navigate('Search', { screen: 'SearchHome', params });
-      } else {
-        navigation.navigate('SearchHome', params);
-      }
+      // Navigate directly to FilteredResultsScreen to show restaurants having this cuisine/dish
+      navigation.navigate('FilteredResults', {
+        searchQuery: item.name,
+        drawerFilters: {},
+        apiFilters: {
+          lat: globalLocation?.latitude,
+          lng: globalLocation?.longitude,
+        },
+        userLocation: globalLocation
+      });
     }
-  }, [navigation]);
+  }, [navigation, globalLocation]);
 
   const handlePromoPress = useCallback((item) => {
     // Banner item mein restaurant aksar item.banner.restaurant ke andar hota hai
@@ -868,112 +864,108 @@ export default function HomeScreen() {
             addressLine={addressLine}
             userData={userData}
             cartCount={cartCount}
-            tabs={tabs}
-            activeTab={activeTab}
             isSmallDevice={isSmallDevice}
             onProfilePress={handleProfilePress}
             onCartPress={handleCartPress}
             onNotificationPress={handleNotificationPress}
             onSearchPress={handleSearchPress}
-            onTabPress={handleTabPress}
             onAddressPress={() => navigation.navigate('Profile', { screen: 'AddressesScreen' })}
           />
 
-          {activeTab === t('home.offers', 'Offers') ? (
-            <Offers />
-          ) : activeTab === t('home.pickup', 'Pick-up') ? (
-            <PickupScreen />
-          ) : (
-            <>
-              <FoodCategoryList
-                categories={categories}
-                isLoading={isLoadingCategories}
-                selectedCategoryId={selectedCategoryId}
-                onCategoryPress={handleCategoryPress}
-              />
-              <PromoCardList promoCards={promoCards} onPromoPress={handlePromoPress} />
+          {/* Banners displayed below search bar */}
+          <PromoCardList promoCards={promoCards} onPromoPress={handlePromoPress} />
 
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('home.recommended_for_you', 'Recommended For You')}</Text>
-                <TouchableOpacity style={styles.allItemsButton} activeOpacity={0.85} onPress={handleSeeAllRecommended}>
-                  <Text style={styles.allItemsText}>{t('home.view_all', 'View All')}</Text>
-                </TouchableOpacity>
-              </View>
+          {/* "What's in your Mind?" Section */}
+          <View style={styles.whatsInMindHeader}>
+            <Text style={styles.whatsInMindTitle}>{t('home.whats_in_your_mind', "What's in your Mind?")}</Text>
+          </View>
 
-              {isLoadingRestaurants ? (
-                <FlatList
-                  horizontal
-                  data={Array(3).fill(null)}
-                  keyExtractor={(_, index) => `skeleton-recommend-${index}`}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recommendList}
-                  renderItem={() => <SkeletonRecommendCard />}
+          <FoodCategoryList
+            categories={categories}
+            isLoading={isLoadingCategories}
+            selectedCategoryId={selectedCategoryId}
+            onCategoryPress={handleCategoryPress}
+          />
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('home.recommended_for_you', 'Recommended For You')}</Text>
+            <TouchableOpacity style={styles.allItemsButton} activeOpacity={0.85} onPress={handleSeeAllRecommended}>
+              <Text style={styles.allItemsText}>{t('home.view_all', 'View All')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isLoadingRestaurants ? (
+            <FlatList
+              horizontal
+              data={Array(3).fill(null)}
+              keyExtractor={(_, index) => `skeleton-recommend-${index}`}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recommendList}
+              renderItem={() => <SkeletonRecommendCard />}
+            />
+          ) : recommendedRestaurants.length > 0 ? (
+            <FlatList
+              horizontal
+              data={recommendedRestaurants}
+              keyExtractor={item => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recommendList}
+              renderItem={({ item }) => (
+                <RestaurantRecommendCard
+                  item={item}
+                  isFavorite={isFavourite?.(item.id, 'restaurant')}
+                  onPress={() => handleRestaurantPress(item)}
+                  onFavoritePress={() => handleToggleFavorite(item)}
                 />
-              ) : recommendedRestaurants.length > 0 ? (
-                <FlatList
-                  horizontal
-                  data={recommendedRestaurants}
-                  keyExtractor={item => item.id}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recommendList}
-                  renderItem={({ item }) => (
-                    <RestaurantRecommendCard
-                      item={item}
-                      isFavorite={isFavourite?.(item.id, 'restaurant')}
-                      onPress={() => handleRestaurantPress(item)}
-                      onFavoritePress={() => handleToggleFavorite(item)}
-                    />
-                  )}
-                />
-              ) : null}
-
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('home.explore_restaurants', 'Explore Restaurants')}</Text>
-                <View style={styles.sortActions}>
-                  <TouchableOpacity activeOpacity={0.85} onPress={() => setIsFilterOpen(true)}>
-                    <Filter size={scale(18)} color="#ed1c24" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {isLoadingRestaurants ? (
-                <View style={{ marginBottom: hp(5) }}>
-                  {Array(6).fill(null).map((_, index) => (
-                    <SkeletonCard key={`skeleton-${index}`} />
-                  ))}
-                  <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: hp(1.5) }}>
-                    <ActivityIndicator size="small" color="#ed1c24" />
-                    <Text style={{ marginTop: hp(1), color: '#8E8E93', fontSize: FONT.xs }}>
-                      {t('home.loading_restaurants', 'Loading restaurants...')}
-                    </Text>
-                  </View>
-                </View>
-              ) : restaurants.length > 0 ? (
-                <View style={{ paddingBottom: hp(8) }}>
-                  {restaurants.map((item) => (
-                    <RestaurantListCard
-                      key={item.id}
-                      item={item}
-                      isFavorite={isFavourite?.(item.id, 'restaurant')}
-                      onPress={() => handleRestaurantPress(item)}
-                      onFavoritePress={() => handleToggleFavorite(item)}
-                    />
-                  ))}
-                  <View style={{ height: hp(2) }} />
-                </View>
-              ) : (
-                <View style={styles.emptyResults}>
-                  <TouchableOpacity
-                    style={styles.tryAgainBtn}
-                    onPress={handleTryAgain}
-                  >
-                    <Text style={styles.tryAgainText}>{t('home.try_again', 'Try Again')}</Text>
-                  </TouchableOpacity>
-                </View>
               )}
-              <View style={{ height: hp(10) }} />
-            </>
+            />
+          ) : null}
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('home.explore_restaurants', 'Explore Restaurants')}</Text>
+            <View style={styles.sortActions}>
+              <TouchableOpacity activeOpacity={0.85} onPress={() => setIsFilterOpen(true)}>
+                <Filter size={scale(18)} color="#ed1c24" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {isLoadingRestaurants ? (
+            <View style={{ marginBottom: hp(5) }}>
+              {Array(6).fill(null).map((_, index) => (
+                <SkeletonCard key={`skeleton-${index}`} />
+              ))}
+              <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: hp(1.5) }}>
+                <ActivityIndicator size="small" color="#ed1c24" />
+                <Text style={{ marginTop: hp(1), color: '#8E8E93', fontSize: FONT.xs }}>
+                  {t('home.loading_restaurants', 'Loading restaurants...')}
+                </Text>
+              </View>
+            </View>
+          ) : restaurants.length > 0 ? (
+            <View style={{ paddingBottom: hp(8) }}>
+              {restaurants.map((item) => (
+                <RestaurantListCard
+                  key={item.id}
+                  item={item}
+                  isFavorite={isFavourite?.(item.id, 'restaurant')}
+                  onPress={() => handleRestaurantPress(item)}
+                  onFavoritePress={() => handleToggleFavorite(item)}
+                />
+              ))}
+              <View style={{ height: hp(2) }} />
+            </View>
+          ) : (
+            <View style={styles.emptyResults}>
+              <TouchableOpacity
+                style={styles.tryAgainBtn}
+                onPress={handleTryAgain}
+              >
+                <Text style={styles.tryAgainText}>{t('home.try_again', 'Try Again')}</Text>
+              </TouchableOpacity>
+            </View>
           )}
+          <View style={{ height: hp(10) }} />
         </ScrollView>
       </View>
       <FilterDrawer visible={isFilterOpen} onClose={() => setIsFilterOpen(false)} onReset={handleResetFilters} onApply={handleApplyFilters} />
@@ -1048,5 +1040,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: FONT.sm,
     fontWeight: '700',
+  },
+  whatsInMindHeader: {
+    marginTop: hp(2.5),
+    paddingHorizontal: wp(4.44),
+  },
+  whatsInMindTitle: {
+    fontSize: FONT.md + scale(2),
+    fontWeight: '700',
+    color: '#111111',
   },
 });

@@ -301,7 +301,8 @@ export default function Favourite() {
                         id: p.restaurantId,
                         _id: p.restaurantId,
                         name: p.restaurantName || t('restaurant.default_name', 'Restaurant'),
-                      }
+                      },
+                      initialProductId: p.menuItemId || p.id
                     });
                   }}
                 />

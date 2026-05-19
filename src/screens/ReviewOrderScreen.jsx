@@ -768,9 +768,6 @@ export default function ReviewOrderScreen() {
         });
       }, 1000);
 
-      // In a real app, we would poll the backend here or wait for a socket
-      // For this demo, we'll provide a "Verify Payment" button in the modal
-
     } catch (error) {
       console.error('UPI Payment Error:', error);
       Alert.alert('Payment Failed', error?.message || 'Please try again');

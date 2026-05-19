@@ -529,10 +529,14 @@ export default function SearchScreen() {
         navigation.getParent?.()
           ? navigation.getParent().navigate('Home', {
               screen: 'RestaurantDetail',
-              params: { restaurant: restaurantData },
+              params: { 
+                restaurant: restaurantData,
+                initialProductId: item.product?._id || item.product?.id || item.id
+              },
             })
           : navigation.navigate('RestaurantDetail', {
               restaurant: restaurantData,
+              initialProductId: item.product?._id || item.product?.id || item.id
             });
       } catch (error) {
         console.error('❌ Error fetching restaurant details:', error?.message);

@@ -69,8 +69,9 @@ export const RestaurantListCard = memo(
     const ratingCount = getRatingCount(item);
     const formattedRatingCount = formatViewCount(ratingCount);
 
-    const bestSellerText = item?.bestSeller
-      ? t(`restaurant.best_seller.${item.id}`, item.bestSeller)
+    const hasBestSellerDish = item?.bestSeller && item.bestSeller !== 'Best Seller' && item.bestSeller !== 'Best seller';
+    const bestSellerDisplay = hasBestSellerDish 
+      ? `Best Seller: ${item.bestSeller}` 
       : t('restaurant.popular_choice', 'Popular choice');
 
     return (
@@ -122,12 +123,14 @@ export const RestaurantListCard = memo(
               {translatedName || item.name}
             </Text>
             <View style={styles.listRatingRow}>
-              <Star size={14} color="#F5A623" fill="#F5A623" />
-              <Text style={styles.listRatingValue}>
-                {ratingValue === '0.0' ? t('common.new', 'New') : ratingValue}
-              </Text>
-              {ratingValue !== '0.0' && (
-                <Text style={styles.listRatingCount}>({formattedRatingCount})</Text>
+              {ratingValue === '0.0' || parseFloat(ratingValue) === 0 ? (
+                <Text style={styles.listRatingValue}>New ★</Text>
+              ) : (
+                <>
+                  <Star size={14} color="#F5A623" fill="#F5A623" />
+                  <Text style={styles.listRatingValue}>{ratingValue}</Text>
+                  <Text style={styles.listRatingCount}>({formattedRatingCount})</Text>
+                </>
               )}
             </View>
           </View>
@@ -144,7 +147,7 @@ export const RestaurantListCard = memo(
 
           <View style={styles.listBestSellerPill}>
             <Text style={styles.listBestSellerText} numberOfLines={1}>
-              {bestSellerText}
+              {bestSellerDisplay}
             </Text>
           </View>
         </View>
@@ -177,8 +180,9 @@ export const RestaurantRecommendCard = memo(
     const ratingCount = getRatingCount(item);
     const formattedRatingCount = formatViewCount(ratingCount);
 
-    const bestSellerText = item?.bestSeller
-      ? t(`restaurant.best_seller.${item.id}`, item.bestSeller)
+    const hasBestSellerDish = item?.bestSeller && item.bestSeller !== 'Best Seller' && item.bestSeller !== 'Best seller';
+    const bestSellerDisplay = hasBestSellerDish 
+      ? `Best Seller: ${item.bestSeller}` 
       : t('restaurant.popular_choice', 'Popular choice');
 
     const translatedName = useTranslatedText(item?.name);
@@ -210,6 +214,10 @@ export const RestaurantRecommendCard = memo(
             }}
             defaultSource={require('../../assets/images/Food.png')}
           />
+          {/* Offer Tag */}
+          <View style={styles.offerTag}>
+            <Text style={styles.offerText}>{item.offer || 'Flat 20% OFF'}</Text>
+          </View>
           <TouchableOpacity
             style={styles.favBtn}
             activeOpacity={0.8}
@@ -240,9 +248,15 @@ export const RestaurantRecommendCard = memo(
               {translatedName || item.name}
             </Text>
             <View style={styles.ratingRow}>
-              <Star size={14} color="#F5A623" fill="#F5A623" />
-              <Text style={styles.ratingValue}>{ratingValue}</Text>
-              <Text style={styles.ratingCount}>({formattedRatingCount})</Text>
+              {ratingValue === '0.0' || parseFloat(ratingValue) === 0 ? (
+                <Text style={styles.ratingValue}>New ★</Text>
+              ) : (
+                <>
+                  <Star size={14} color="#F5A623" fill="#F5A623" />
+                  <Text style={styles.ratingValue}>{ratingValue}</Text>
+                  <Text style={styles.ratingCount}>({formattedRatingCount})</Text>
+                </>
+              )}
             </View>
           </View>
 
@@ -256,7 +270,7 @@ export const RestaurantRecommendCard = memo(
 
           <View style={styles.bestSellerPill}>
             <Text style={styles.bestSellerText} numberOfLines={1}>
-              Best Seller: {bestSellerText}
+              {bestSellerDisplay}
             </Text>
           </View>
         </View>
@@ -289,6 +303,7 @@ const styles = StyleSheet.create({
     height: hp(19.375),
     borderTopLeftRadius: scale(18),
     borderTopRightRadius: scale(18),
+    backgroundColor: '#F5F5F7',
   },
   offerTag: {
     position: 'absolute',
@@ -420,6 +435,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: scale(18),
     borderTopRightRadius: scale(18),
     borderRadius: scale(18),
+    backgroundColor: '#F5F5F7',
   },
   favBtn: {
     position: 'absolute',

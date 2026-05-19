@@ -129,40 +129,6 @@ export const HomeHeader = memo(({
             editable={false}
           />
         </TouchableOpacity>
-
-        <View style={[styles.tabs, isSmallDevice && styles.tabsCompact]}>
-          {tabs.map(label => {
-            const isActive = activeTab === label;
-            return (
-              <TouchableOpacity
-                key={label}
-                style={[
-                  styles.tabItem,
-                  isSmallDevice && styles.tabItemCompact,
-                ]}
-                activeOpacity={0.85}
-                onPress={() => onTabPress(label)}
-              >
-                <Text
-                  style={
-                    isActive
-                      ? [
-                          styles.tabTextActive,
-                          isSmallDevice && styles.tabTextCompact,
-                        ]
-                      : [
-                          styles.tabText,
-                          isSmallDevice && styles.tabTextCompact,
-                        ]
-                  }
-                >
-                  {t(`home.tabs.${label.toLowerCase()}`, label)}
-                </Text>
-                {isActive ? <View style={styles.tabUnderline} /> : null}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
       </View>
     </ImageBackground>
   );
@@ -180,7 +146,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   headerGlass: {
-    paddingBottom: hp(0),
+    paddingBottom: hp(2),
     backgroundColor: 'transparent',
   },
   cartBadge: {

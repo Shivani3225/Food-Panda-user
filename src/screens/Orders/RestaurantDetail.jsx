@@ -102,6 +102,25 @@ export default function RestaurantDetail() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState(null); // null = categories view
 
+  const initialProductId = route.params?.initialProductId;
+
+  useEffect(() => {
+    if (initialProductId && restaurant?.menuByCategory) {
+      const allItems = Object.values(restaurant.menuByCategory).flat();
+      const foundProduct = allItems.find(item => 
+        String(item.id) === String(initialProductId) || 
+        String(item._id) === String(initialProductId)
+      );
+      if (foundProduct) {
+        console.log('🎯 [RestaurantDetail] Found initial product, opening drawer:', foundProduct.name);
+        setSelectedItem(foundProduct);
+        
+        // Clear the param so it doesn't open again on re-renders
+        navigation.setParams({ initialProductId: null });
+      }
+    }
+  }, [initialProductId, restaurant?.menuByCategory, navigation]);
+
   const restaurantParamId = initialParamRestaurant?.id ?? initialParamRestaurant?._id ?? null;
 
   const fetchMenu = useCallback(async () => {
