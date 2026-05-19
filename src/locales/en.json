@@ -421,7 +421,7 @@
     "filter": "Filter",
     "reset": "Reset",
     "sort_by": "Sort By",
-    "relevance": "Relevance",
+    "relevance": "Nearest",
     "price_low_high": "Price: Low to High",
     "price_high_low": "Price: High to Low",
     "most_popular": "Most Popular",

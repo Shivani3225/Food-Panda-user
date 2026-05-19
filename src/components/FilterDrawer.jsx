@@ -25,7 +25,7 @@ import { scale } from '../utils/scale';
 const { width: screenWidth } = Dimensions.get('window');
 
 const getSortOptions = (t) => [
-  { id: 'relevance', label: t('filter.relevance', 'Relevance') },
+  { id: 'relevance', label: t('filter.relevance', 'Nearest') },
   { id: 'delivery_time', label: t('filter.delivery_time', 'Delivery Time (Fastest)') },
   { id: 'rating_high_low', label: t('filter.rating_high_low', 'Rating (High to Low)') },
   { id: 'cost_low_high', label: t('filter.cost_low_high', 'Cost: Low to High') },
@@ -249,9 +249,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
               />
             </Pressable>
             <Text style={styles.headerTitle}>{t('filter.filter', 'Filter')}</Text>
-            <Pressable onPress={handleReset} hitSlop={15} style={styles.headerResetPressable}>
-              <Text style={styles.headerReset}>{t('filter.reset', 'Reset')}</Text>
-            </Pressable>
+            <View style={{ width: scale(40) }} />
           </View>
 
         <ScrollView
@@ -505,6 +503,17 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
 
 
 
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={styles.resetBtn} 
+            onPress={handleReset}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.resetBtnText}>{t('filter.reset', 'Reset')}</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={styles.applyBtn} 
             onPress={handleApply}
@@ -512,7 +521,7 @@ export default function FilterDrawer({ visible, onClose, onReset, onApply }) {
           >
             <Text style={styles.applyBtnText}>{t('filter.apply', 'Apply Filters')}</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
         </SafeAreaView>
       </Animated.View>
     </Modal>
@@ -694,23 +703,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 8,
   },
+  footer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF',
+    backgroundColor: '#FFFFFF',
+    gap: 12,
+  },
+  resetBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#EFEFEF',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetBtnText: {
+    color: '#6E6E6E',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   applyBtn: {
-    marginTop: 12,
-    marginBottom: 30,
-    height: 52,
-    borderRadius: 14,
+    flex: 2,
+    height: 48,
+    borderRadius: 12,
     backgroundColor: '#ed1c24',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#ed1c24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   applyBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
