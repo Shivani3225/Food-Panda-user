@@ -92,6 +92,8 @@ export default function ReviewOrderScreen() {
   const [tipLoading, setTipLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
+  const [isProcessingUpi, setIsProcessingUpi] = useState(false);
+  const [upiTimer, setUpiTimer] = useState(60);
   const { user, currencySymbol, currencyCode } = useAuth();
   const { address: globalAddress, selectedAddress, gpsAddress, gpsLocation } = useLocation();
 
@@ -110,74 +112,11 @@ export default function ReviewOrderScreen() {
   latestPaymentMethodRef.current = paymentMethod;
 
   const [paymentSettings, setPaymentSettings] = useState(null);
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const res = await apiClient.get('/api/settings');
-        if (res.data?.paymentSettings) {
-          setPaymentSettings(res.data.paymentSettings);
-          console.log('✅ Loaded dynamic payment settings (UPI VPA):', res.data.paymentSettings.upiVpa);
-        }
-      } catch (e) {
-        console.warn('⚠️ Failed to load payment settings from API:', e.message);
-      }
-    };
-    loadSettings();
-  }, []);
-
   const [addresses, setAddresses] = useState([]);
-
-  const summary = useMemo(() => {
-    const subtotal = toNumber(totals?.subtotal, 0);
-    const deliveryFee = toNumber(totals?.delivery, 0);
-    const tax = toNumber(totals?.tax, 0);
-    const platformFee = toNumber(totals?.platformFee, 0);
-    const packaging = toNumber(totals?.packaging, 0);
-    const smallCartFee = toNumber(totals?.smallCartFee, 0);
-    const surgeFee = toNumber(bill?.surgeFee, 0);
-    const discount = navDiscount ?? toNumber(totals?.discount, 0);
-    const totalBeforeTip = subtotal + deliveryFee + tax + platformFee + packaging + smallCartFee + surgeFee - discount;
-
-    // Use the backend's authoritative toPay to ensure consistency with Stripe charges
-    const backendToPay = toNumber(bill?.toPay, 0);
-    const grandTotal = backendToPay > 0 ? backendToPay : Math.max(0, totalBeforeTip + tipAmount);
-
-    return {
-      subtotal,
-      delivery: deliveryFee,
-      tax,
-      serviceFee: platformFee,
-      packaging,
-      smallCartFee,
-      surgeFee,
-      discount,
-      tip: tipAmount,
-      totalBeforeTip,
-      grandTotal,
-    };
-  }, [totals, tipAmount, bill, navDiscount]);
-
-  useEffect(() => {
-    return () => {
-      if (placeOrderTimerRef.current) {
-        clearTimeout(placeOrderTimerRef.current);
-        placeOrderTimerRef.current = null;
-      }
-    };
-  }, []);
 
   const isAnySheetVisible = activeSheet !== null;
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const unsubscribe = navigation.addListener('beforeRemove', e => {
-        if (!showModal && !isAnySheetVisible && !isPlacing && !isProcessingStripe && !isProcessingUpi) return;
-        e.preventDefault();
-      });
-      return unsubscribe;
-    }, [navigation, showModal, isAnySheetVisible, isPlacing, isProcessingStripe, isProcessingUpi]),
-  );
+  const addressOptions = useMemo(() => addresses, [addresses]);
 
   const normalizeAddress = useCallback(addr => {
     if (!addr) return null;
@@ -229,7 +168,97 @@ export default function ReviewOrderScreen() {
       }
       return list;
     },
-    [address?.id, address?._id, normalizeAddress, setAddress],
+    [address?.id, address?._id, normalizeAddress, setAddress, gpsAddress, t, gpsLocation, selectedAddress],
+  );
+
+  const summary = useMemo(() => {
+    const subtotal = toNumber(totals?.subtotal, 0);
+    const deliveryFee = toNumber(totals?.delivery, 0);
+    const tax = toNumber(totals?.tax, 0);
+    const platformFee = toNumber(totals?.platformFee, 0);
+    const packaging = toNumber(totals?.packaging, 0);
+    const smallCartFee = toNumber(totals?.smallCartFee, 0);
+    const surgeFee = toNumber(bill?.surgeFee, 0);
+    const discount = navDiscount ?? toNumber(totals?.discount, 0);
+    const totalBeforeTip = subtotal + deliveryFee + tax + platformFee + packaging + smallCartFee + surgeFee - discount;
+
+    // Use the backend's authoritative toPay to ensure consistency with Stripe charges
+    const backendToPay = toNumber(bill?.toPay, 0);
+    const grandTotal = backendToPay > 0 ? backendToPay : Math.max(0, totalBeforeTip + tipAmount);
+
+    return {
+      subtotal,
+      delivery: deliveryFee,
+      tax,
+      serviceFee: platformFee,
+      packaging,
+      smallCartFee,
+      surgeFee,
+      discount,
+      tip: tipAmount,
+      totalBeforeTip,
+      grandTotal,
+    };
+  }, [totals, tipAmount, bill, navDiscount]);
+
+  const handleUpdateTip = useCallback(async (newTipAmount) => {
+    setTipLoading(true);
+    try {
+      const response = await apiClient.put(CART_ROUTES.updateMeta, {
+        tip: newTipAmount,
+      });
+
+      const addr = latestAddressRef.current;
+      const addrId = addr?._id || addr?.id || null;
+      const lng = addr?.location?.coordinates?.[0] || null;
+      const lat = addr?.location?.coordinates?.[1] || null;
+      await fetchCart(addrId, lng, lat);
+
+      if (response?.data?.bill) {
+        setTipAmount(response.data.bill.tip ?? newTipAmount);
+      } else {
+        setTipAmount(newTipAmount);
+      }
+    } catch (error) {
+      console.error('Failed to update tip:', error?.message);
+      setTipAmount(newTipAmount);
+    } finally {
+      setTipLoading(false);
+    }
+  }, [fetchCart]);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await apiClient.get('/api/settings');
+        if (res.data?.paymentSettings) {
+          setPaymentSettings(res.data.paymentSettings);
+          console.log('✅ Loaded dynamic payment settings (UPI VPA):', res.data.paymentSettings.upiVpa);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to load payment settings from API:', e.message);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (placeOrderTimerRef.current) {
+        clearTimeout(placeOrderTimerRef.current);
+        placeOrderTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const unsubscribe = navigation.addListener('beforeRemove', e => {
+        if (!showModal && !isAnySheetVisible && !isPlacing && !isProcessingStripe && !isProcessingUpi) return;
+        e.preventDefault();
+      });
+      return unsubscribe;
+    }, [navigation, showModal, isAnySheetVisible, isPlacing, isProcessingStripe, isProcessingUpi]),
   );
 
   useFocusEffect(
@@ -273,32 +302,6 @@ export default function ReviewOrderScreen() {
       };
     }, [fetchCart]),
   );
-
-  const handleUpdateTip = useCallback(async (newTipAmount) => {
-    setTipLoading(true);
-    try {
-      const response = await apiClient.put(CART_ROUTES.updateMeta, {
-        tip: newTipAmount,
-      });
-
-      const addr = latestAddressRef.current;
-      const addrId = addr?._id || addr?.id || null;
-      const lng = addr?.location?.coordinates?.[0] || null;
-      const lat = addr?.location?.coordinates?.[1] || null;
-      await fetchCart(addrId, lng, lat);
-
-      if (response?.data?.bill) {
-        setTipAmount(response.data.bill.tip ?? newTipAmount);
-      } else {
-        setTipAmount(newTipAmount);
-      }
-    } catch (error) {
-      console.error('Failed to update tip:', error?.message);
-      setTipAmount(newTipAmount);
-    } finally {
-      setTipLoading(false);
-    }
-  }, [fetchCart]);
 
   const deleteOrder = async (orderId) => {
     try {
@@ -680,8 +683,7 @@ export default function ReviewOrderScreen() {
       setIsProcessingStripe(false);
     }
   };
-  const [isProcessingUpi, setIsProcessingUpi] = useState(false);
-  const [upiTimer, setUpiTimer] = useState(60);
+
 
   const handleUpiPayment = async () => {
     setIsProcessingUpi(true);
@@ -880,7 +882,7 @@ export default function ReviewOrderScreen() {
     }
   };
 
-  const addressOptions = useMemo(() => addresses, [addresses]);
+
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

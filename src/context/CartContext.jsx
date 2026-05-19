@@ -146,8 +146,6 @@ export const CartProvider = ({ children }) => {
   const fetchCart = useCallback(async (overrideAddressId = null, overrideLng = null, overrideLat = null) => {
     try {
       setLoading(true);
-      console.log('CartContext: Fetching cart...');
-      
       let addrId = overrideAddressId;
       let lng = overrideLng;
       let lat = overrideLat;
@@ -168,6 +166,7 @@ export const CartProvider = ({ children }) => {
         } catch (e) {}
       }
 
+      console.log('CartContext: Fetching cart with currencyCode:', currencyCode, 'addr:', addrId, 'coords:', { lng, lat });
       const data = await getCart(addrId, currencyCode, lng, lat);
       console.log('CartContext: Cart data received:', data);
       
