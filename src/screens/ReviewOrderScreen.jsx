@@ -339,7 +339,7 @@ export default function ReviewOrderScreen() {
       currency: currencyCode,
       currencySymbol: currencySymbol,
       ...(stripePaymentIntentId && { paymentIntentId: stripePaymentIntentId }),
-    
+
       currentAddress: addressSnapshot?.id === 'current_location' ? addressSnapshot : undefined,
     };
 
@@ -612,7 +612,7 @@ export default function ReviewOrderScreen() {
                 setIsProcessingStripe(true);
                 try {
                   await apiClient.post('/api/payment/mock-success', { orderId: newOrderId });
-                  
+
                   const cartRestaurant = latestCartRef.current[0]?.restaurant;
                   const cartRestaurantName = latestCartRef.current[0]?.restaurantName || latestCartRef.current[0]?.restaurant?.name;
 
@@ -788,15 +788,6 @@ export default function ReviewOrderScreen() {
 
       let isPaid = apiOrder?.paymentStatus === 'paid';
 
-      // Simulation fallback: if payment is not confirmed yet, mark it as successful via mock-success
-      if (!isPaid) {
-        try {
-          await apiClient.post('/api/payment/mock-success', { orderId });
-          isPaid = true;
-        } catch (mockErr) {
-          console.warn('Simulation fallback failed:', mockErr);
-        }
-      }
 
       setTimeout(async () => {
         const cartRestaurant = latestCartRef.current[0]?.restaurant;
