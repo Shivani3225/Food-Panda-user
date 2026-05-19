@@ -92,7 +92,15 @@ export const CartProvider = ({ children }) => {
         const raw = await AsyncStorage.getItem('chosen_address');
         if (raw) {
           console.log('📦 [CartContext] Restoring address from storage');
-          setAddress(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          if (parsed) {
+            const normalized = {
+              ...parsed,
+              id: parsed._id || parsed.id,
+              _id: parsed._id || parsed.id
+            };
+            setAddress(normalized);
+          }
         }
       } catch (e) {
         console.warn('Failed to load address in CartContext');
